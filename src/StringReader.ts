@@ -1,0 +1,170 @@
+export enum Type {
+	INT,
+	FLOAT,
+	BOOLEAN,
+	QUOTED,
+	UNQUOUTED,
+	STRING,
+}
+export enum MissingCharType {
+	QUOTE
+}
+export class ExpectedError extends Error {
+	constructor(public readonly reader: StringReader, public readonly type: Type) {
+		super(type.toString());
+		Object.setPrototypeOf(this, new.target.prototype);
+	}
+}
+export class BadValueError<T> extends Error {
+	constructor(public readonly reader: StringReader, public readonly type: Type, public readonly value: T) {
+		super(type.toString());
+		Object.setPrototypeOf(this, new.target.prototype);
+	}
+}
+export class MissingChar<T> extends Error {
+	constructor(public readonly reader: StringReader, public readonly type: Type, public readonly missingType: MissingCharType, public readonly char: T) {
+		super(type.toString());
+		Object.setPrototypeOf(this, new.target.prototype);
+	}
+}
+export default class StringReader {
+	cursor: number = 0;
+	constructor(public readonly string: string) { }
+	get remainingLength() {
+		return this.string.length - this.cursor;
+	}
+	get totalLength() {
+		return this.string.length;
+	}
+	get read() {
+		return this.string.substring(0, this.cursor);
+	}
+	get remaining() {
+		return this.string.substring(this.cursor);
+	}
+	canRead(length: number) {
+		return this.cursor + length <= this.string.length;
+	}
+	get canReadAnything() {
+		return this.canRead(1);
+	}
+	peek() {
+		return this.peekAt(0);
+	}
+	peekAt(offset: number) {
+		return this.string.charAt(this.cursor + offset);
+	}
+	readChar() {
+		return this.string.charAt(this.cursor++);
+	}
+	skip() {
+		this.cursor++;
+	}
+	skipWhitespace() {
+		while (this.canReadAnything && /\s/.test(this.peek())) {
+			this.skip();
+		}
+	}
+	static isNumberChar(char: string) {
+		return /[0-9.,-]/.test(char);
+	}
+	private readBeforeTestFails(test: (char: string) => boolean) {
+		let start = this.cursor;
+		while (this.canReadAnything && test(this.peek())) {
+			this.skip();
+		}
+		return this.string.substring(start, this.cursor);
+	}
+	static isEscape(char: string) {
+		return /\\/.test(char);
+	}
+	private readBeforeTestFailsWithEscapes(test: (char: string) => boolean) {
+		let inEscape = false;
+		return this.readBeforeTestFails(char => {
+			if (inEscape) {
+				inEscape = false;
+				return true;
+			}
+			if (StringReader.isEscape(char)) {
+				inEscape = true;
+				return true;
+			} else {
+				return test(char);
+			}
+		})
+	}
+	private regexpTerminatorReplaceCache: { [key: string]: RegExp } = {};
+	private readBeforeTerminatorWithEscapes(char: string) {
+		if (char.length !== 1) throw new Error('Expected single character');
+		let got = this.readBeforeTestFailsWithEscapes(t => t !== char);
+		if (!this.regexpTerminatorReplaceCache[char])
+			this.regexpTerminatorReplaceCache[char] = new RegExp(`\\${char}`, 'g');
+		return got.replace(this.regexpTerminatorReplaceCache[char], char).replace(/\\\\/g, '\\');
+	}
+	private readNumber(int: boolean) {
+		let got = this.readBeforeTestFails(StringReader.isNumberChar);
+		if (got.length === 0) throw new ExpectedError(this, int ? Type.INT : Type.FLOAT);
+		if (int && /[.,]/.test(got)) {
+			throw new BadValueError(this, Type.INT, got);
+		}
+		got = got.replace(',', '.')
+		if (!int && got.indexOf('.') !== got.lastIndexOf('.'))
+			throw new BadValueError(this, Type.FLOAT, got);
+		let value = int ? parseInt(got, 10) : parseFloat(got);
+		if (isNaN(value))
+			throw new BadValueError(this, int ? Type.INT : Type.FLOAT, got);
+		return value;
+	}
+	readInt() {
+		return this.readNumber(true);
+	}
+	readFloat() {
+		return this.readNumber(false);
+	}
+	static isUnquotedStringChar(char: string) {
+		return !/\s/.test(char);
+	}
+	readUnquotedString() {
+		if (!this.canReadAnything) throw new ExpectedError(this, Type.UNQUOUTED);
+		return this.readBeforeTestFails(StringReader.isUnquotedStringChar);
+	}
+	static isQuote(char: string) {
+		return /['"]/.test(char);
+	}
+	readQuotedString() {
+		if (!this.canReadAnything) throw new ExpectedError(this, Type.QUOTED);
+		let quoteChar = this.peek();
+		if (!StringReader.isQuote(quoteChar)) throw new ExpectedError(this, Type.QUOTED);
+		let start = this.cursor;
+		this.skip();
+		let value = this.readBeforeTerminatorWithEscapes(quoteChar);
+		if (this.peek() !== quoteChar) {
+			this.cursor = start;
+			throw new MissingChar(this, Type.QUOTED, MissingCharType.QUOTE, quoteChar)
+		}
+		this.skip();
+		return value;
+	}
+	readString() {
+		if (!this.canReadAnything) throw new ExpectedError(this, Type.STRING);
+		let char = this.peek();
+		if (StringReader.isQuote(char)) {
+			return this.readQuotedString();
+		} else {
+			return this.readUnquotedString();
+		}
+	}
+	readBoolean() {
+		if (!this.canReadAnything) throw new ExpectedError(this, Type.BOOLEAN);
+		let start = this.cursor;
+		let value = this.readString().toLowerCase();
+		if (value === 'true') {
+			return true;
+		} else if (value === 'false') {
+			return false;
+		} else {
+			this.cursor = start;
+			throw new BadValueError(this, Type.BOOLEAN, value);
+		}
+	}
+}

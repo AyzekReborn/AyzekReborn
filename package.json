@@ -1,0 +1,11 @@
+{
+  "name": "AyzekReborn",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Лач <iam@lach.pw>",
+  "license": "MIT",
+  "dependencies": {
+    "@types/jasmine": "^3.4.4",
+    "jasmine": "^3.5.0"
+  }
+}
