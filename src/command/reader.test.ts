@@ -1,4 +1,4 @@
-import StringReader from './StringReader';
+import StringReader from './reader';
 
 describe('Sayings Greeter', () => {
 	it('should should correctly do cursor manipilations', () => {
@@ -109,5 +109,14 @@ describe('Sayings Greeter', () => {
 		reader.skip();
 		expect(() => reader.readBoolean()).toThrow();
 		expect(reader.readString()).toBe('hello');
+	});
+	it('should fail on bad calls', () => {
+		let reader = new StringReader('');
+		expect(() => reader.readBeforeTerminatorWithEscapes('')).toThrow();
+		expect(() => reader.readBeforeTerminatorWithEscapes('  ')).toThrow();
+		expect(() => reader.readQuotedString()).toThrow();
+		expect(() => reader.readUnquotedString()).toThrow();
+		expect(() => reader.readString()).toThrow();
+		expect(() => reader.readBoolean()).toThrow();
 	});
 });

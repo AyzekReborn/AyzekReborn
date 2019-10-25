@@ -5,7 +5,22 @@
   "author": "Лач <iam@lach.pw>",
   "license": "MIT",
   "dependencies": {
+    "@meteor-it/fs": "^1.2.14",
+    "@meteor-it/logger": "^2.3.38",
+    "@meteor-it/mime": "^0.4.21",
+    "@meteor-it/utils": "^1.3.27",
+    "@meteor-it/xpress": "^4.2.60",
+    "@meteor-it/xrest": "^1.3.48",
+    "@types/cloneable-readable": "^2.0.0",
     "@types/jasmine": "^3.4.4",
-    "jasmine": "^3.5.0"
+    "@types/temp": "^0.8.34",
+    "cloneable-readable": "^2.0.1",
+    "is-equal": "^1.5.5",
+    "jasmine": "^3.5.0",
+    "stream-now": "^1.1.1",
+    "temp": "^0.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^12.11.7"
   }
 }

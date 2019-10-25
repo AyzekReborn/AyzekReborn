@@ -1,8 +1,11 @@
-import StringReader, { Type } from './StringReader';
+import StringReader, { Type } from './reader';
+import { SuggestionsBuilder, Suggestions } from './suggestions';
+import StringRange from './range';
+import { CommandContext } from './command';
 export abstract class ArgumentType<T> {
 	abstract parse(reader: StringReader): T;
-	async listSuggestions<S>(ctx: SuggestionContext<S>, builder: SuggestionBuilder): Suggestions {
-		return Suggestions.builder();
+	async listSuggestions<S>(_ctx: CommandContext<S>, _builder: SuggestionsBuilder): Promise<Suggestions> {
+		return Suggestions.empty;
 	}
 	get examples(): string[] {
 		return [];
@@ -12,15 +15,15 @@ export class BoolArgumentType extends ArgumentType<boolean> {
 	parse(reader: StringReader): boolean {
 		return reader.readBoolean();
 	}
-	async listSuggestions<S>(ctx: SuggestionContext<S>, builder: SuggestionBuilder): Suggestions {
-		let buffer = builder.getRemaining().toLowerCase();
+	async listSuggestions<S>(_ctx: CommandContext<S>, builder: SuggestionsBuilder) {
+		let buffer = builder.remaining.toLowerCase();
 		if ('true'.startsWith(buffer)) {
-			builder.suggest('true');
+			builder.suggest('true', null);
 		}
 		if ('false'.startsWith(buffer)) {
-			builder.suggest('false');
+			builder.suggest('false', null);
 		}
-		return builder.buildPromise();
+		return builder.build();
 	}
 	get examples(): string[] {
 		return ['true', 'false'];
@@ -31,7 +34,7 @@ enum FailType {
 	TOO_HIGH,
 }
 class RangeError<T> extends Error {
-	constructor(ctx: StringReader, failType: FailType, type: Type, value: T) {
+	constructor(public ctx: StringReader, public failType: FailType, public type: Type, public value: T) {
 		super(`${failType} ${type}: ${value}`);
 	}
 }
@@ -82,7 +85,7 @@ export enum StringType {
 	QUOTABLE_PHRAZE,
 	GREEDY_PHRAZE,
 }
-class StringArgumentType extends ArgumentType<string> {
+export class StringArgumentType extends ArgumentType<string> {
 	constructor(public readonly type: StringType) {
 		super();
 	}
@@ -107,5 +110,11 @@ class StringArgumentType extends ArgumentType<string> {
 			case StringType.QUOTABLE_PHRAZE:
 				return ['"quoted phraze"', 'word'];
 		}
+	}
+}
+
+
+export class ParsedArgument<_S, T> {
+	constructor(public readonly range: StringRange, public readonly result: T) {
 	}
 }

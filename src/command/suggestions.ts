@@ -1,8 +1,13 @@
-import StringRange from "./StringRange";
-import { create } from "domain";
+import StringRange from "./range";
+import { CommandNode } from './tree';
+import { CommandContext } from "./command";
+
+export class SuggestionContext<S> {
+	constructor(public readonly parent: CommandNode<S>, public readonly startPos: number) { }
+}
 
 export class Suggestion {
-	constructor(public readonly range: StringRange, public readonly text: string, public readonly tooltip: string) { }
+	constructor(public readonly range: StringRange, public readonly text: string, public readonly tooltip: string | null) { }
 	apply(input: string) {
 		if (this.range.start === 0 && this.range.end === input.length)
 			return input
@@ -36,8 +41,8 @@ export class Suggestions {
 	get isEmpty() {
 		return this.suggestions.length === 0;
 	}
-	get empty(): Promise<Suggestions> {
-		return Promise.resolve(EMPTY_SUGGESTIONS);
+	static get empty(): Suggestions {
+		return EMPTY_SUGGESTIONS;
 	}
 	static merge(command: string, input: Suggestions[]): Suggestions {
 		if (input.length === 0) return EMPTY_SUGGESTIONS;
@@ -80,7 +85,7 @@ export class SuggestionsBuilder {
 	build() {
 		return Suggestions.create(this.input, this.result);
 	}
-	suggest(text: string, tooltip: string): this {
+	suggest(text: string, tooltip: string | null): this {
 		if (text === this.remaining) {
 			return this;
 		}
@@ -99,5 +104,4 @@ export class SuggestionsBuilder {
 	}
 }
 
-
-// export type SuggestionProvider<S> = async (ctx: CommandContext<S>, builder: SuggestionsBuilder) => void {}
+export type SuggestionProvider<S> = (ctx: CommandContext<S>, builder: SuggestionsBuilder) => Promise<Suggestions>;

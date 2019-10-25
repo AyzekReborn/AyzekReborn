@@ -28,6 +28,11 @@ export class MissingChar<T> extends Error {
 	}
 }
 export default class StringReader {
+	clone(): StringReader {
+		let reader = new StringReader(this.string);
+		reader.cursor = this.cursor;
+		return reader;
+	}
 	cursor: number = 0;
 	constructor(public readonly string: string) { }
 	get remainingLength() {
@@ -94,7 +99,7 @@ export default class StringReader {
 		})
 	}
 	private regexpTerminatorReplaceCache: { [key: string]: RegExp } = {};
-	private readBeforeTerminatorWithEscapes(char: string) {
+	public readBeforeTerminatorWithEscapes(char: string) {
 		if (char.length !== 1) throw new Error('Expected single character');
 		let got = this.readBeforeTestFailsWithEscapes(t => t !== char);
 		if (!this.regexpTerminatorReplaceCache[char])
@@ -124,14 +129,14 @@ export default class StringReader {
 	static isUnquotedStringChar(char: string) {
 		return !/\s/.test(char);
 	}
-	readUnquotedString() {
+	readUnquotedString(): string {
 		if (!this.canReadAnything) throw new ExpectedError(this, Type.UNQUOUTED);
 		return this.readBeforeTestFails(StringReader.isUnquotedStringChar);
 	}
 	static isQuote(char: string) {
 		return /['"]/.test(char);
 	}
-	readQuotedString() {
+	readQuotedString(): string {
 		if (!this.canReadAnything) throw new ExpectedError(this, Type.QUOTED);
 		let quoteChar = this.peek();
 		if (!StringReader.isQuote(quoteChar)) throw new ExpectedError(this, Type.QUOTED);
@@ -145,7 +150,7 @@ export default class StringReader {
 		this.skip();
 		return value;
 	}
-	readString() {
+	readString(): string {
 		if (!this.canReadAnything) throw new ExpectedError(this, Type.STRING);
 		let char = this.peek();
 		if (StringReader.isQuote(char)) {
@@ -154,7 +159,7 @@ export default class StringReader {
 			return this.readUnquotedString();
 		}
 	}
-	readBoolean() {
+	readBoolean(): boolean {
 		if (!this.canReadAnything) throw new ExpectedError(this, Type.BOOLEAN);
 		let start = this.cursor;
 		let value = this.readString().toLowerCase();

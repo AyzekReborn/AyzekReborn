@@ -1,1 +1,3 @@
 /.gtm/
+/node_modules
+dist

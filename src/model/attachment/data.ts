@@ -1,0 +1,171 @@
+import { Readable } from 'stream';
+import { readStreamToBuffer, createReadStream } from '@meteor-it/utils';
+import cloneable from 'cloneable-readable';
+import temp from 'temp';
+import { writeFile, unlink, readFile, getReadStream } from '@meteor-it/fs';
+import { emit } from '@meteor-it/xrest';
+import { readable as streamReadableNow } from 'stream-now';
+
+interface MaybeTemporary {
+	path: string;
+	cleanIfTemporary(): Promise<void>;
+}
+
+export abstract class Data {
+	abstract toStream(): Readable;
+	abstract async toBuffer(): Promise<Buffer>;
+	abstract async toFile(): Promise<MaybeTemporary>;
+	abstract async toExternalUrl(): Promise<MaybeTemporary>;
+
+	static fromBuffer(buffer: Buffer) {
+		return new BufferData(buffer);
+	}
+	static fromStreamCloneable<T extends Readable>(stream: cloneable.Cloneable<T>) {
+		return new CloneableStreamData(cloneable(stream));
+	}
+	static fromStreamAlreadyCloneable<T extends Readable>(stream: cloneable.Cloneable<T>) {
+		return new CloneableStreamData(stream);
+	}
+	static fromStreamUnique(stream: Readable) {
+		return new UniqueStreamData(stream);
+	}
+	static fromFile(file: string) {
+		return new FileData(file);
+	}
+	static fromExternalUrl(file: string) {
+		return new ExternalUrlData(file);
+	}
+}
+
+/**
+ * Easiest to handle data
+ */
+export class BufferData extends Data {
+	constructor(public readonly buffer: Buffer) {
+		super();
+	}
+	toStream() {
+		return createReadStream(this.buffer);
+	}
+	async toBuffer() {
+		return this.buffer;
+	}
+	async toFile() {
+		let path = temp.path({ prefix: 'ayzek-' });
+		await writeFile(path, this.buffer);
+		return {
+			path,
+			cleanIfTemporary: () => unlink(path)
+		}
+	}
+	async toExternalUrl(): Promise<MaybeTemporary> {
+		throw new Error('Not implemented');
+	}
+}
+
+/**
+ * Should be used with care
+ */
+export class CloneableStreamData<T extends Readable> extends Data {
+	constructor(public readonly stream: cloneable.Cloneable<T>) {
+		super();
+	}
+	toStream() {
+		return this.stream.clone();
+	}
+	private cachedBuffer: Promise<Buffer> | null = null;
+	toBuffer() {
+		if (this.cachedBuffer) return this.cachedBuffer;
+		return this.cachedBuffer = readStreamToBuffer(this.toStream());
+	}
+	async toFile() {
+		let path = temp.path({ prefix: 'ayzek-' });
+		await writeFile(path, await this.toBuffer());
+		return {
+			path,
+			cleanIfTemporary: () => unlink(path)
+		}
+	}
+	async toExternalUrl(): Promise<MaybeTemporary> {
+		throw new Error('Not implemented');
+	}
+}
+
+/**
+ * Should be used with care
+ */
+export class UniqueStreamData extends Data {
+	got: boolean = false;
+	constructor(public readonly stream: Readable) {
+		super();
+	}
+	toStream() {
+		if (this.got) throw new Error("Can't borrow unique stream twice");
+		this.got = true;
+		return this.stream;
+	}
+	private cachedBuffer: Promise<Buffer> | null = null;
+	toBuffer() {
+		if (this.cachedBuffer) return this.cachedBuffer;
+		return this.cachedBuffer = readStreamToBuffer(this.toStream());
+	}
+	async toFile() {
+		let path = temp.path({ prefix: 'ayzek-' });
+		await writeFile(path, await this.toBuffer());
+		return {
+			path,
+			cleanIfTemporary: () => unlink(path)
+		}
+	}
+	async toExternalUrl(): Promise<MaybeTemporary> {
+		throw new Error('Not implemented');
+	}
+}
+
+export class FileData extends Data {
+	constructor(public readonly path: string) {
+		super();
+	}
+	toBuffer() {
+		return readFile(this.path);
+	}
+	toStream() {
+		return getReadStream(this.path);
+	}
+	toFile() {
+		return Promise.resolve({
+			path: this.path,
+			cleanIfTemporary: () => Promise.resolve()
+		});
+	}
+	toExternalUrl(): Promise<MaybeTemporary> {
+		throw new Error('Not implemented');
+	}
+}
+
+export class ExternalUrlData extends Data {
+	constructor(public readonly url: string) {
+		super();
+	}
+	async toBuffer() {
+		let got = await emit('GET', this.url, {});
+		return got.body;
+	}
+	toStream(): Readable {
+		return streamReadableNow(this.toBuffer().then(v => createReadStream(v)));
+	}
+	async toFile() {
+		let path = temp.path({ prefix: 'ayzek-' });
+		await writeFile(path, await this.toBuffer());
+		return {
+			path,
+			cleanIfTemporary: () => unlink(path)
+		}
+	}
+	toExternalUrl() {
+		return Promise.resolve({
+			path: this.url,
+			cleanIfTemporary: () => Promise.resolve()
+		})
+	}
+}
