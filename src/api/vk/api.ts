@@ -9,6 +9,8 @@ import VKChat from "./chat";
 import PromiseMap from "../promiseMap";
 import VKUserMap from "./userMap";
 import VKChatMap from "./chatMap";
+import { Attachment, Image, Audio, File, Video, Location, MessengerSpecificUnknownAttachment } from "../../model/attachment/attachment";
+import { lookup as lookupMime } from '@meteor-it/mime';
 
 export default class VKApi extends Api {
 	processor: VKApiProcessor;
@@ -43,25 +45,93 @@ export default class VKApi extends Api {
 			method, params
 		});
 	}
-	async parseMessage(message: any): Promise<IMessage<VKApi>> {
-		let chat = message.peer_id > 2e9 ? await this.getApiChat(message.peer_id - 2e9) : null;
+	async parseAttachment(attachment: any): Promise<Attachment> {
+		switch (attachment.type) {
+			case 'photo': {
+				const sizes = attachment.photo.sizes;
+				let maxSize = sizes[sizes.length - 1];
+				return Image.fromUrl(maxSize.url, 'photo.jpeg', 'image/jpeg');
+			}
+			case 'audio': {
+				if (attachment.audio.url === '')
+					// TODO: Workaround empty audio?
+					return Audio.fromEmpty(attachment.audio.artist, attachment.audio.title, 'audio/mpeg');
+				return Audio.fromUrl(attachment.audio.url, attachment.audio.artist, attachment.audio.title, 'audio/mpeg');
+			}
+			case 'doc': {
+				return File.fromUrlWithSizeKnown(
+					attachment.doc.url, attachment.doc.size, attachment.doc.title,
+					// Because VK does same thing
+					lookupMime(attachment.doc.ext) || 'text/plain'
+				);
+			}
+			case 'video': {
+				// TODO: Extract something useful? Maybe create
+				// TODO: VKVideoData extends Data?
+				return Video.fromEmpty(attachment.video.title, 'video/mp4')
+			}
+			case 'poll': {
+				return new MessengerSpecificUnknownAttachment('vk:poll', attachment.poll);
+			}
+			case 'link': {
+				return new MessengerSpecificUnknownAttachment('vk:link', attachment.link);
+			}
+			default:
+				this.logger.error(`Unsupported attachment type: ${attachment.type}`);
+				this.logger.error(attachment);
+				return new MessengerSpecificUnknownAttachment(`vk:unk:${attachment.type}`, attachment[attachment.type]);
+		}
+	}
+	async parseExtraAttachments(message: any): Promise<Attachment[]> {
+		const result = [];
+		if (message.geo) {
+			result.push(new Location(message.geo.coordinates.latitude, message.geo.coordinates.longitude));
+		}
+		return result;
+	}
+	async parseReplyMessage(message: any): Promise<IMessage<VKApi>> {
+		const user = await this.getApiUser(message.from_id);
+		if (!user) throw new Error(`Bad user: ${message.from_id}`);
+		return {
+			api: this,
+			user,
+			chat: null,
+			conversation: user,
+			attachments: [
+				...await Promise.all(message.attachments.map((e: any) => this.parseAttachment(e))),
+				...await this.parseExtraAttachments(message)
+			] as Attachment[],
+			text: message.text || '',
+			// Replies have no forwarded messages
+			forwarded: [],
+			messageId: message.id.toString(),
+			replyTo: null,
+		};
+	}
+	async parseMessage(message: any, parseChat: boolean = false): Promise<IMessage<VKApi>> {
+		let chat = (parseChat && message.peer_id > 2e9) ? await this.getApiChat(message.peer_id - 2e9) : null;
 		let user = await this.getApiUser(message.from_id);
+		if (!user) throw new Error(`Bad user: ${message.from_id}`);
+
 		return {
 			api: this,
 			user: user,
 			chat: chat,
 			conversation: chat || user,
-			// TODO: parse attachments
-			attachments: [],
+			attachments: [
+				...await Promise.all(message.attachments.map((e: any) => this.parseAttachment(e))),
+				...await this.parseExtraAttachments(message)
+			] as Attachment[],
 			text: message.text || '',
 			forwarded: message.fwd_messages ? await Promise.all(message.fwd_messages.map((m: any) => this.parseMessage(m))) : [],
-			messageId: message.id.toString()
+			messageId: message.id.toString(),
+			replyTo: message.reply_message ? (await this.parseReplyMessage(message.reply_message)) : null,
 		};
 	}
 	async processNewMessageUpdate(update: any) {
 		// const [message_id, flags, from_id, timestamp, subject, text, attachments] = update;
 		// let user = await this.getApiUser(from_id) //?.
-		const parsed = await this.parseMessage(update);
+		const parsed = await this.parseMessage(update, true);
 		console.warn(parsed);
 
 	}

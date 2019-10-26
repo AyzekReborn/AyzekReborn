@@ -16,19 +16,14 @@ export default class VKApiProcessor extends CollapseQueueProcessor<IVKApiRequest
 	}
 	xrest: XRest = new XRest('https://api.vk.com/', {});
 	async collapser(tasks: IVKApiRequest[]): Promise<any[]> {
-		let code = 'return [';
-		let tasksCodes: string[] = [];
-		tasks.forEach(({ method, params }) => {
-			tasksCodes.push(`API.${method}(${JSON.stringify(params || {})})`);
-		});
-		code += tasksCodes.join(',');
-		code += '];';
 		let token = this.token;
+		const code = `return[${tasks.map(({ method, params }) => `API.${method}(${JSON.stringify(params || {})})`).join(',')}];`;
+		this.logger.debug(code);
 		let res = await this.xrest.emit('POST', '/method/execute', {
 			data: {
 				code
 			}, query: {
-				v: '5.90',
+				v: '5.102',
 				access_token: token
 			}
 		});

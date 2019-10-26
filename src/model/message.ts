@@ -9,6 +9,7 @@ export type IMessage<A extends Api> = {
 	conversation: Conversation<A>,
 	attachments: Attachment[],
 	text: string,
+	replyTo: IMessage<A> | null,
 	forwarded: IMessage<A>[],
 	messageId: string,
 }

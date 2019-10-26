@@ -1,4 +1,4 @@
-import { Data } from "./data";
+import { Data, EmptyData } from "./data";
 import { emitStreaming } from '@meteor-it/xrest';
 import { constants } from 'http2';
 import { isFile, stat } from "@meteor-it/fs";
@@ -8,6 +8,12 @@ export class Attachment {
 	type: string;
 	constructor(type: string) {
 		this.type = type;
+	}
+}
+
+export class MessengerSpecificUnknownAttachment extends Attachment {
+	constructor(type: string, public apiData: any) {
+		super(type)
 	}
 }
 
@@ -78,6 +84,9 @@ export class File extends BaseFile {
 		let parsed = await parseUrlData(url, name, mime, 'text/plain');
 		return new File(parsed.data, parsed.size, parsed.name, parsed.mime);
 	}
+	static async fromUrlWithSizeKnown(url: string, size: number, name: string, mime: string = 'text/plain') {
+		return new File(Data.fromExternalUrl(url), size, name, mime);
+	}
 	static async fromFilePath(path: string, name: string, mime: string | null = null) {
 		let parsed = await parseFilePathData(path, name, mime, 'text/plain');
 		return new File(parsed.data, parsed.size, parsed.name, parsed.mime);
@@ -112,6 +121,9 @@ export class Audio extends BaseFile {
 	constructor(data: Data, size: number, public artist: string | null, public name: string, public mime: string) {
 		super(data, size, artist === null ? name : `${artist} ${name}`);
 	}
+	static async fromEmpty(artist: string | null, title: string, mime: string) {
+		return new Audio(new EmptyData(), 0, artist, title, mime);
+	}
 	static async fromUrl(url: string, artist: string | null, title: string, mime: string) {
 		let parsed = await parseUrlData(url, title, mime, mime);
 		return new Audio(parsed.data, parsed.size, artist, parsed.name, parsed.mime);
@@ -119,5 +131,13 @@ export class Audio extends BaseFile {
 	static async fromFilePath(path: string, artist: string | null, title: string, mime: string) {
 		let parsed = await parseFilePathData(path, title, mime, mime);
 		return new Audio(parsed.data, parsed.size, artist, parsed.name, parsed.mime);
+	}
+}
+export class Video extends BaseFile {
+	constructor(data: Data, size: number, public name: string, public mime: string) {
+		super(data, size, name);
+	}
+	static async fromEmpty(title: string, mime: string) {
+		return new Video(new EmptyData(), 0, title, mime);
 	}
 }

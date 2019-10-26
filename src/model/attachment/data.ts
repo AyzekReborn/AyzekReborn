@@ -38,6 +38,25 @@ export abstract class Data {
 }
 
 /**
+ * Data with no data available
+ * Should be used with care
+ */
+export class EmptyData extends Data {
+	toStream(): Readable {
+		throw new Error('No data');
+	}
+	toBuffer(): Promise<Buffer> {
+		throw new Error('No data');
+	}
+	toFile(): Promise<MaybeTemporary> {
+		throw new Error('No data');
+	}
+	toExternalUrl(): Promise<MaybeTemporary> {
+		throw new Error('No data');
+	}
+}
+
+/**
  * Easiest to handle data
  */
 export class BufferData extends Data {
@@ -143,6 +162,7 @@ export class FileData extends Data {
 	}
 }
 
+// TODO: Identify by public/private(Available by url only for bot)?
 export class ExternalUrlData extends Data {
 	constructor(public readonly url: string) {
 		super();
