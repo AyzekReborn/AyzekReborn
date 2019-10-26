@@ -7,37 +7,37 @@ export enum LeaveReason {
 	SELF,
 }
 
-export abstract class LeaveEvent<A extends Api> {
+export abstract class LeaveEvent<A extends Api<A>> {
 	constructor(
 		public api: A,
 		public user: User<A>,
 		public initiator: User<A> | null,
 		public reason: LeaveReason,
-		public reasonString: string,
+		public reasonString: string | null,
 	) { }
 	get isSelf() {
 		return this.reason === LeaveReason.SELF;
 	}
 }
-export class LeaveChatEvent<A extends Api> extends LeaveEvent<A> {
+export class LeaveChatEvent<A extends Api<A>> extends LeaveEvent<A> {
 	constructor(
 		api: A,
 		user: User<A>,
 		initiator: User<A> | null,
 		reason: LeaveReason,
-		reasonString: string,
+		reasonString: string | null,
 		public chat: Chat<A>,
 	) {
 		super(api, user, initiator, reason, reasonString);
 	}
 }
-export class LeaveGuildEvent<A extends Api> extends LeaveEvent<A> {
+export class LeaveGuildEvent<A extends Api<A>> extends LeaveEvent<A> {
 	constructor(
 		api: A,
 		user: User<A>,
 		initiator: User<A> | null,
 		reason: LeaveReason,
-		reasonString: string,
+		reasonString: string | null,
 		public guild: Guild<A>,
 	) {
 		super(api, user, initiator, reason, reasonString);

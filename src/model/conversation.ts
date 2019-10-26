@@ -10,7 +10,7 @@ enum ConversationType {
 	OTHER
 }
 
-export abstract class Conversation<A extends Api> {
+export abstract class Conversation<A extends Api<A>> {
 	@nonenumerable
 	readonly api: A
 	constructor(
@@ -49,7 +49,7 @@ export enum UserType {
 	BOT,
 }
 
-export abstract class User<A extends Api> extends Conversation<A> {
+export abstract class User<A extends Api<A>> extends Conversation<A> {
 	constructor(
 		api: A,
 		targetId: string,
@@ -98,14 +98,14 @@ export abstract class User<A extends Api> extends Conversation<A> {
 	}
 }
 
-export abstract class Guild<A extends Api> {
+export abstract class Guild<A extends Api<A>> {
 	constructor(
 		public readonly api: A,
 		public readonly gid: string,
 	) { };
 };
 
-export abstract class Chat<A extends Api> extends Conversation<A> {
+export abstract class Chat<A extends Api<A>> extends Conversation<A> {
 	constructor(
 		api: A,
 		targetId: string,

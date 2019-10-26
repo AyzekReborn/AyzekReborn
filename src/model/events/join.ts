@@ -1,13 +1,13 @@
 import { Api } from "../api";
 import { User, Chat, Guild } from "../conversation";
 
-enum JoinReason {
+export enum JoinReason {
 	INVITED,
 	INVITE_LINK,
 	RETURNED,
 }
 
-export abstract class JoinEvent<A extends Api> {
+export abstract class JoinEvent<A extends Api<A>> {
 	constructor(
 		public api: A,
 		public user: User<A>,
@@ -19,7 +19,7 @@ export abstract class JoinEvent<A extends Api> {
 		return this.reason === JoinReason.INVITE_LINK || this.reason === JoinReason.RETURNED;
 	}
 }
-export class JoinChatEvent<A extends Api> extends JoinEvent<A> {
+export class JoinChatEvent<A extends Api<A>> extends JoinEvent<A> {
 	constructor(
 		api: A,
 		user: User<A>,
@@ -31,7 +31,7 @@ export class JoinChatEvent<A extends Api> extends JoinEvent<A> {
 		super(api, user, initiator, reason, reasonString);
 	}
 }
-export class JoinGuildEvent<A extends Api> extends JoinEvent<A> {
+export class JoinGuildEvent<A extends Api<A>> extends JoinEvent<A> {
 	constructor(
 		api: A,
 		user: User<A>,

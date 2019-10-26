@@ -9,15 +9,16 @@ import VKChat from "./chat";
 import PromiseMap from "../promiseMap";
 import VKUserMap from "./userMap";
 import VKChatMap from "./chatMap";
-import { Attachment, Image, Audio, File, Video, Location, MessengerSpecificUnknownAttachment } from "../../model/attachment/attachment";
+import { Attachment, Image, Audio, File, Video, Location, MessengerSpecificUnknownAttachment, Voice } from "../../model/attachment/attachment";
 import { lookup as lookupMime } from '@meteor-it/mime';
+import { MessageEvent } from '../../model/events/message';
+import { JoinChatEvent, JoinReason } from "../../model/events/join";
+import { LeaveChatEvent, LeaveReason } from "../../model/events/leave";
 
-export default class VKApi extends Api {
+export default class VKApi extends Api<VKApi> {
 	processor: VKApiProcessor;
 	userMap: VKUserMap;
 	chatMap: VKChatMap;
-	// userProcessor: GroupingVKApiRequester<string>;
-	// chatProcessor: GroupingVKApiRequester<string>;
 	@nonenumerable
 	tokens: string[];
 	constructor(public apiId: string, public groupId: number, tokens: string[]) {
@@ -30,7 +31,7 @@ export default class VKApi extends Api {
 	async init() {
 	}
 	getApiUser(id: number): Promise<VKUser | null> {
-		// TODO: Add bot support
+		// TODO: Add bot support (negative ids)
 		if (id < 0) {
 			return Promise.resolve(null);
 		}
@@ -65,6 +66,9 @@ export default class VKApi extends Api {
 					lookupMime(attachment.doc.ext) || 'text/plain'
 				);
 			}
+			case 'audio_message': {
+				return Voice.fromUrl(attachment.audio_message.link_ogg, 'voice.ogg', 'audio/ogg');
+			}
 			case 'video': {
 				// TODO: Extract something useful? Maybe create
 				// TODO: VKVideoData extends Data?
@@ -75,6 +79,10 @@ export default class VKApi extends Api {
 			}
 			case 'link': {
 				return new MessengerSpecificUnknownAttachment('vk:link', attachment.link);
+			}
+			// TODO: Sticker attachment
+			case 'sticker': {
+				return new MessengerSpecificUnknownAttachment('vk:sticker', attachment.sticker);
 			}
 			default:
 				this.logger.error(`Unsupported attachment type: ${attachment.type}`);
@@ -129,10 +137,85 @@ export default class VKApi extends Api {
 		};
 	}
 	async processNewMessageUpdate(update: any) {
-		// const [message_id, flags, from_id, timestamp, subject, text, attachments] = update;
-		// let user = await this.getApiUser(from_id) //?.
+		console.log(update);
+		if (update.action) {
+			switch (update.action.type) {
+				case 'chat_invite_user_by_link': {
+					const user = await this.getApiUser(update.from_id);
+					if (!user) throw new Error(`Bad user: ${update.from_id}`);
+					this.joinChatEvent.emit(new JoinChatEvent(
+						this,
+						user,
+						null,
+						JoinReason.INVITE_LINK,
+						null,
+						await this.getApiChat(update.peer_id - 2e9)
+					));
+					return;
+				}
+				case 'chat_invite_user': {
+					const user = await this.getApiUser(update.action.member_id);
+					if (!user) throw new Error(`Bad user: ${update.action.member_id}`);
+					if (update.from_id === update.action.member_id) {
+						this.joinChatEvent.emit(new JoinChatEvent(
+							this,
+							user,
+							null,
+							JoinReason.RETURNED,
+							null,
+							await this.getApiChat(update.peer_id - 2e9)
+						));
+					} else {
+						this.joinChatEvent.emit(new JoinChatEvent(
+							this,
+							user,
+							await this.getApiUser(update.from_id),
+							JoinReason.INVITED,
+							null,
+							await this.getApiChat(update.peer_id - 2e9)
+						));
+					}
+
+					return;
+				}
+				case 'chat_kick_user': {
+					const user = await this.getApiUser(update.action.member_id);
+					if (!user) throw new Error(`Bad user: ${update.action.member_id}`);
+					if (update.from_id === update.action.member_id) {
+						this.leaveChatEvent.emit(new LeaveChatEvent(
+							this,
+							user,
+							null,
+							LeaveReason.SELF,
+							null,
+							await this.getApiChat(update.peer_id - 2e9)
+						));
+					} else {
+						this.leaveChatEvent.emit(new LeaveChatEvent(
+							this,
+							user,
+							await this.getApiUser(update.from_id),
+							LeaveReason.KICKED,
+							null,
+							await this.getApiChat(update.peer_id - 2e9)
+						))
+					}
+
+					return;
+				}
+				default:
+					this.logger.error(`Unknown message action: ${update.action.type}`);
+					this.logger.error(update.object);
+			}
+			return;
+		}
 		const parsed = await this.parseMessage(update, true);
-		console.warn(parsed);
+		this.messageEvent.emit(new MessageEvent(
+			this, parsed.user,
+			parsed.chat,
+			parsed.conversation, parsed.attachments, parsed.text, parsed.forwarded, parsed.messageId, parsed.replyTo
+		));
+		// console.warn(parsed);
 
 	}
 	async processUpdate(update: { type: string, object: any }) {
@@ -140,6 +223,9 @@ export default class VKApi extends Api {
 			case 'message_new':
 				await this.processNewMessageUpdate(update.object);
 				break;
+			default:
+				this.logger.error(`Unknown update type: ${update.type}`);
+				this.logger.error(update.object);
 		}
 	}
 	async loop() {

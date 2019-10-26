@@ -2,7 +2,7 @@ import { Api } from "./api"
 import { User, Chat, Conversation } from "./conversation"
 import { Attachment } from "./attachment/attachment"
 
-export type IMessage<A extends Api> = {
+export type IMessage<A extends Api<A>> = {
 	api: A,
 	user: User<A>,
 	chat: Chat<A> | null,

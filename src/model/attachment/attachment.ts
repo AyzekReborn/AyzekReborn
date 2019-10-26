@@ -117,6 +117,15 @@ export class Image extends BaseFile {
 	// 	return new Image(createReadStream(buffer), buffer.length);
 	// }
 }
+export class Voice extends BaseFile {
+	constructor(data: Data, size: number, public name: string, public mime: string) {
+		super(data, size, name);
+	}
+	static async fromUrl(url: string, title: string, mime: string) {
+		let parsed = await parseUrlData(url, title, mime, mime);
+		return new Voice(parsed.data, parsed.size, parsed.name, parsed.mime);
+	}
+}
 export class Audio extends BaseFile {
 	constructor(data: Data, size: number, public artist: string | null, public name: string, public mime: string) {
 		super(data, size, artist === null ? name : `${artist} ${name}`);
