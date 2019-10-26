@@ -44,15 +44,4 @@ export abstract class Api<A extends Api<A>> {
 	send(conv: Conversation<A>, text: Text<A>, attachments: Attachment[], options: IMessageOptions): Promise<void> {
 		throw new NotImplementedInApiError('send');
 	}
-
-	// emit(name: 'message', event: MessageEvent<this>): boolean;
-
-	// emit(name: 'joinGuild', event: JoinGuildEvent<this>): boolean;
-	// emit(name: 'joinChat', event: JoinChatEvent<this>): boolean;
-
-	// emit(name: 'leaveGuild', event: LeaveGuildEvent<this>): boolean;
-	// emit(name: 'leaveChat', event: LeaveChatEvent<this>): boolean;
-
-	// emit(name: 'guildTitleChange', event: GuildTitleChangeEvent<this>): boolean;
-	// emit(name: 'chatTitleChange', event: ChatTitleChangeEvent<this>): boolean;
 }

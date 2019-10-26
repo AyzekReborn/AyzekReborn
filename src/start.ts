@@ -12,3 +12,12 @@ const api = new VKApi('kraken2', 180370112, [API_KEY]);
 (async () => {
 	await api.loop();
 })();
+api.messageEvent.on(e => {
+	if (e.text === '/ping') {
+		e.conversation.send(['Hello, ', {
+			type: 'mentionPart',
+			data: e.user,
+			text: 'пидор'
+		}]);
+	}
+});

@@ -1,25 +1,19 @@
 import { Api } from "./api";
 import { Chat, User } from "./conversation";
 
-export type MentionLinePart<A extends Api<A>> = {
+export type MentionTextPart<A extends Api<A>> = {
 	type: 'mentionPart',
 	data: User<A>,
+	text?: string,
 }
-export type ChatReferenceLinePart<A extends Api<A>> = {
+export type ChatReferenceTextPart<A extends Api<A>> = {
 	type: 'chatRefPart',
 	data: Chat<A>,
+	text?: string,
 };
-export type TextLinePart = {
-	type: 'textPart',
-	data: string,
-};
-export type UnderlinedPart<A extends Api<A>> = {
+export type UnderlinedTextPart<A extends Api<A>> = {
 	type: 'underlinedPart',
-	data: LinePart<A>,
+	data: Text<A>,
 }
-export type LinePart<A extends Api<A>> = TextLinePart | MentionLinePart<A> | ChatReferenceLinePart<A> | UnderlinedPart<A>;
-export type Line<A extends Api<A>> = {
-	type: 'line',
-	data: LinePart<A>[]
-};
-export type Text<A extends Api<A>> = string | Line<A>[];
+export type TextPart<A extends Api<A>> = string | MentionTextPart<A> | ChatReferenceTextPart<A> | UnderlinedTextPart<A>;
+export type Text<A extends Api<A>> = TextPart<A> | TextPart<A>[];

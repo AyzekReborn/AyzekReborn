@@ -1,12 +1,10 @@
 import { Api } from "../../model/api";
 import VKApiProcessor from "./apiProcessor";
-import GroupingVKApiRequester from "./groupingRequester";
-import { IMessage } from "../../model/message";
+import { IMessage, IMessageOptions } from "../../model/message";
 import { emit } from "@meteor-it/xrest";
 import { nonenumerable } from 'nonenumerable';
 import VKUser from "./user";
 import VKChat from "./chat";
-import PromiseMap from "../promiseMap";
 import VKUserMap from "./userMap";
 import VKChatMap from "./chatMap";
 import { Attachment, Image, Audio, File, Video, Location, MessengerSpecificUnknownAttachment, Voice } from "../../model/attachment/attachment";
@@ -14,6 +12,8 @@ import { lookup as lookupMime } from '@meteor-it/mime';
 import { MessageEvent } from '../../model/events/message';
 import { JoinChatEvent, JoinReason } from "../../model/events/join";
 import { LeaveChatEvent, LeaveReason } from "../../model/events/leave";
+import { Conversation } from "../../model/conversation";
+import { Text, TextPart } from '../../model/text';
 
 export default class VKApi extends Api<VKApi> {
 	processor: VKApiProcessor;
@@ -137,7 +137,6 @@ export default class VKApi extends Api<VKApi> {
 		};
 	}
 	async processNewMessageUpdate(update: any) {
-		console.log(update);
 		if (update.action) {
 			switch (update.action.type) {
 				case 'chat_invite_user_by_link': {
@@ -280,5 +279,40 @@ export default class VKApi extends Api<VKApi> {
 			this.logger.warn('Loop end (???), waiting before restart');
 			await new Promise(res => setTimeout(res, 5000));
 		}
+	}
+	// TODO: Send multi via user_ids
+	async send(conv: Conversation<VKApi>, text: Text<VKApi>, attachments: Attachment[] = [], options: IMessageOptions = {}) {
+		const peer_id = +conv.targetId;
+		// TODO: Send forwarded in next message
+		if (options.forwarded && options.replyTo) throw new Error(`Can't specify both forwarded and replyTo`);
+		this.execute('messages.send', {
+			random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
+			peer_id,
+			// TODO: Split text to fit
+			message: this.textToString(text),
+			// TODO: attachment
+			reply_to: options.replyTo && options.replyTo.messageId,
+			forwarded_messages: options.forwarded && options.forwarded.map(e => e.messageId).join(','),
+			// TODO: Link text
+			dont_parse_links: 1,
+			// TODO: Somehow use passed text mention object
+			disable_mentions: 1,
+		});
+	}
+
+	textPartToString(part: TextPart<VKApi>): string {
+		if (typeof part === 'string') return part;
+		switch (part.type) {
+			case 'mentionPart':
+				return `[id${part.data.targetId}|${part.text || part.data.name}]`
+			case 'chatRefPart':
+				return `<Чат ${part.data.title}>`;
+			case 'underlinedPart':
+				return this.textToString(part);
+		}
+	}
+	textToString(text: Text<VKApi>): string {
+		if (text instanceof Array) return text.map(l => this.textPartToString(l)).join('');
+		else return this.textPartToString(text);
 	}
 }

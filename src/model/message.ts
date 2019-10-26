@@ -2,6 +2,10 @@ import { Api } from "./api"
 import { User, Chat, Conversation } from "./conversation"
 import { Attachment } from "./attachment/attachment"
 
+export type ForwardInfo = {
+	messageId: string,
+}
+
 export type IMessage<A extends Api<A>> = {
 	api: A,
 	user: User<A>,
@@ -15,5 +19,6 @@ export type IMessage<A extends Api<A>> = {
 }
 
 export type IMessageOptions = {
-	answerTo?: string,
+	replyTo?: ForwardInfo,
+	forwarded?: ForwardInfo[],
 }

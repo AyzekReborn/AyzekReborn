@@ -1,8 +1,8 @@
 import { Api } from "./api";
 import { Attachment, Image } from "./attachment/attachment";
-import { LinePart, MentionLinePart, ChatReferenceLinePart } from "./text";
 import { IMessageOptions } from "./message";
 import { nonenumerable } from 'nonenumerable';
+import { Text, TextPart, MentionTextPart, ChatReferenceTextPart } from './text';
 
 enum ConversationType {
 	USER,
@@ -21,7 +21,7 @@ export abstract class Conversation<A extends Api<A>> {
 		this.api = api;
 	}
 
-	async send(text: string, attachments: Attachment[] = [], options: IMessageOptions = {}) {
+	async send(text: Text<A>, attachments: Attachment[] = [], options: IMessageOptions = {}) {
 		return await this.api.send(this, text, attachments, options);
 	}
 
@@ -32,7 +32,7 @@ export abstract class Conversation<A extends Api<A>> {
 		return this.conversationType === ConversationType.CHAT;
 	}
 
-	abstract get reference(): LinePart<A>;
+	abstract get reference(): TextPart<A>;
 }
 
 
@@ -90,11 +90,11 @@ export abstract class User<A extends Api<A>> extends Conversation<A> {
 		return name;
 	}
 
-	get reference(): LinePart<A> {
+	get reference(): TextPart<A> {
 		return {
 			type: 'mentionPart',
 			data: this,
-		} as MentionLinePart<A>
+		} as MentionTextPart<A>
 	}
 }
 
@@ -120,10 +120,10 @@ export abstract class Chat<A extends Api<A>> extends Conversation<A> {
 
 	abstract get photoImage(): Promise<Image | null>;
 
-	get reference(): LinePart<A> {
+	get reference(): TextPart<A> {
 		return {
 			type: 'chatRefPart',
 			data: this,
-		} as ChatReferenceLinePart<A>
+		} as ChatReferenceTextPart<A>
 	}
 }
