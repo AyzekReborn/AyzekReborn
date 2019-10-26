@@ -27,7 +27,6 @@ export abstract class ArgumentBuilder<S, T extends ArgumentBuilder<S, T>> {
 	}
 
 	thenCommand(argument: CommandNode<S>) {
-		console.log(this.target);
 		if (this.target !== null) throw new Error("Can't add child to redirected node");
 		this.arguments.addChild(argument);
 		return this;

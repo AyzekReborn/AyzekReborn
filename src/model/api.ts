@@ -2,6 +2,7 @@ import Logger from "@meteor-it/logger";
 import { User, Chat, Conversation, Guild } from "./conversation";
 import { Text } from './text';
 import { Attachment } from "./attachment/attachment";
+import { IMessageOptions } from "./message";
 
 export class NotImplementedInApiError extends Error {
 	constructor(method: string) {

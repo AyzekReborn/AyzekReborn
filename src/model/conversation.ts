@@ -2,6 +2,7 @@ import { Api } from "./api";
 import { Attachment, Image } from "./attachment/attachment";
 import { LinePart, MentionLinePart, ChatReferenceLinePart } from "./text";
 import { IMessageOptions } from "./message";
+import { nonenumerable } from 'nonenumerable';
 
 enum ConversationType {
 	USER,
@@ -10,13 +11,14 @@ enum ConversationType {
 }
 
 export abstract class Conversation<A extends Api> {
+	@nonenumerable
+	readonly api: A
 	constructor(
-		public readonly api: A,
+		api: A,
 		public readonly targetId: string,
 		public readonly conversationType: ConversationType,
 	) {
 		this.api = api;
-		this.targetId = targetId;
 	}
 
 	async send(text: string, attachments: Attachment[] = [], options: IMessageOptions = {}) {
@@ -61,7 +63,7 @@ export abstract class User<A extends Api> extends Conversation<A> {
 	) {
 		super(api, targetId, ConversationType.USER);
 	}
-	abstract async getPhotoImage(): Promise<Image>;
+	abstract get photoImage(): Promise<Image | null>;
 
 	private get idName() {
 		return `<Unknown ${this.uid}>`;
@@ -116,7 +118,7 @@ export abstract class Chat<A extends Api> extends Conversation<A> {
 		super(api, targetId, ConversationType.CHAT);
 	}
 
-	abstract async getPhotoImage(): Promise<Image>;
+	abstract get photoImage(): Promise<Image | null>;
 
 	get reference(): LinePart<A> {
 		return {
