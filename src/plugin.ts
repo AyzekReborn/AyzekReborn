@@ -1,0 +1,4 @@
+type PluginInfo = {
+
+}
+export { PluginInfo };

@@ -17,8 +17,6 @@ const API_KEY = 'ff57bfbf3a3c67afabc6c64d0e2e343447bf9388d57bb5e487056c293393f0a
 				data: e.user,
 				text: 'пидор'
 			}]);
-		} else if (e.text === '/debug') {
-			console.log(JSON.stringify(e));
 		}
 	});
 	const ayzek = new Ayzek('ayzek', [vkApi], true);

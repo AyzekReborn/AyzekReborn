@@ -149,8 +149,7 @@ export default class VKApi extends Api<VKApi> {
 			text: message.text || '',
 			// Replies have no forwarded messages
 			forwarded: [],
-			// Sometimes id is not sent
-			messageId: (message.id || 0).toString(),
+			messageId: '0',
 			replyTo: null,
 		};
 	}
@@ -177,7 +176,7 @@ export default class VKApi extends Api<VKApi> {
 			] as Attachment[],
 			text: message.text || '',
 			forwarded,
-			messageId: message.id.toString(),
+			messageId: '0',
 			replyTo,
 		};
 	}
@@ -265,8 +264,6 @@ export default class VKApi extends Api<VKApi> {
 			parsed.chat,
 			parsed.conversation, parsed.attachments, parsed.text, parsed.forwarded, parsed.messageId, parsed.replyTo
 		));
-		// console.warn(parsed);
-
 	}
 	async processUpdate(update: { type: string, object: any }) {
 		switch (update.type) {
@@ -283,7 +280,7 @@ export default class VKApi extends Api<VKApi> {
 		while (true) {
 			//
 			let data = await this.execute('groups.getLongPollServer', {
-				group_id: 180370112
+				group_id: this.groupId
 			});
 			if (!data.server) {
 				this.logger.error("Can't get data!")
@@ -334,16 +331,13 @@ export default class VKApi extends Api<VKApi> {
 	// TODO: Send multi via user_ids
 	async send(conv: Conversation<VKApi>, text: Text<VKApi>, attachments: Attachment[] = [], options: IMessageOptions = {}) {
 		const peer_id = +conv.targetId;
-		// TODO: Send forwarded in next message
-		if (options.forwarded && options.replyTo) throw new Error(`Can't specify both forwarded and replyTo`);
+		if (options.forwarded || options.replyTo) throw new Error(`Message responses are not supported by vk bots`);
 		this.execute('messages.send', {
 			random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
 			peer_id,
 			// TODO: Split text to fit
 			message: this.textToString(text),
 			// TODO: attachment
-			reply_to: options.replyTo && options.replyTo.messageId,
-			forwarded_messages: options.forwarded && options.forwarded.map(e => e.messageId).join(','),
 			// TODO: Link text
 			dont_parse_links: 1,
 			// TODO: Somehow use passed text mention object
@@ -374,7 +368,5 @@ export default class VKApi extends Api<VKApi> {
 		ApiFeature.ChatButtons,
 		ApiFeature.ChatMemberList,
 		ApiFeature.EditMessage,
-		ApiFeature.MessageReply,
-		ApiFeature.MessageForward,
 	]);
 }
