@@ -33,6 +33,9 @@ export class Ayzek<A extends Api<any>> {
 				const forwarded = e.maybeForwarded ? ` {green}+${e.forwarded.length + (e.replyTo ? 1 : 0)}F{/green}` : '';
 				e.api.logger.log(`${e.user.fullName}${chat} {gray}»{/gray}${text}${attachments}${forwarded}`);
 			});
+			this.chatTitleChangeEvent.on(e => {
+				e.api.logger.log(`${e.initiator.fullName} renamed {red}${e.oldTitle || '<unknown>'}{/red} -> {green}${e.newTitle}{/green}`);
+			});
 		}
 	}
 
@@ -45,7 +48,7 @@ export class Ayzek<A extends Api<any>> {
 		api.leaveGuildEvent.pipe(this.leaveGuildEvent);
 		api.leaveChatEvent.pipe(this.leaveChatEvent);
 
-		this.guildTitleChangeEvent.pipe(this.guildTitleChangeEvent);
-		this.chatTitleChangeEvent.pipe(this.chatTitleChangeEvent);
+		api.guildTitleChangeEvent.pipe(this.guildTitleChangeEvent);
+		api.chatTitleChangeEvent.pipe(this.chatTitleChangeEvent);
 	}
 }

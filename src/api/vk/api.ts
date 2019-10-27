@@ -19,6 +19,7 @@ import { LeaveChatEvent, LeaveReason } from "../../model/events/leave";
 import { Conversation } from "../../model/conversation";
 import { Text, TextPart } from '../../model/text';
 import ApiFeature from "../features";
+import { ChatTitleChangeEvent, TitleChangeEvent } from "../../model/events/titleChange";
 
 export default class VKApi extends Api<VKApi> {
 	processor: VKApiProcessor;
@@ -183,6 +184,25 @@ export default class VKApi extends Api<VKApi> {
 	async processNewMessageUpdate(update: any) {
 		if (update.action) {
 			switch (update.action.type) {
+				case 'chat_title_update': {
+					const [user, chat] = await Promise.all([
+						this.getApiUser(update.from_id),
+						this.getApiChat(update.peer_id - 2e9)
+					]);
+					if (!user) throw new Error(`Bad user: ${update.from_id}`);
+					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
+					const newTitle = update.action.text;
+					this.chatTitleChangeEvent.emit(new ChatTitleChangeEvent(
+						this,
+						// If old title is in cache
+						chat.title === newTitle ? null : chat.title,
+						newTitle,
+						user,
+						chat
+					));
+					(chat as Writeable<VKChat>).title = newTitle;
+					return;
+				}
 				case 'chat_invite_user_by_link': {
 					const [user, chat] = await Promise.all([
 						this.getApiUser(update.from_id),
@@ -260,7 +280,7 @@ export default class VKApi extends Api<VKApi> {
 				}
 				default:
 					this.logger.error(`Unknown message action: ${update.action.type}`);
-					this.logger.error(update.object);
+					this.logger.error(update.action);
 			}
 			return;
 		}
