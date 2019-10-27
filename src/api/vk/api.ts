@@ -184,9 +184,11 @@ export default class VKApi extends Api<VKApi> {
 		if (update.action) {
 			switch (update.action.type) {
 				case 'chat_invite_user_by_link': {
-					const user = await this.getApiUser(update.from_id);
+					const [user, chat] = await Promise.all([
+						this.getApiUser(update.from_id),
+						this.getApiChat(update.peer_id - 2e9)
+					]);
 					if (!user) throw new Error(`Bad user: ${update.from_id}`);
-					const chat = await this.getApiChat(update.peer_id - 2e9);
 					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
 					this.joinChatEvent.emit(new JoinChatEvent(
 						this,
@@ -199,9 +201,11 @@ export default class VKApi extends Api<VKApi> {
 					return;
 				}
 				case 'chat_invite_user': {
-					const user = await this.getApiUser(update.action.member_id);
+					const [user, chat] = await Promise.all([
+						this.getApiUser(update.action.member_id),
+						this.getApiChat(update.peer_id - 2e9)
+					]);
 					if (!user) throw new Error(`Bad user: ${update.action.member_id}`);
-					const chat = await this.getApiChat(update.peer_id - 2e9);
 					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
 					if (update.from_id === update.action.member_id) {
 						this.joinChatEvent.emit(new JoinChatEvent(
@@ -226,9 +230,11 @@ export default class VKApi extends Api<VKApi> {
 					return;
 				}
 				case 'chat_kick_user': {
-					const user = await this.getApiUser(update.action.member_id);
+					const [user, chat] = await Promise.all([
+						this.getApiUser(update.action.member_id),
+						this.getApiChat(update.peer_id - 2e9)
+					]);
 					if (!user) throw new Error(`Bad user: ${update.action.member_id}`);
-					const chat = await this.getApiChat(update.peer_id - 2e9);
 					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
 					if (update.from_id === update.action.member_id) {
 						this.leaveChatEvent.emit(new LeaveChatEvent(
