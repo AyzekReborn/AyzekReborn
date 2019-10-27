@@ -5,6 +5,9 @@ export type MentionTextPart<A extends Api<A>> = {
 	type: 'mentionPart',
 	data: User<A>,
 	text?: string,
+	// VK behavior: if one of all mentions have notification = true, then
+	// all mentions have notification
+	notification?: boolean,
 }
 export type ChatReferenceTextPart<A extends Api<A>> = {
 	type: 'chatRefPart',

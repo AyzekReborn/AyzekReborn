@@ -1,7 +1,7 @@
 import { User, Chat, Guild } from "../conversation";
 import { Api } from "../api";
 
-export abstract class TitleChangeEvent<A extends Api> {
+export abstract class TitleChangeEvent<A extends Api<A>> {
 	constructor(
 		public api: A,
 		public oldTitle: string | null,
@@ -9,7 +9,7 @@ export abstract class TitleChangeEvent<A extends Api> {
 		public initiator: User<A>,
 	) { }
 }
-export class ChatTitleChangeEvent<A extends Api> extends TitleChangeEvent<A> {
+export class ChatTitleChangeEvent<A extends Api<A>> extends TitleChangeEvent<A> {
 	constructor(
 		api: A,
 		oldTitle: string | null,
@@ -20,7 +20,7 @@ export class ChatTitleChangeEvent<A extends Api> extends TitleChangeEvent<A> {
 		super(api, oldTitle, newTitle, initiator);
 	}
 }
-export class GuildTitleChangeEvent<A extends Api> extends TitleChangeEvent<A> {
+export class GuildTitleChangeEvent<A extends Api<A>> extends TitleChangeEvent<A> {
 	constructor(
 		api: A,
 		oldTitle: string | null,

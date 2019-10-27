@@ -8,6 +8,7 @@ import { JoinChatEvent, JoinGuildEvent } from "./events/join";
 import { LeaveGuildEvent, LeaveChatEvent } from "./events/leave";
 import { GuildTitleChangeEvent, ChatTitleChangeEvent } from "./events/titleChange";
 import { TypedEvent } from "../util/event";
+import ApiFeature from "../api/features";
 
 export class NotImplementedInApiError extends Error {
 	constructor(method: string) {
@@ -18,7 +19,7 @@ export class NotImplementedInApiError extends Error {
 export abstract class Api<A extends Api<A>> {
 	logger: Logger;
 
-	messageEvent: TypedEvent<MessageEvent<A>> = new TypedEvent();
+	messageEvent = new TypedEvent<MessageEvent<A>>();
 
 	joinGuildEvent = new TypedEvent<JoinGuildEvent<A>>();
 	joinChatEvent = new TypedEvent<JoinChatEvent<A>>();
@@ -32,16 +33,22 @@ export abstract class Api<A extends Api<A>> {
 	constructor(name: string | Logger) {
 		this.logger = Logger.from(name);
 	}
-	getUser(uid: string): Promise<User<A>> {
-		throw new NotImplementedInApiError('getUser');
+	getUser(_uid: string): Promise<User<A> | null> {
+		return Promise.resolve(null);
 	}
-	getChat(cid: string): Promise<Chat<A>> {
-		throw new NotImplementedInApiError('getChat');
+	getChat(_cid: string): Promise<Chat<A> | null> {
+		return Promise.resolve(null);
 	}
-	getGuild(gid: string): Promise<Guild<A>> {
-		throw new NotImplementedInApiError('getGuild');
+	getGuild(_gid: string): Promise<Guild<A> | null> {
+		return Promise.resolve(null);
 	}
 	send(conv: Conversation<A>, text: Text<A>, attachments: Attachment[], options: IMessageOptions): Promise<void> {
 		throw new NotImplementedInApiError('send');
+	}
+
+	protected abstract supportedFeatures: Set<ApiFeature>;
+
+	isFeatureSupported(feature: ApiFeature) {
+		return this.supportedFeatures.has(feature);
 	}
 }

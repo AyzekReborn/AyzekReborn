@@ -9,7 +9,7 @@ export interface IVKApiRequest {
 
 export default class VKApiProcessor extends CollapseQueueProcessor<IVKApiRequest, any>{
 	constructor(public logger: Logger, public tokens: string[]) {
-		super(600, 20);
+		super(600, 20, true);
 	}
 	get token() {
 		return this.tokens[0];

@@ -1,6 +1,6 @@
 import { Api } from "./api";
 import { Attachment, Image } from "./attachment/attachment";
-import { IMessageOptions } from "./message";
+import { IMessageOptions, IMessage } from "./message";
 import { nonenumerable } from 'nonenumerable';
 import { Text, TextPart, MentionTextPart, ChatReferenceTextPart } from './text';
 
@@ -23,6 +23,11 @@ export abstract class Conversation<A extends Api<A>> {
 
 	async send(text: Text<A>, attachments: Attachment[] = [], options: IMessageOptions = {}) {
 		return await this.api.send(this, text, attachments, options);
+	}
+
+	// TODO: Move to message context somehow?
+	async waitForNext(shouldAccept: (message: IMessage<A>) => boolean, timeout: number | null): Promise<IMessage<A>> {
+		throw new Error('Method is not overriden by ayzek core');
 	}
 
 	get isUser() {

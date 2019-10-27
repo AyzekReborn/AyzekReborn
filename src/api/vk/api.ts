@@ -14,6 +14,7 @@ import { JoinChatEvent, JoinReason } from "../../model/events/join";
 import { LeaveChatEvent, LeaveReason } from "../../model/events/leave";
 import { Conversation } from "../../model/conversation";
 import { Text, TextPart } from '../../model/text';
+import ApiFeature from "../features";
 
 export default class VKApi extends Api<VKApi> {
 	processor: VKApiProcessor;
@@ -37,9 +38,35 @@ export default class VKApi extends Api<VKApi> {
 		}
 		return this.userMap.get(id);
 	}
-	async getApiChat(id: number): Promise<VKChat> {
+	async getApiChat(id: number): Promise<VKChat | null> {
 		if (id >= 2e9) throw new Error('Already transformed id passed');
 		return this.chatMap.get(id);
+	}
+	encodeUserUid(id: number): string {
+		return `VKU:${this.apiId}:${id}`;
+	}
+	encodeChatCid(id: number): string {
+		return `VKC:${this.apiId}:${id}`;
+	}
+	getUser(uid: string) {
+		const userPrefix = `VKU:${this.apiId}:`;
+		if (!uid.startsWith(userPrefix)) {
+			return Promise.resolve(null);
+		}
+		const id = parseInt(uid.replace(userPrefix, ''), 10);
+		if (isNaN(id))
+			return Promise.resolve(null);
+		return this.getApiUser(id);
+	}
+	getChat(cid: string) {
+		const chatPrefix = `VKC:${this.apiId}:`;
+		if (!cid.startsWith(chatPrefix)) {
+			return Promise.resolve(null);
+		}
+		const id = parseInt(cid.replace(chatPrefix, ''), 10);
+		if (isNaN(id))
+			return Promise.resolve(null);
+		return this.getApiChat(id);
 	}
 	execute(method: string, params: any) {
 		return this.processor.runTask({
@@ -98,7 +125,11 @@ export default class VKApi extends Api<VKApi> {
 		return result;
 	}
 	async parseReplyMessage(message: any): Promise<IMessage<VKApi>> {
-		const user = await this.getApiUser(message.from_id);
+		const [user, attachments, extraAttachments] = await Promise.all([
+			this.getApiUser(message.from_id),
+			Promise.all(message.attachments.map((e: any) => this.parseAttachment(e))),
+			this.parseExtraAttachments(message)
+		]);
 		if (!user) throw new Error(`Bad user: ${message.from_id}`);
 		return {
 			api: this,
@@ -106,8 +137,8 @@ export default class VKApi extends Api<VKApi> {
 			chat: null,
 			conversation: user,
 			attachments: [
-				...await Promise.all(message.attachments.map((e: any) => this.parseAttachment(e))),
-				...await this.parseExtraAttachments(message)
+				...attachments,
+				...extraAttachments
 			] as Attachment[],
 			text: message.text || '',
 			// Replies have no forwarded messages
@@ -117,23 +148,30 @@ export default class VKApi extends Api<VKApi> {
 		};
 	}
 	async parseMessage(message: any, parseChat: boolean = false): Promise<IMessage<VKApi>> {
-		let chat = (parseChat && message.peer_id > 2e9) ? await this.getApiChat(message.peer_id - 2e9) : null;
-		let user = await this.getApiUser(message.from_id);
+		// Do everything in parallel!
+		// Typescript fails to analyze dat shit 🤷‍
+		const [chat, user, attachments, extraAttachments, forwarded, replyTo] = await Promise.all([
+			(parseChat && message.peer_id > 2e9) ? this.getApiChat(message.peer_id - 2e9) : null,
+			this.getApiUser(message.from_id),
+			Promise.all(message.attachments.map((e: any) => this.parseAttachment(e))),
+			this.parseExtraAttachments(message),
+			(message.fwd_messages ? Promise.all(message.fwd_messages.map((m: any) => this.parseMessage(m))) : Promise.resolve([])),
+			message.reply_message ? (this.parseReplyMessage(message.reply_message)) : null
+		] as [Promise<VKChat | null>, Promise<VKUser | null>, Promise<Attachment[]>, Promise<Attachment[]>, Promise<IMessage<VKApi>[]>, Promise<IMessage<VKApi> | null>]);
 		if (!user) throw new Error(`Bad user: ${message.from_id}`);
-
 		return {
 			api: this,
 			user: user,
 			chat: chat,
 			conversation: chat || user,
 			attachments: [
-				...await Promise.all(message.attachments.map((e: any) => this.parseAttachment(e))),
-				...await this.parseExtraAttachments(message)
+				...attachments,
+				...extraAttachments
 			] as Attachment[],
 			text: message.text || '',
-			forwarded: message.fwd_messages ? await Promise.all(message.fwd_messages.map((m: any) => this.parseMessage(m))) : [],
+			forwarded,
 			messageId: message.id.toString(),
-			replyTo: message.reply_message ? (await this.parseReplyMessage(message.reply_message)) : null,
+			replyTo,
 		};
 	}
 	async processNewMessageUpdate(update: any) {
@@ -142,19 +180,23 @@ export default class VKApi extends Api<VKApi> {
 				case 'chat_invite_user_by_link': {
 					const user = await this.getApiUser(update.from_id);
 					if (!user) throw new Error(`Bad user: ${update.from_id}`);
+					const chat = await this.getApiChat(update.peer_id - 2e9);
+					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
 					this.joinChatEvent.emit(new JoinChatEvent(
 						this,
 						user,
 						null,
 						JoinReason.INVITE_LINK,
 						null,
-						await this.getApiChat(update.peer_id - 2e9)
+						chat
 					));
 					return;
 				}
 				case 'chat_invite_user': {
 					const user = await this.getApiUser(update.action.member_id);
 					if (!user) throw new Error(`Bad user: ${update.action.member_id}`);
+					const chat = await this.getApiChat(update.peer_id - 2e9);
+					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
 					if (update.from_id === update.action.member_id) {
 						this.joinChatEvent.emit(new JoinChatEvent(
 							this,
@@ -162,7 +204,7 @@ export default class VKApi extends Api<VKApi> {
 							null,
 							JoinReason.RETURNED,
 							null,
-							await this.getApiChat(update.peer_id - 2e9)
+							chat
 						));
 					} else {
 						this.joinChatEvent.emit(new JoinChatEvent(
@@ -171,7 +213,7 @@ export default class VKApi extends Api<VKApi> {
 							await this.getApiUser(update.from_id),
 							JoinReason.INVITED,
 							null,
-							await this.getApiChat(update.peer_id - 2e9)
+							chat
 						));
 					}
 
@@ -180,6 +222,8 @@ export default class VKApi extends Api<VKApi> {
 				case 'chat_kick_user': {
 					const user = await this.getApiUser(update.action.member_id);
 					if (!user) throw new Error(`Bad user: ${update.action.member_id}`);
+					const chat = await this.getApiChat(update.peer_id - 2e9);
+					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
 					if (update.from_id === update.action.member_id) {
 						this.leaveChatEvent.emit(new LeaveChatEvent(
 							this,
@@ -187,7 +231,7 @@ export default class VKApi extends Api<VKApi> {
 							null,
 							LeaveReason.SELF,
 							null,
-							await this.getApiChat(update.peer_id - 2e9)
+							chat
 						));
 					} else {
 						this.leaveChatEvent.emit(new LeaveChatEvent(
@@ -196,7 +240,7 @@ export default class VKApi extends Api<VKApi> {
 							await this.getApiUser(update.from_id),
 							LeaveReason.KICKED,
 							null,
-							await this.getApiChat(update.peer_id - 2e9)
+							chat
 						))
 					}
 
@@ -297,6 +341,7 @@ export default class VKApi extends Api<VKApi> {
 			dont_parse_links: 1,
 			// TODO: Somehow use passed text mention object
 			disable_mentions: 1,
+			// TODO: Buttons?
 		});
 	}
 
@@ -315,4 +360,14 @@ export default class VKApi extends Api<VKApi> {
 		if (text instanceof Array) return text.map(l => this.textPartToString(l)).join('');
 		else return this.textPartToString(text);
 	}
+
+	supportedFeatures = new Set([
+		ApiFeature.IncomingMessageWithMultipleAttachments,
+		ApiFeature.OutgoingMessageWithMultipleAttachments,
+		ApiFeature.ChatButtons,
+		ApiFeature.ChatMemberList,
+		ApiFeature.EditMessage,
+		ApiFeature.MessageReply,
+		ApiFeature.MessageForward,
+	]);
 }

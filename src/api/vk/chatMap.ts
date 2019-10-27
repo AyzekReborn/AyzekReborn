@@ -16,12 +16,21 @@ export default class VKChatMap extends PromiseMap<number, VKChat> {
 		}), (v) => v.items);
 	}
 	protected async getPromise(key: number): Promise<VKChat> {
-		const apiChat = await this.processor.runTask(key + 2e9);
-		let members = await this.api.execute('messages.getConversationMembers', {
-			peer_id: key + 2e9,
-		});
-		let memberUsers: VKUser[] = (await Promise.all(members.items.map((e: any) => this.api.getApiUser(e.member_id)))).filter(e => e !== null) as VKUser[];
-		let adminUsers: VKUser[] = (await Promise.all([apiChat.chat_settings.owner_id, ...apiChat.chat_settings.admin_ids].map((e: any) => this.api.getApiUser(e)))).filter(e => e !== null) as VKUser[];
-		return new VKChat(this.api, apiChat, memberUsers, adminUsers);
+		const [apiChat, members] = await Promise.all([
+			this.processor.runTask(key + 2e9),
+			this.api.execute('messages.getConversationMembers', {
+				peer_id: key + 2e9,
+			})
+		]);
+		const [memberUsers, adminUsers] = await Promise.all([
+			Promise.all(members.items.map((e: any) => this.api.getApiUser(e.member_id)) as Promise<VKUser>[]),
+			Promise.all([apiChat.chat_settings.owner_id, ...apiChat.chat_settings.admin_ids].map((e: any) => this.api.getApiUser(e)))
+		]);
+		return new VKChat(
+			this.api,
+			apiChat,
+			memberUsers.filter((e: VKUser | null) => e !== null) as VKUser[],
+			adminUsers.filter((e: VKUser | null) => e !== null) as VKUser[]
+		);
 	}
 }

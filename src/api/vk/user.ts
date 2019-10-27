@@ -7,7 +7,7 @@ export default class VKUser extends User<VKApi>{
 		super(
 			api,
 			apiUser.id.toString(),
-			`VKU:${api.apiId}:${apiUser.id}`,
+			api.encodeUserUid(apiUser.id),
 			apiUser.domain || null,
 			apiUser.first_name || null,
 			apiUser.last_name || null,

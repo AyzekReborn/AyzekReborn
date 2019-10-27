@@ -3,7 +3,7 @@ import { Attachment } from "../attachment/attachment";
 import { User, Chat, Conversation } from "../conversation";
 import { Api } from "../api";
 
-export class MessageEvent<A extends Api> implements IMessage<A> {
+export class MessageEvent<A extends Api<A>> implements IMessage<A> {
 	constructor(
 		public api: A,
 		public user: User<A>,

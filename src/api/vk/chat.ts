@@ -8,7 +8,7 @@ export default class VKChat extends Chat<VKApi>{
 		super(
 			api,
 			apiChat.peer.id,
-			`VKC:${api.apiId}:${apiChat.peer.local_id}`,
+			api.encodeChatCid(apiChat.peer.local_id),
 			members,
 			apiChat.chat_settings.title,
 			admins,
