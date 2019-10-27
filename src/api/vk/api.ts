@@ -218,6 +218,8 @@ export default class VKApi extends Api<VKApi> {
 						null,
 						chat
 					));
+					if (!chat.users.includes(user))
+						chat.users.push(user);
 					return;
 				}
 				case 'chat_invite_user': {
@@ -246,7 +248,8 @@ export default class VKApi extends Api<VKApi> {
 							chat
 						));
 					}
-
+					if (!chat.users.includes(user))
+						chat.users.push(user);
 					return;
 				}
 				case 'chat_kick_user': {
@@ -275,7 +278,8 @@ export default class VKApi extends Api<VKApi> {
 							chat
 						))
 					}
-
+					if (chat.users.includes(user))
+						chat.users.splice(chat.users.indexOf(user), 1);
 					return;
 				}
 				default:
