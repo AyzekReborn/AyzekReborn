@@ -1,8 +1,9 @@
-import { User, Gender } from "../../model/conversation";
-import VKApi from "./api";
-import { Image } from '../../model/attachment/attachment';
+import { Gender } from "../../../model/conversation";
+import VKApi from "../api";
+import { Image } from '../../../model/attachment/attachment';
+import VKUser from "./user";
 
-export default class VKUser extends User<VKApi>{
+export default class VKRealUser extends VKUser {
 	constructor(api: VKApi, public apiUser: any) {
 		super(
 			api,
@@ -24,6 +25,6 @@ export default class VKUser extends User<VKApi>{
 	get photoImage() {
 		if (this._photoImage)
 			return this._photoImage;
-		return this._photoImage = Promise.resolve(Image.fromUrl(this.apiUser.mcdev, 'photo.jpeg', 'image/jpeg'));
+		return this._photoImage = Promise.resolve(Image.fromUrl(this.apiUser.photo_map, 'photo.jpeg', 'image/jpeg'));
 	}
 }

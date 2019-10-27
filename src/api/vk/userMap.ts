@@ -1,9 +1,9 @@
 import PromiseMap from "../promiseMap";
-import VKUser from "./user";
+import VKRealUser from "./user/realUser";
 import GroupingVKApiRequester from "./groupingRequester";
 import VKApi from "./api";
 
-export default class VKUserMap extends PromiseMap<number, VKUser> {
+export default class VKUserMap extends PromiseMap<number, VKRealUser> {
 	processor: GroupingVKApiRequester<number>;
 	constructor(public api: VKApi) {
 		super();
@@ -15,8 +15,8 @@ export default class VKUserMap extends PromiseMap<number, VKUser> {
 			}
 		}), (v) => v);
 	}
-	protected async getPromise(key: number): Promise<VKUser> {
+	protected async getPromise(key: number): Promise<VKRealUser> {
 		const apiUser = await this.processor.runTask(key);
-		return new VKUser(this.api, apiUser);
+		return new VKRealUser(this.api, apiUser);
 	}
 }

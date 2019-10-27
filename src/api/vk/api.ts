@@ -3,10 +3,14 @@ import VKApiProcessor from "./apiProcessor";
 import { IMessage, IMessageOptions } from "../../model/message";
 import { emit } from "@meteor-it/xrest";
 import { nonenumerable } from 'nonenumerable';
-import VKUser from "./user";
+
+import VKUser from "./user/user";
 import VKChat from "./chat";
+
 import VKUserMap from "./userMap";
 import VKChatMap from "./chatMap";
+import VKBotMap from "./botMap";
+
 import { Attachment, Image, Audio, File, Video, Location, MessengerSpecificUnknownAttachment, Voice } from "../../model/attachment/attachment";
 import { lookup as lookupMime } from '@meteor-it/mime';
 import { MessageEvent } from '../../model/events/message';
@@ -19,22 +23,24 @@ import ApiFeature from "../features";
 export default class VKApi extends Api<VKApi> {
 	processor: VKApiProcessor;
 	userMap: VKUserMap;
+	botMap: VKBotMap;
 	chatMap: VKChatMap;
 	@nonenumerable
 	tokens: string[];
+	// TODO: Work as user account (illegal)
 	constructor(public apiId: string, public groupId: number, tokens: string[]) {
 		super('vk');
 		this.processor = new VKApiProcessor(this.logger, tokens);
 		this.userMap = new VKUserMap(this);
+		this.botMap = new VKBotMap(this);
 		this.chatMap = new VKChatMap(this);
 		this.tokens = tokens;
 	}
 	async init() {
 	}
 	getApiUser(id: number): Promise<VKUser | null> {
-		// TODO: Add bot support (negative ids)
 		if (id < 0) {
-			return Promise.resolve(null);
+			return this.botMap.get(-id);
 		}
 		return this.userMap.get(id);
 	}
@@ -143,7 +149,8 @@ export default class VKApi extends Api<VKApi> {
 			text: message.text || '',
 			// Replies have no forwarded messages
 			forwarded: [],
-			messageId: message.id.toString(),
+			// Sometimes id is not sent
+			messageId: (message.id || 0).toString(),
 			replyTo: null,
 		};
 	}

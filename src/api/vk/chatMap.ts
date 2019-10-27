@@ -2,7 +2,7 @@ import PromiseMap from "../promiseMap";
 import VKChat from "./chat";
 import VKApi from "./api";
 import GroupingVKApiRequester from "./groupingRequester";
-import VKUser from "./user";
+import VKUser from "./user/user";
 
 export default class VKChatMap extends PromiseMap<number, VKChat> {
 	processor: GroupingVKApiRequester<number>;
@@ -18,6 +18,7 @@ export default class VKChatMap extends PromiseMap<number, VKChat> {
 	protected async getPromise(key: number): Promise<VKChat> {
 		const [apiChat, members] = await Promise.all([
 			this.processor.runTask(key + 2e9),
+			// Can't be grouped together
 			this.api.execute('messages.getConversationMembers', {
 				peer_id: key + 2e9,
 			})

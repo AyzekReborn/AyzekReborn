@@ -27,10 +27,10 @@
   resolved "https://registry.yarnpkg.com/@meteor-it/mime/-/mime-0.4.21.tgz#5ff235c3d6bcb40ed3df74392402504f5d74eac8"
   integrity sha512-hNxp40HduC3JiVk+s93cGGaWkqJBL6spw/n610t8XXHowlt6Np0vF209IloPnGlhlTPNZ4f9QHzu2g6kiHn9+g==
 
-"@meteor-it/queue@^2.0.41":
-  version "2.0.41"
-  resolved "https://registry.yarnpkg.com/@meteor-it/queue/-/queue-2.0.41.tgz#42b6e1cd1b7750745dcfe62b7df511c95a3a3f73"
-  integrity sha512-syf+K1uRwfnZI+45SHXSVguLKELOonjR6j9NR2a0iBUFUDzAyZkOd7DK+86+Gqex+g1BjkR80CKw+RpU4kP3sg==
+"@meteor-it/queue@^2.0.42":
+  version "2.0.42"
+  resolved "https://registry.yarnpkg.com/@meteor-it/queue/-/queue-2.0.42.tgz#3e93dde5f77c85b78e9f229b83049c502d9e1cea"
+  integrity sha512-+6VYCJCWVilWjrIp1V/T/xXnytWmLuuYH2uPCyQvMcBAtGf2mJ5Bc3G1La2DwvLPyoLa5HfIEjp7ALo/lVFk3A==
   dependencies:
     "@meteor-it/logger" "^2.3.38"
 

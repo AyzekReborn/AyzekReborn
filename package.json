@@ -8,7 +8,7 @@
     "@meteor-it/fs": "^1.2.14",
     "@meteor-it/logger": "^2.3.38",
     "@meteor-it/mime": "^0.4.21",
-    "@meteor-it/queue": "^2.0.41",
+    "@meteor-it/queue": "^2.0.42",
     "@meteor-it/utils": "^1.3.27",
     "@meteor-it/xpress": "^4.2.60",
     "@meteor-it/xrest": "^1.3.48",
