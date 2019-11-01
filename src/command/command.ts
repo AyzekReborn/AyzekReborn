@@ -4,19 +4,22 @@ import { CommandNode, ParsedCommandNode, RootCommandNode, ArgumentCommandNode, L
 import { SuggestionContext } from "./suggestions";
 import { LiteralArgumentBuilder } from "./builder";
 import StringReader from "./reader";
+import { padList } from "../util/pad";
 
-enum ThingType {
-	COMMAND,
-	ARGUMENT,
+export enum ThingType {
+	COMMAND = 'Command',
+	ARGUMENT = 'Argument',
 }
-class UnknownThingError extends Error {
+export class UnknownThingError extends Error {
 	constructor(public thing: ThingType, public reader: StringReader) {
-		super();
+		super(`Unknown ${thing} at ${reader}`);
+		this.name = 'UnknownThingError';
+		Object.setPrototypeOf(this, UnknownThingError.prototype);
 	}
 }
-class ExpectedArgumentSeparatorError extends Error {
+export class ExpectedArgumentSeparatorError extends Error {
 	constructor(public reader: StringReader) {
-		super();
+		super(`Expected argument separator at ${reader}`);
 	}
 }
 
@@ -26,11 +29,6 @@ type ParseResults<S> = {
 	reader: StringReader;
 }
 type ResultConsumer<S> = (ctx: CommandContext<S>, success: boolean, result: number) => void;
-
-function padList(list: string[]) {
-	return list.map(e => `  ${e}`);
-}
-
 
 export const ARGUMENT_SEPARATOR = ' ';
 export const USAGE_OPTIONAL_OPEN = '[';
@@ -47,7 +45,7 @@ export class CommandDispatcher<S> {
 
 	constructor() { }
 
-	register(command: LiteralArgumentBuilder<S>) {
+	register(command: LiteralArgumentBuilder<S>): CommandNode<S> {
 		let build = command.build();
 		this.root.addChild(build);
 		return build;
@@ -55,6 +53,9 @@ export class CommandDispatcher<S> {
 	registerBuilt(command: CommandNode<S>) {
 		this.root.addChild(command);
 		return command;
+	}
+	unregister(command: CommandNode<S>) {
+		this.root.removeChild(command);
 	}
 	executeResults(parse: ParseResults<S>) {
 		if (parse.reader.canReadAnything) {
@@ -371,7 +372,9 @@ export class CommandContext<S> {
 		public child: CommandContext<S> | null,
 		public modifier: RedirectModifier<S> | null,
 		public forks: boolean
-	) { }
+	) {
+		this.getArgument = this.getArgument.bind(this);
+	}
 	copyFor(source: S): CommandContext<S> {
 		if (this.source === source) return this;
 		let copy = new CommandContext<S>(

@@ -172,4 +172,10 @@ export default class StringReader {
 			throw new BadValueError(this, Type.BOOLEAN, value);
 		}
 	}
+	toString() {
+		return this.toStringWithCursor('|');
+	}
+	toStringWithCursor(cursor: string) {
+		return `${this.string.substring(0, this.cursor)}${cursor}${this.string.substring(this.cursor)}`
+	}
 }

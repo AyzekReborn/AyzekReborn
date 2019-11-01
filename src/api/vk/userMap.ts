@@ -13,7 +13,7 @@ export default class VKUserMap extends PromiseMap<number, VKRealUser> {
 				user_ids: ids.join(','),
 				fields: 'sex,bdate,photo_max,online,domain'
 			}
-		}), (v) => v);
+		}), (v) => v, u => +u.id);
 	}
 	protected async getPromise(key: number): Promise<VKRealUser> {
 		const apiUser = await this.processor.runTask(key);

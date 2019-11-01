@@ -13,7 +13,7 @@ export default class VKBotMap extends PromiseMap<number, VKBot> {
 				group_ids: ids.join(','),
 				fields: 'photo_200'
 			}
-		}), (v) => v);
+		}), (v) => v, u => u.id);
 	}
 	protected async getPromise(key: number): Promise<VKBot> {
 		const apiBot = await this.processor.runTask(key);

@@ -20,6 +20,7 @@ export function extractMaxPossiblePart(text: string, length: number): [string, s
 	if (extractedWord[0] !== null) return extractedWord as [string, string];
 	return extractMaxChars(text, length);
 }
+// TODO: Ability to attach metadata to parts
 export function splitByMaxPossibleParts(text: string, length: number): string[] {
 	let result = [];
 	while (text.length !== 0) {

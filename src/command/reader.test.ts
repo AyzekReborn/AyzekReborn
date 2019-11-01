@@ -21,7 +21,7 @@ describe('Sayings Greeter', () => {
 	it('should correctly peek', () => {
 		let reader = new StringReader('a  b c');
 		expect(reader.peek()).toBe('a');
-		expect(reader.peekAt(1)/* ? */).toBe(' ');
+		expect(reader.peekAt(1)).toBe(' ');
 	});
 	it('should correctly skip whitespace and read signe chars', () => {
 		let reader = new StringReader('a     b');

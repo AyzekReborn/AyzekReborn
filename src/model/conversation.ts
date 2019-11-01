@@ -10,7 +10,13 @@ enum ConversationType {
 	OTHER
 }
 
-export abstract class Conversation<A extends Api<A>> {
+export interface IConversation<A extends Api<A>> {
+	// TODO: Edit message?
+	send(text: Text<A>, attachments?: Attachment[], options?: IMessageOptions): Promise<void>;
+	waitForNext(shouldAccept: (message: IMessage<A>) => boolean, timeout: number | null): Promise<IMessage<A>>;
+}
+
+export abstract class Conversation<A extends Api<A>> implements IConversation<A> {
 	@nonenumerable
 	readonly api: A
 	constructor(

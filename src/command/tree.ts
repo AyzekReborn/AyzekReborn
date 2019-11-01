@@ -28,6 +28,14 @@ export abstract class CommandNode<S> {
 	canUse(source: S) {
 		return this.requirement(source);
 	}
+	removeChild(node: CommandNode<S>) {
+		this.childrenMap.delete(node.name);
+		if (node instanceof LiteralCommandNode) {
+			this.literals.delete(node.name);
+		} else if (node instanceof ArgumentCommandNode) {
+			this.arguments.delete(node.name);
+		}
+	}
 	addChild(node: CommandNode<S>) {
 		if (node instanceof RootCommandNode) throw new Error('Cannot add RootCommandNode as child');
 		let child = this.getChild(node.name);

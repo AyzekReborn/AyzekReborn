@@ -19,7 +19,15 @@ import { LeaveChatEvent, LeaveReason } from "../../model/events/leave";
 import { Conversation } from "../../model/conversation";
 import { Text, TextPart } from '../../model/text';
 import ApiFeature from "../features";
-import { ChatTitleChangeEvent, TitleChangeEvent } from "../../model/events/titleChange";
+import { ChatTitleChangeEvent } from "../../model/events/titleChange";
+import StringReader from "../../command/reader";
+import { splitByMaxPossibleParts } from "../../util/split";
+import arrayChunks from "../../util/arrayChunks";
+
+const MAX_MESSAGE_LENGTH = 4096;
+const MAX_ATTACHMENTS_PER_MESSAGE = 10;
+type ExtraAttachment = Location;
+const EXTRA_ATTACHMENT_PREDICATE = (a: Attachment) => a instanceof Location;
 
 export default class VKApi extends Api<VKApi> {
 	processor: VKApiProcessor;
@@ -300,6 +308,10 @@ export default class VKApi extends Api<VKApi> {
 			case 'message_new':
 				await this.processNewMessageUpdate(update.object);
 				break;
+			case 'message_reply':
+				// TODO: Use for message editing. Not supported by vk yet.
+				// TODO: (Message id === 0)
+				break;
 			default:
 				this.logger.error(`Unknown update type: ${update.type}`);
 				this.logger.error(update.object);
@@ -358,38 +370,83 @@ export default class VKApi extends Api<VKApi> {
 			await new Promise(res => setTimeout(res, 5000));
 		}
 	}
-	// TODO: Send multi via user_ids
+
+	async uploadAttachment(attachment: Attachment): Promise<string> {
+		throw new Error('Not implemented');
+	}
+	addExtraAttachment(message: any, attachment: ExtraAttachment) {
+		if (attachment instanceof Location) {
+			message.lat = attachment.lat;
+			message.long = attachment.long;
+		}
+	}
+	// TODO: Add support for message editing (Also look at comment for message_reply)
 	async send(conv: Conversation<VKApi>, text: Text<VKApi>, attachments: Attachment[] = [], options: IMessageOptions = {}) {
 		const peer_id = +conv.targetId;
 		if (options.forwarded || options.replyTo) throw new Error(`Message responses are not supported by vk bots`);
-		this.execute('messages.send', {
-			random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
-			peer_id,
-			// TODO: Split text to fit
-			message: this.textToString(text),
-			// TODO: attachment
-			// TODO: Link text
-			dont_parse_links: 1,
-			// TODO: Somehow use passed text mention object
-			disable_mentions: 1,
-			// TODO: Buttons?
-		});
+		const texts = splitByMaxPossibleParts(this.textToString(text), MAX_MESSAGE_LENGTH);
+		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[];
+		const attachmentsChunks = arrayChunks(attachments, MAX_ATTACHMENTS_PER_MESSAGE);
+		for (let i = 0; i < texts.length; i++) {
+			let isLast = i === texts.length - 1;
+			const apiObject: any = {
+				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
+				peer_id,
+				message: texts[i],
+				// TODO: Link text
+				dont_parse_links: 1,
+				// TODO: Somehow use passed text mention object
+				disable_mentions: 1,
+				// TODO: Buttons?
+			};
+			if (isLast && attachmentsChunks.length >= 1) {
+				apiObject.attachment = await Promise.all(attachmentsChunks.shift()!.map(this.uploadAttachment));
+			}
+			if (isLast && attachmentsChunks.length === 0 && extraAttachments.length >= 1) {
+				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
+			}
+			this.execute('messages.send', apiObject);
+		}
+		for (let i = 0; i < attachmentsChunks.length; i++) {
+			let isLast = i === attachmentsChunks.length - 1;
+			const apiObject: any = {
+				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
+				peer_id,
+			};
+			apiObject.attachment = await Promise.all(attachmentsChunks[i]!.map(this.uploadAttachment));
+			if (isLast && extraAttachments.length >= 1) {
+				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
+			}
+			this.execute('messages.send', apiObject);
+		}
+		let extraAttachment: ExtraAttachment | undefined;
+		while (extraAttachment = extraAttachments.shift()) {
+			const apiObject: any = {
+				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
+				peer_id,
+			};
+			this.addExtraAttachment(apiObject, extraAttachment as ExtraAttachment);
+			this.execute('messages.send', apiObject);
+		}
 	}
 
-	textPartToString(part: TextPart<VKApi>): string {
+	textToString(part: TextPart<VKApi>): string {
 		if (typeof part === 'string') return part;
+		if (part instanceof StringReader) {
+			return `${part.toStringWithCursor(`𝆄`)}`
+		} else if (part instanceof Array) {
+			return part.map(l => this.textToString(l)).join('');
+		}
 		switch (part.type) {
+			case 'code':
+				return this.textToString(part.data).replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
 			case 'mentionPart':
 				return `[id${part.data.targetId}|${part.text || part.data.name}]`
 			case 'chatRefPart':
 				return `<Чат ${part.data.title}>`;
 			case 'underlinedPart':
-				return this.textToString(part);
+				return this.textToString(part.data);
 		}
-	}
-	textToString(text: Text<VKApi>): string {
-		if (text instanceof Array) return text.map(l => this.textPartToString(l)).join('');
-		else return this.textPartToString(text);
 	}
 
 	supportedFeatures = new Set([

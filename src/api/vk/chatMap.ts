@@ -13,16 +13,19 @@ export default class VKChatMap extends PromiseMap<number, VKChat> {
 			params: {
 				peer_ids: ids.map(e => e.toString()).join(',')
 			}
-		}), (v) => v.items);
+		}), (v) => v.items, u => u.peer.id);
 	}
 	protected async getPromise(key: number): Promise<VKChat> {
-		const [apiChat, members] = await Promise.all([
+		let [apiChat, members] = await Promise.all([
 			this.processor.runTask(key + 2e9),
 			// Can't be grouped together
 			this.api.execute('messages.getConversationMembers', {
 				peer_id: key + 2e9,
 			})
 		]);
+		if (members === false) {
+			members = { items: [] }
+		}
 		const [memberUsers, adminUsers] = await Promise.all([
 			Promise.all(members.items.map((e: any) => this.api.getApiUser(e.member_id)) as Promise<VKUser>[]),
 			Promise.all([apiChat.chat_settings.owner_id, ...apiChat.chat_settings.admin_ids].map((e: any) => this.api.getApiUser(e)))

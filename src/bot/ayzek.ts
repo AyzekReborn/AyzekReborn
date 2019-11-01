@@ -1,13 +1,17 @@
 import Logger from "@meteor-it/logger";
-import { TypedEvent } from "./util/event";
-import { JoinGuildEvent, JoinChatEvent } from "./model/events/join";
-import { LeaveGuildEvent, LeaveChatEvent } from "./model/events/leave";
-import { GuildTitleChangeEvent, ChatTitleChangeEvent } from "./model/events/titleChange";
-import { MessageEvent } from './model/events/message';
-import { Api } from "./model/api";
+import { TypedEvent } from "../util/event";
+import { JoinGuildEvent, JoinChatEvent } from "../model/events/join";
+import { LeaveGuildEvent, LeaveChatEvent } from "../model/events/leave";
+import { GuildTitleChangeEvent, ChatTitleChangeEvent } from "../model/events/titleChange";
+import { MessageEvent } from '../model/events/message';
+import { Api } from "../model/api";
+import { CommandDispatcher, UnknownThingError, ThingType } from "../command/command";
+import { MessageEventContext } from "./context";
+import { PluginInfo } from "./plugin";
 
 export class Ayzek<A extends Api<any>> {
 	logger: Logger;
+	plugins: PluginInfo[] = [];
 
 	messageEvent = new TypedEvent<MessageEvent<A>>();
 
@@ -20,7 +24,9 @@ export class Ayzek<A extends Api<any>> {
 	guildTitleChangeEvent = new TypedEvent<GuildTitleChangeEvent<A>>();
 	chatTitleChangeEvent = new TypedEvent<ChatTitleChangeEvent<A>>();
 
-	constructor(logger: string | Logger, apis: A[], logEvents: boolean) {
+	commandDispatcher = new CommandDispatcher<MessageEventContext<A>>();
+
+	constructor(logger: string | Logger, apis: A[], commandPrefix: string, logEvents: boolean) {
 		this.logger = Logger.from(logger);
 		for (let api of apis) {
 			this.attachApi(api);
@@ -37,6 +43,23 @@ export class Ayzek<A extends Api<any>> {
 				e.api.logger.log(`${e.initiator.fullName} renamed {red}${e.oldTitle || '<unknown>'}{/red} -> {green}${e.newTitle}{/green}`);
 			});
 		}
+		this.messageEvent.on(e => {
+			if (e.text.startsWith(commandPrefix)) {
+				const command = e.text.replace(commandPrefix, '');
+				try {
+					const parseResult = this.commandDispatcher.parse(command, new MessageEventContext(this, e));
+					console.log(parseResult);
+					this.commandDispatcher.executeResults(parseResult);
+				} catch (err) {
+					if (err instanceof UnknownThingError) {
+						// TODO: Messenger specific formatting & i18n
+						e.conversation.send([`Неизвестн${err.thing === ThingType.COMMAND ? 'ая комманда' : 'ый аргумент'}: ${commandPrefix}`, err.reader]);
+					} else {
+						this.logger.error(err.stack);
+					}
+				}
+			}
+		});
 	}
 
 	private attachApi(api: A) {

@@ -28,6 +28,7 @@ export default class VKApiProcessor extends CollapseQueueProcessor<IVKApiRequest
 			}
 		});
 		let responses = res.body.response;
+		this.logger.debug(JSON.stringify(res.body));
 		if (res.body.error || !responses) {
 			if (res.body.error.error_code === 14) {
 				// Process captcha

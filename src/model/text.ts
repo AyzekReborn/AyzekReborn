@@ -1,5 +1,6 @@
 import { Api } from "./api";
 import { Chat, User } from "./conversation";
+import StringReader from "../command/reader";
 
 export type MentionTextPart<A extends Api<A>> = {
 	type: 'mentionPart',
@@ -18,5 +19,15 @@ export type UnderlinedTextPart<A extends Api<A>> = {
 	type: 'underlinedPart',
 	data: Text<A>,
 }
-export type TextPart<A extends Api<A>> = string | MentionTextPart<A> | ChatReferenceTextPart<A> | UnderlinedTextPart<A>;
-export type Text<A extends Api<A>> = TextPart<A> | TextPart<A>[];
+export type CodeTextPart<A extends Api<A>> = {
+	type: 'code',
+	data: Text<A>,
+}
+export type TextPart<A extends Api<A>> = string | MentionTextPart<A> | ChatReferenceTextPart<A> | UnderlinedTextPart<A> | StringReader | TextPartArray<A> | CodeTextPart<A>;
+interface TextPartArray<A extends Api<A>> extends Array<TextPart<A>> { }
+export type Text<A extends Api<A>> = TextPart<A>;
+
+export function textJoin<A extends Api<A>>(arr: Text<A>[], joiner: Text<A>): Text<any>[] {
+	// Wtf, ts doesn't provide typings for flatMap?
+	return (arr as any).flatMap((e: any, index: number) => index ? [joiner, e] : [e])
+}

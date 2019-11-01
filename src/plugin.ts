@@ -1,4 +1,0 @@
-type PluginInfo = {
-
-}
-export { PluginInfo };
