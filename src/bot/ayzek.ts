@@ -43,13 +43,13 @@ export class Ayzek<A extends Api<any>> {
 				e.api.logger.log(`${e.initiator.fullName} renamed {red}${e.oldTitle || '<unknown>'}{/red} -> {green}${e.newTitle}{/green}`);
 			});
 		}
-		this.messageEvent.on(e => {
+		this.messageEvent.on(async e => {
 			if (e.text.startsWith(commandPrefix)) {
 				const command = e.text.replace(commandPrefix, '');
 				try {
 					const parseResult = this.commandDispatcher.parse(command, new MessageEventContext(this, e));
 					console.log(parseResult);
-					this.commandDispatcher.executeResults(parseResult);
+					await this.commandDispatcher.executeResults(parseResult);
 				} catch (err) {
 					if (err instanceof UnknownThingError) {
 						// TODO: Messenger specific formatting & i18n

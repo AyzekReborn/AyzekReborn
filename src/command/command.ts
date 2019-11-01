@@ -57,7 +57,7 @@ export class CommandDispatcher<S> {
 	unregister(command: CommandNode<S>) {
 		this.root.removeChild(command);
 	}
-	executeResults(parse: ParseResults<S>) {
+	async executeResults(parse: ParseResults<S>) {
 		if (parse.reader.canReadAnything) {
 			if (parse.exceptions.size === 1) {
 				throw parse.exceptions.values().next().value;
@@ -114,7 +114,7 @@ export class CommandDispatcher<S> {
 				} else if (context.command != null) {
 					foundCommand = true;
 					try {
-						let value = context.command(context);
+						let value = await context.command(context);
 						result += value;
 						this.consumer(context, true, value);
 						successfulForks++;
@@ -509,6 +509,6 @@ export default class CommandContextBuilder<S> {
 }
 
 
-export type Command<S> = (context: CommandContext<S>) => number;
+export type Command<S> = (context: CommandContext<S>) => Promise<number>;
 export type RedirectModifier<S> = (context: CommandContext<S>) => S[];
 export type SingleRedirectModifier<S> = (context: CommandContext<S>) => S;
