@@ -26,7 +26,7 @@ export default class VKChatMap extends PromiseMap<number, VKChat> {
 		if (members === false) {
 			members = { items: [] }
 		}
-		// TODO: Get more info later? (Currently it no "became admin" event)
+		// TODO: Get more info later? (Currently there is no "became admin" event)
 		if (apiChat === null) {
 			apiChat = {
 				peer: {
