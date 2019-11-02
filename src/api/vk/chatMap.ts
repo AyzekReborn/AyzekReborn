@@ -26,6 +26,20 @@ export default class VKChatMap extends PromiseMap<number, VKChat> {
 		if (members === false) {
 			members = { items: [] }
 		}
+		// TODO: Get more info later? (Currently it no "became admin" event)
+		if (apiChat === null) {
+			apiChat = {
+				peer: {
+					id: key + 2e9,
+					local_id: key,
+				},
+				chat_settings: {
+					owner_id: 1,
+					admin_ids: [],
+					title: 'Unprivileged',
+				}
+			}
+		}
 		const [memberUsers, adminUsers] = await Promise.all([
 			Promise.all(members.items.map((e: any) => this.api.getApiUser(e.member_id)) as Promise<VKUser>[]),
 			Promise.all([apiChat.chat_settings.owner_id, ...apiChat.chat_settings.admin_ids].map((e: any) => this.api.getApiUser(e)))
