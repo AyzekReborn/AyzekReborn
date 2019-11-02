@@ -18,12 +18,12 @@
     "is-equal": "^1.5.5",
     "nonenumerable": "^1.1.1",
     "stream-now": "^1.1.1",
-    "temp": "^0.9.0"
+    "temp": "^0.9.1"
   },
   "devDependencies": {
     "@types/cloneable-readable": "^2.0.0",
-    "@types/jasmine": "^3.4.4",
-    "@types/node": "^12.12.0",
+    "@types/jasmine": "^3.4.5",
+    "@types/node": "^12.12.5",
     "@types/temp": "^0.8.34",
     "jasmine": "^3.5.0",
     "zarbis": "^1.5.99",
