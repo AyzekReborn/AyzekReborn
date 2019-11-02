@@ -23,7 +23,7 @@ export default class VKApiProcessor extends CollapseQueueProcessor<IVKApiRequest
 			data: {
 				code
 			}, query: {
-				v: '5.102',
+				v: '5.103',
 				access_token: token
 			}
 		});

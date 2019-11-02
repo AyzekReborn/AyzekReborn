@@ -306,7 +306,7 @@ export default class VKApi extends Api<VKApi> {
 	async processUpdate(update: { type: string, object: any }) {
 		switch (update.type) {
 			case 'message_new':
-				await this.processNewMessageUpdate(update.object);
+				await this.processNewMessageUpdate(update.object.message);
 				break;
 			case 'message_reply':
 				// TODO: Use for message editing. Not supported by vk yet.
@@ -357,9 +357,9 @@ export default class VKApi extends Api<VKApi> {
 				}
 				ts = events.ts;
 
-				events.updates.forEach((update: any) => {
+				events.updates.forEach(async (update: any) => {
 					try {
-						this.processUpdate(update);
+						await this.processUpdate(update);
 					} catch (e) {
 						this.logger.error(`Update processing error: `, update);
 						this.logger.error(e.stack);
@@ -447,6 +447,10 @@ export default class VKApi extends Api<VKApi> {
 			case 'underlinedPart':
 				return this.textToString(part.data);
 		}
+	}
+
+	async doWork(): Promise<void> {
+		await this.loop();
 	}
 
 	supportedFeatures = new Set([

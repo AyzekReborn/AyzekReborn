@@ -51,4 +51,6 @@ export abstract class Api<A extends Api<A>> {
 	isFeatureSupported(feature: ApiFeature) {
 		return this.supportedFeatures.has(feature);
 	}
+
+	public abstract async doWork(): Promise<void>;
 }
