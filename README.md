@@ -22,10 +22,11 @@ git clone https://github.com/CertainLach/AyzekReborn && cd AyzekReborn
 yarn
 ```
 
-### Adjust settings
+### Configure access tokens
 
 ```sh
-vim src/start.ts
+cp src/config.example.yaml src/config.yaml
+vim src/config.yaml
 ```
 
 ### Start watcher/rebuilder (In another terminal window)
