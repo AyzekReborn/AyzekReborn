@@ -16,7 +16,6 @@ const whatCommand = literal('what')
 	;
 
 export default class implements PluginInfo {
-	file = '';
 	name = 'FloodPlugin';
 	author = 'НекийЛач';
 	description = 'Плагин для флуда';

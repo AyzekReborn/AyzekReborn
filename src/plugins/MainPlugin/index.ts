@@ -5,7 +5,12 @@ import { Ayzek } from "../../bot/ayzek";
 import { Text } from '../../model/text';
 import { padList } from "../../util/pad";
 
-
+function padAllListItemExceptFirst(list: string[]) {
+	return [
+		list[0],
+		...padList(list.slice(1), '      ')
+	];
+}
 
 function describePlugin(ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
 	return [
@@ -15,24 +20,27 @@ function describePlugin(ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
 		...((plugin.commands.length > 0 || plugin.listeners.length > 0) ? [
 			`\n\nСписок фич:\n`,
 			textJoin([
-				plugin.commands.map(command => {
+				textJoin(plugin.commands.map(command => {
 					const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal);
 					return [
 						`⚡ /${command.literal} `,
 						// TODO: Restricted
-						{ type: 'code', data: textJoin(ayzek.commandDispatcher.getAllUsage(commandNode!, null as any, false), '\n') }
+						{
+							type: 'code',
+							data: textJoin(padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode!, null as any, false)), '\n')
+						}
 					];
-				}),
+				}), '\n'),
 				textJoin(plugin.listeners.map(listener => [
 					`👁‍🗨 ${listener.name}${listener.description ? ` — ${listener.description}` : ''}`
 				]), '\n')
-			], '\n'),
+			].filter(e => e.length !== 0), '\n\n'),
 		] : [])
 	]
 }
 
 const helpCommand = literal('help')
-	.then(argument('name', new StringArgumentType(StringType.GREEDY_PHRAZE)).executes(({ source: { ayzek, event }, getArgument }) => {
+	.then(argument('name', new StringArgumentType(StringType.GREEDY_PHRAZE)).executes(async ({ source: { ayzek, event }, getArgument }) => {
 		const name = getArgument<string>('name');
 		const found = ayzek.plugins.find(plugin => plugin.name === name);
 		if (!found) {
@@ -42,11 +50,11 @@ const helpCommand = literal('help')
 		}
 		return 0;
 	}))
-	.then(literal('all').executes(({ source: { ayzek, event } }) => {
-		event.conversation.send(textJoin(ayzek.plugins.map(p => describePlugin(ayzek, p)), '\n'));
+	.then(literal('all').executes(async ({ source: { ayzek, event } }) => {
+		event.conversation.send(textJoin(ayzek.plugins.map(p => describePlugin(ayzek, p)), { type: 'code', data: '\n \n \n' }));
 		return 0;
 	}))
-	.executes(({ source: { ayzek, event } }) => {
+	.executes(async ({ source: { ayzek, event } }) => {
 		event.conversation.send([
 			`В бота установлены следующие плагины:\n\n`,
 			textJoin(ayzek.plugins.map((plugin, i) => textJoin([
@@ -59,7 +67,6 @@ const helpCommand = literal('help')
 	});
 
 export default class implements PluginInfo {
-	file = '';
 	name = 'MainPlugin';
 	author = 'НекийЛач';
 	description = 'Плагин, содержащий некоторые команды - утилиты для управления другими плагинами';

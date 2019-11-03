@@ -42,6 +42,18 @@ export class Ayzek<A extends Api<any>> {
 			this.chatTitleChangeEvent.on(e => {
 				e.api.logger.log(`${e.initiator.fullName} renamed {red}${e.oldTitle || '<unknown>'}{/red} -> {green}${e.newTitle}{/green}`);
 			});
+			this.joinChatEvent.on(e => {
+				if (e.initiator)
+					e.api.logger.log(`${e.initiator.fullName} added ${e.user.fullName} to ${e.chat.title}`);
+				else
+					e.api.logger.log(`${e.user.fullName} joined to ${e.chat.title}`);
+			});
+			this.leaveChatEvent.on(e => {
+				if (e.initiator)
+					e.api.logger.log(`${e.initiator.fullName} kicked ${e.user.fullName} from ${e.chat.title}`);
+				else
+					e.api.logger.log(`${e.user.fullName} leaved ${e.chat.title}`);
+			});
 		}
 		this.messageEvent.on(async e => {
 			if (e.text.startsWith(commandPrefix)) {
