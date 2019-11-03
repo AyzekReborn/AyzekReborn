@@ -28,6 +28,7 @@
     "@types/node": "^12.12.5",
     "@types/temp": "^0.8.34",
     "jasmine": "^3.5.0",
+    "source-map-support": "^0.5.16",
     "zarbis": "^1.5.99",
     "zarbis-platform-nix-amd64": "^1.5.99"
   }
