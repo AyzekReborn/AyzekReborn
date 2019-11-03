@@ -27,10 +27,10 @@
   resolved "https://registry.yarnpkg.com/@meteor-it/mime/-/mime-0.4.21.tgz#5ff235c3d6bcb40ed3df74392402504f5d74eac8"
   integrity sha512-hNxp40HduC3JiVk+s93cGGaWkqJBL6spw/n610t8XXHowlt6Np0vF209IloPnGlhlTPNZ4f9QHzu2g6kiHn9+g==
 
-"@meteor-it/plugin-loader@^1.5.1":
-  version "1.5.1"
-  resolved "https://registry.yarnpkg.com/@meteor-it/plugin-loader/-/plugin-loader-1.5.1.tgz#6f01ec624050da4fe5be11eb839d243ae7502695"
-  integrity sha512-NHDPYqQmxMaAT2tnX+i+N71VEIdp+mu+2zBleKkbv8cFIFRjGl7wwpP42QBlI6tQ6jUHXpag2SnJG95e63HFjw==
+"@meteor-it/plugin-loader@^1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@meteor-it/plugin-loader/-/plugin-loader-1.6.1.tgz#791ad27f909791a611a62be2e97396dac79ad990"
+  integrity sha512-+rZamcX8wtIoLYXV8vfIJBDpCahY2Ya0XnT7wgCFvkyq4W/ajE5PZBVAhT5oj3VWT+3+AeSpidg0K4d1dRqFMw==
   dependencies:
     "@meteor-it/fs" "^1.2.14"
     "@meteor-it/logger" "^2.3.38"
@@ -713,12 +713,12 @@ ws@^7.1.2:
   dependencies:
     async-limiter "^1.0.0"
 
-zarbis-platform-nix-amd64@^1.5.99:
-  version "1.5.99"
-  resolved "https://registry.yarnpkg.com/zarbis-platform-nix-amd64/-/zarbis-platform-nix-amd64-1.5.99.tgz#aff29056a5cae2a2f8e2d3a9bc810252395d5549"
-  integrity sha512-jKQZz2YKv1xnAl/wOgH70cJxqVJ7HqJOoAcdZ0U4R4hVNuTAIVELwWL+wCuGz1x02o5lE+cx6iBwuEPJFyaaJw==
+zarbis-platform-nix-amd64@^1.5.100:
+  version "1.5.100"
+  resolved "https://registry.yarnpkg.com/zarbis-platform-nix-amd64/-/zarbis-platform-nix-amd64-1.5.100.tgz#f4d0695997507b8136076742cfdd53a162afa651"
+  integrity sha512-tqJU+NY8+dQ90L0TEAIEuW3bjr0OqrcFJwAaGpAD+vr8sGT9Plu8ghCG4g4oCDPDZY4KwBKQ09A76NHGbMcxuQ==
 
-zarbis@^1.5.99:
-  version "1.5.99"
-  resolved "https://registry.yarnpkg.com/zarbis/-/zarbis-1.5.99.tgz#65fd3c84b1992398b1d74ee9a15968956d222ff0"
-  integrity sha512-fG1jEZKtsSxIg6LhP/FIeoN7fAA7UNKiWM87dLCATmH2ZxW3QCMF/X/p9CxwqvFGbL2i7WQyNpOEF+iGzngMJA==
+zarbis@^1.5.100:
+  version "1.5.100"
+  resolved "https://registry.yarnpkg.com/zarbis/-/zarbis-1.5.100.tgz#727a75ffc43142fd4fb35e14bce6b3bcda8bb719"
+  integrity sha512-LdZFsyk7vY14v4EtDmVmpxbME2De/66HlqeV73xWgAURmy6jaDCHMTzqaxuR529rF/GVUldxhjwLE/rbcoM6rw==
