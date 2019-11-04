@@ -7,7 +7,7 @@ export default class DiscordGuild extends Guild<DiscordApi> {
     constructor(api: DiscordApi, guild: DSGuild) {
         super(
             api,
-            guild.id
+            api.encodeGuildGid(guild.id)
         );
     }
 }

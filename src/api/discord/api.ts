@@ -16,23 +16,29 @@ export default class DiscordApi extends Api<DiscordApi> {
     api: Client;
     @nonenumerable
     token: string;
+    private userPrefix: string;
+    private chatPrefix: string;
+    private guildPrefix: string;
 
     constructor(public apiId: string, token: string) {
         super('ds');
         this.api = new Client();
         this.token = token;
+        this.userPrefix = `DSU:${apiId}:`;
+        this.chatPrefix = `DSC:${apiId}:`;
+        this.guildPrefix = `DSG:${apiId}:`;
     }
 
-    encodeUserUid(id: string): string {
-        return `DSU:${this.apiId}:${id}`;
+    encodeUserUid(uid: string): string {
+        return `${this.userPrefix}${uid}`;
     }
 
-    encodeChatUid(id: string): string {
-        return `DSC:${this.apiId}:${id}`;
+    encodeChatUid(cid: string): string {
+        return `${this.chatPrefix}${cid}`;
     }
 
-    encodeGuildGid(id: string): string {
-        return `DSG:${this.apiId}:${id}`;
+    encodeGuildGid(gid: string): string {
+        return `${this.guildPrefix}${gid}`;
     }
 
     wrapGuild(guild: Guild): DiscordGuild {
@@ -66,6 +72,14 @@ export default class DiscordApi extends Api<DiscordApi> {
 
     async getApiUser(id: string): Promise<DiscordUser> {
         return this.wrapUser(await this.api.fetchUser(id, true));
+    }
+
+    getUser(uid: string): Promise<DiscordUser | null> {
+        if (!uid.startsWith(this.userPrefix)) {
+            return Promise.resolve(null);
+        }
+        const id = uid.replace(this.userPrefix, '');
+        return this.getApiUser(id);
     }
 
     parseAttachments(attachments: MessageAttachment[]): Attachment[] {
