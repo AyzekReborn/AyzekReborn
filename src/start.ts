@@ -5,13 +5,22 @@ import { Ayzek } from "./bot/ayzek";
 import ModernPluginSystem from "./bot/pluginSystems/ModernPluginSystem";
 import { Api } from "./model/api";
 import config from "./config.yaml";
+import DiscordApi from "./api/discord/api";
 
 Logger.addReceiver(new ConsoleReceiver());
 
 function parseApi(apiDesc: any) {
+	if (!apiDesc.type) throw new Error('Missing api type');
+	if (!apiDesc.descriptor) throw new Error('Missing API descriptor');
 	switch (apiDesc.type) {
 		case 'VK':
-			return new VKApi(apiDesc.descriptor, apiDesc.groupId, apiDesc.apiKeys);
+			if (!apiDesc.groupId) throw new Error('Missing vk groupId');
+			if (typeof apiDesc.groupId !== 'number') throw new Error('VK groupId must be number');
+			if (!apiDesc.tokens) throw new Error('Missing vk tokens');
+			return new VKApi(apiDesc.descriptor, apiDesc.groupId, apiDesc.tokens);
+		case 'DS':
+			if (!apiDesc.tokens) throw new Error('Missing ds token');
+			return new DiscordApi(apiDesc.descriptor, apiDesc.token);
 		default:
 			throw new Error(`Unknown API type: ${apiDesc.type}`);
 	}
