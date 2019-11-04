@@ -341,9 +341,10 @@ export default class VKApi extends Api<VKApi> {
 			let data = await this.execute('groups.getLongPollServer', {
 				group_id: this.groupId
 			});
-			if (!data.server) {
+			if (!data || !data.server) {
 				this.logger.error("Can't get data!")
 				this.logger.error(data);
+				continue;
 			}
 			let { key, server, ts } = data;
 			eventLoop: while (true) {
