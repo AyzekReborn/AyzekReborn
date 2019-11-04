@@ -15,7 +15,8 @@ export default class DiscordUser extends User<DiscordApi>{
             null,
             // TODO: Bot-level gender selection
             Gender.UNSPECIFIED,
-            "",
+            // Available only for friends/users who present in same guilds as you
+            `https://discordapp.com/users/${user.id}`,
             user.bot
         );
     }
