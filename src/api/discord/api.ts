@@ -16,34 +16,39 @@ export default class DiscordApi extends Api<DiscordApi> {
     @nonenumerable
     token: string;
 
-    constructor(token: string) {
+    constructor(public apiId: string, token: string) {
         super('ds');
         this.api = new Client();
         this.token = token;
     }
 
     encodeUserUid(id: string): string {
-        return `DSU:${id}`;
+        return `DSU:${this.apiId}:${id}`;
     }
 
     encodeChatUid(id: string): string {
-        return `DSC:${id}`;
+        return `DSC:${this.apiId}:${id}`;
     }
 
-    wrapGuild(guild: Guild) : DiscordGuild {
+    encodeGuildGid(id: string): string {
+        return `DSG:${this.apiId}:${id}`;
+    }
+
+    wrapGuild(guild: Guild): DiscordGuild {
         return new DiscordGuild(this, guild);
     }
 
-    wrapUser(user: User) : DiscordUser {
+    wrapUser(user: User): DiscordUser {
         return new DiscordUser(this, user);
     }
 
-    wrapChat(chat: TextChannel) : DiscordChat {
-        return new DiscordChat(this, this.wrapGuild(chat.guild), chat, null, null); // TODO fill two last parameters
+    wrapChat(chat: TextChannel): DiscordChat {
+        // TODO fill two last parameters
+        return new DiscordChat(this, this.wrapGuild(chat.guild), chat, [], []);
     }
 
-    getUser(uid: string): Promise<DiscordUser> {
-        return this.api.fetchUser(uid, true).then(user => this.wrapUser(user));
+    async getApiUser(id: string): Promise<DiscordUser> {
+        return this.wrapUser(await this.api.fetchUser(id, true));
     }
 
     async init() {

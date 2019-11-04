@@ -13,7 +13,8 @@ export default class DiscordUser extends User<DiscordApi>{
             user.username,
             null,
             null,
-            Gender.MAN, // TODO how to select gender in Discord?
+            // TODO: Bot-level gender selection
+            Gender.UNSPECIFIED,
             "",
             user.bot
         );
