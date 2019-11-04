@@ -10,6 +10,7 @@ import { LeaveGuildEvent, LeaveReason } from "../../model/events/leave";
 import { lookupByPath } from '@meteor-it/mime';
 import { Attachment, File } from "../../model/attachment/attachment";
 import { MessageEvent } from "../../model/events/message";
+import { TypingEvent, TypingEventType } from "../../model/events/typing";
 
 export default class DiscordApi extends Api<DiscordApi> {
 
@@ -130,6 +131,16 @@ export default class DiscordApi extends Api<DiscordApi> {
                 null
             ));
         });
+        this.api.on('typingStart', (ch, user) => {
+            let chat = this.wrapChat(ch);
+            this.typingEvent.emit(new TypingEvent(
+                this,
+                this.wrapUser(user),
+                chat,
+                chat,
+                TypingEventType.WRITING_TEXT
+            ));
+        })
     }
 
     async doWork(): Promise<void> {
