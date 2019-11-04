@@ -16,6 +16,8 @@ export default class DiscordApi extends Api<DiscordApi> {
     api: Client;
     @nonenumerable
     token: string;
+    private userPrefix = 'DSU';
+    private chatPrefix = 'DSC';
 
     constructor(token: string) {
         super('ds');
@@ -24,11 +26,11 @@ export default class DiscordApi extends Api<DiscordApi> {
     }
 
     encodeUserUid(id: string): string {
-        return `DSU:${id}`;
+        return `${this.userPrefix}:${id}`;
     }
 
     encodeChatUid(id: string): string {
-        return `DSC:${id}`;
+        return `${this.chatPrefix}:${id}`;
     }
 
     wrapGuild(guild: Guild): DiscordGuild {
@@ -60,8 +62,12 @@ export default class DiscordApi extends Api<DiscordApi> {
         return new DiscordChat(this, this.wrapGuild(chat.guild), chat, [], members); // TODO fill one last parameter
     }
 
-    getUser(uid: string): Promise<DiscordUser> {
-        return this.api.fetchUser(uid, true).then(user => this.wrapUser(user));
+    getUser(uid: string): Promise<DiscordUser | null> {
+        if (!uid.startsWith(this.userPrefix)) {
+            return Promise.resolve(null);
+        }
+        const id = uid.replace(this.userPrefix, '');
+        return this.api.fetchUser(id, true).then(user => this.wrapUser(user));
     }
 
     parseAttachments(attachments: MessageAttachment[]): Attachment[] {
