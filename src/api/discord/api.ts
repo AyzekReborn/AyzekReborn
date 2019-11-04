@@ -7,7 +7,7 @@ import DiscordGuild from "./guild";
 import DiscordChat from "./chat";
 import { JoinGuildEvent, JoinReason } from "../../model/events/join";
 import { LeaveGuildEvent, LeaveReason } from "../../model/events/leave";
-import { lookup as lookupMime } from '@meteor-it/mime';
+import { lookupByPath } from '@meteor-it/mime';
 import { Attachment, File } from "../../model/attachment/attachment";
 import { MessageEvent } from "../../model/events/message";
 
@@ -77,7 +77,7 @@ export default class DiscordApi extends Api<DiscordApi> {
                 a.url,
                 a.filesize,
                 filename,
-                lookupMime(File.getExtension(filename)) || ''
+                lookupByPath(filename) || ''
             );
         });
     }

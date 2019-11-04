@@ -91,11 +91,6 @@ export class File extends BaseFile {
 		let parsed = await parseFilePathData(path, name, mime, 'text/plain');
 		return new File(parsed.data, parsed.size, parsed.name, parsed.mime);
 	}
-
-	static getExtension(filename: string) : string {
-		let lastDot = filename.lastIndexOf('.');
-		return lastDot == -1 ? '' : filename.substring(lastDot+1);
-	}
 }
 
 // Some services looks at extensions, so extension can be changed runtime in adapter
