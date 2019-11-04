@@ -152,17 +152,22 @@ export default class DiscordApi extends Api<DiscordApi> {
         const textString = this.textToString(text);
         const chat = this.api.channels.get(conv.targetId) as TextChannel;
         if (!chat) throw new Error(`Bad channel: ${conv.targetId}`);
-        chat.sendMessage(textString);
+        chat.send(textString);
     }
 
     textToString(part: TextPart<DiscordApi>): string {
-        if (typeof part === 'string') return part;
+        if (typeof part === 'string')
+            return part
+                .replace(/`/g, '\\`')
+                .replace(/_/g, '\\_');
         if (part instanceof StringReader) {
             return `${part.toStringWithCursor(`|`)}`
         } else if (part instanceof Array) {
             return part.map(l => this.textToString(l)).join('');
         }
         switch (part.type) {
+            case 'preservingWhitespace':
+                return this.textToString(part.data).replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
             case 'code':
                 // TODO: Multiline comments
                 return `\`${this.textToString(part.data)}\``;

@@ -23,7 +23,11 @@ export type CodeTextPart<A extends Api<A>> = {
 	type: 'code',
 	data: Text<A>,
 }
-export type TextPart<A extends Api<A>> = string | MentionTextPart<A> | ChatReferenceTextPart<A> | UnderlinedTextPart<A> | StringReader | TextPartArray<A> | CodeTextPart<A>;
+export type PreservingWhitespaceTextPart<A extends Api<A>> = {
+	type: 'preservingWhitespace',
+	data: Text<A>,
+}
+export type TextPart<A extends Api<A>> = string | MentionTextPart<A> | ChatReferenceTextPart<A> | UnderlinedTextPart<A> | StringReader | TextPartArray<A> | CodeTextPart<A> | PreservingWhitespaceTextPart<A>;
 interface TextPartArray<A extends Api<A>> extends Array<TextPart<A>> { }
 export type Text<A extends Api<A>> = TextPart<A>;
 

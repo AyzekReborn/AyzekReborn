@@ -26,7 +26,7 @@ function describePlugin(ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
 						`⚡ /${command.literal} `,
 						// TODO: Restricted
 						{
-							type: 'code',
+							type: 'preservingWhitespace',
 							data: textJoin(padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode!, null as any, false)), '\n')
 						}
 					];
@@ -62,7 +62,7 @@ const helpCommand = literal('help')
 		return 0;
 	}))
 	.then(literal('all').executes(async ({ source: { ayzek, event } }) => {
-		event.conversation.send(textJoin(ayzek.plugins.map(p => describePlugin(ayzek, p)), { type: 'code', data: '\n \n \n' }));
+		event.conversation.send(textJoin(ayzek.plugins.map(p => describePlugin(ayzek, p)), { type: 'preservingWhitespace', data: '\n \n \n' }));
 		return 0;
 	}))
 	.executes(async ({ source: { ayzek, event } }) => {
