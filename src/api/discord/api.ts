@@ -1,4 +1,4 @@
-import { Client, Guild, User, TextChannel, MessageAttachment, GuildMember, DMChannel, GroupDMChannel } from "discord.js";
+import { Client, Guild, User, MessageAttachment, GuildMember } from "discord.js";
 import { nonenumerable } from 'nonenumerable';
 import { Api } from "../../model/api";
 import ApiFeature from "../features";
