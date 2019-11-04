@@ -38,5 +38,8 @@ yarn zarbis development
 ### Start bot
 
 ```sh
+# with source maps
+node -r source-map-support/register dist/development/start
+# or, if you ok with broken stack traces
 node dist/development/start
 ```

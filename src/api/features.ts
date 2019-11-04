@@ -1,7 +1,7 @@
 enum ApiFeature {
-	// VK
+	// VK, DS
 	IncomingMessageWithMultipleAttachments,
-	// VK
+	// VK, DS
 	OutgoingMessageWithMultipleAttachments,
 	// DS
 	GuildSupport,
@@ -11,6 +11,8 @@ enum ApiFeature {
 	EmbeddedMessageButtons,
 	// VK, TG
 	ChatButtons,
+	// DS, Slack
+	MessageReactions,
 	// VK, TG, DS
 	EditMessage,
 	// VK, TG

@@ -1,10 +1,11 @@
-import { WebpackPluginLoader } from '@meteor-it/plugin-loader';
+import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
 import { PluginInfo } from '../plugin';
 import { Ayzek } from '../ayzek';
 import { CommandNode } from '../../command/tree';
 
 type PluginInfoAttachment = {
 	registered?: CommandNode<any>[];
+	file: string;
 };
 export default class ModernPluginSystem extends WebpackPluginLoader<void, PluginInfo & PluginInfoAttachment> {
 
