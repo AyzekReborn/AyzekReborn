@@ -1,6 +1,6 @@
 import { PluginInfo, literal, PluginCategory, argument } from "../../bot/plugin";
 import { textJoin } from "../../model/text";
-import { ArgumentType, StringArgumentType, StringType } from "../../command/arguments";
+import { StringArgumentType, StringType } from "../../command/arguments";
 import { Ayzek } from "../../bot/ayzek";
 import { Text } from '../../model/text';
 import { padList } from "../../util/pad";
@@ -39,6 +39,17 @@ function describePlugin(ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
 	]
 }
 
+const debugCommand = literal('debug')
+	.then(literal('mentions').executes(async ctx => {
+		ctx.source.event.conversation.send([
+			'User mention:\n',
+			ctx.source.event.user.reference, '\n',
+			'Chat mention:\n',
+			ctx.source.event.chat && ctx.source.event.chat.reference || 'no chat',
+		]);
+		return 1;
+	}))
+
 const helpCommand = literal('help')
 	.then(argument('name', new StringArgumentType(StringType.GREEDY_PHRAZE)).executes(async ({ source: { ayzek, event }, getArgument }) => {
 		const name = getArgument<string>('name');
@@ -71,6 +82,6 @@ export default class implements PluginInfo {
 	author = 'НекийЛач';
 	description = 'Плагин, содержащий некоторые команды - утилиты для управления другими плагинами';
 	category = PluginCategory.UTILITY;
-	commands = [helpCommand];
+	commands = [debugCommand, helpCommand];
 	listeners = [];
 }

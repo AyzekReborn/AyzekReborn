@@ -1,4 +1,4 @@
-import { Client, Guild, User, MessageAttachment, GuildMember } from "discord.js";
+import { Client, Guild, User, MessageAttachment, GuildMember, TextChannel } from "discord.js";
 import { nonenumerable } from 'nonenumerable';
 import { Api } from "../../model/api";
 import ApiFeature from "../features";
@@ -11,6 +11,10 @@ import { lookupByPath } from '@meteor-it/mime';
 import { Attachment, File } from "../../model/attachment/attachment";
 import { MessageEvent } from "../../model/events/message";
 import { TypingEvent, TypingEventType } from "../../model/events/typing";
+import { Conversation } from "../../model/conversation";
+import { Text, TextPart } from "../../model/text";
+import { IMessageOptions } from "../../model/message";
+import StringReader from "../../command/reader";
 
 export default class DiscordApi extends Api<DiscordApi> {
 
@@ -118,6 +122,7 @@ export default class DiscordApi extends Api<DiscordApi> {
             ));
         });
         this.api.on('message', message => {
+            if (message.author === this.api.user) return;
             let chat = this.wrapChat(message.channel);
             this.messageEvent.emit(new MessageEvent(
                 this,
@@ -141,6 +146,33 @@ export default class DiscordApi extends Api<DiscordApi> {
                 TypingEventType.WRITING_TEXT
             ));
         })
+    }
+
+    async send(conv: Conversation<DiscordApi>, text: Text<DiscordApi>, attachments: Attachment[] = [], options: IMessageOptions = {}) {
+        const textString = this.textToString(text);
+        const chat = this.api.channels.get(conv.targetId) as TextChannel;
+        if (!chat) throw new Error(`Bad channel: ${conv.targetId}`);
+        chat.sendMessage(textString);
+    }
+
+    textToString(part: TextPart<DiscordApi>): string {
+        if (typeof part === 'string') return part;
+        if (part instanceof StringReader) {
+            return `${part.toStringWithCursor(`|`)}`
+        } else if (part instanceof Array) {
+            return part.map(l => this.textToString(l)).join('');
+        }
+        switch (part.type) {
+            case 'code':
+                // TODO: Multiline comments
+                return `\`${this.textToString(part.data)}\``;
+            case 'mentionPart':
+                return `<@${part.data.targetId}>`
+            case 'chatRefPart':
+                return `<#${part.data.targetId}>`;
+            case 'underlinedPart':
+                return `__${this.textToString(part.data)}__`;
+        }
     }
 
     async doWork(): Promise<void> {

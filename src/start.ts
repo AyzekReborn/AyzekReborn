@@ -19,7 +19,7 @@ function parseApi(apiDesc: any) {
 			if (!apiDesc.tokens) throw new Error('Missing vk tokens');
 			return new VKApi(apiDesc.descriptor, apiDesc.groupId, apiDesc.tokens);
 		case 'DS':
-			if (!apiDesc.tokens) throw new Error('Missing ds token');
+			if (!apiDesc.token) throw new Error('Missing ds token');
 			return new DiscordApi(apiDesc.descriptor, apiDesc.token);
 		default:
 			throw new Error(`Unknown API type: ${apiDesc.type}`);
