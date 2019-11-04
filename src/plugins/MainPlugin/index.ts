@@ -1,6 +1,6 @@
 import { PluginInfo, literal, PluginCategory, argument } from "../../bot/plugin";
 import { textJoin } from "../../model/text";
-import { ArgumentType, StringArgumentType, StringType } from "../../command/arguments";
+import { StringArgumentType, StringType } from "../../command/arguments";
 import { Ayzek } from "../../bot/ayzek";
 import { Text } from '../../model/text';
 import { padList } from "../../util/pad";
@@ -26,7 +26,7 @@ function describePlugin(ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
 						`⚡ /${command.literal} `,
 						// TODO: Restricted
 						{
-							type: 'code',
+							type: 'preservingWhitespace',
 							data: textJoin(padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode!, null as any, false)), '\n')
 						}
 					];
@@ -38,6 +38,17 @@ function describePlugin(ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
 		] : [])
 	]
 }
+
+const debugCommand = literal('debug')
+	.then(literal('mentions').executes(async ctx => {
+		ctx.source.event.conversation.send([
+			'User mention:\n',
+			ctx.source.event.user.reference, '\n',
+			'Chat mention:\n',
+			ctx.source.event.chat && ctx.source.event.chat.reference || 'no chat',
+		]);
+		return 1;
+	}))
 
 const helpCommand = literal('help')
 	.then(argument('name', new StringArgumentType(StringType.GREEDY_PHRAZE)).executes(async ({ source: { ayzek, event }, getArgument }) => {
@@ -51,7 +62,7 @@ const helpCommand = literal('help')
 		return 0;
 	}))
 	.then(literal('all').executes(async ({ source: { ayzek, event } }) => {
-		event.conversation.send(textJoin(ayzek.plugins.map(p => describePlugin(ayzek, p)), { type: 'code', data: '\n \n \n' }));
+		event.conversation.send(textJoin(ayzek.plugins.map(p => describePlugin(ayzek, p)), { type: 'preservingWhitespace', data: '\n \n \n' }));
 		return 0;
 	}))
 	.executes(async ({ source: { ayzek, event } }) => {
@@ -71,6 +82,6 @@ export default class implements PluginInfo {
 	author = 'НекийЛач';
 	description = 'Плагин, содержащий некоторые команды - утилиты для управления другими плагинами';
 	category = PluginCategory.UTILITY;
-	commands = [helpCommand];
+	commands = [debugCommand, helpCommand];
 	listeners = [];
 }

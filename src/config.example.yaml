@@ -1,6 +1,9 @@
 apis:
   - type: VK
-    apiKeys:
+    tokens:
       - fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
     descriptor: ayzek
     groupId: 188280200
+  - type: DS
+    token: NNNNNNNNNNNNNNNNNNNNNNNN.NNNNNN.NNNNNNNNNNNNNNNNNNNNNNNNNNN
+    descriptor: ayzek

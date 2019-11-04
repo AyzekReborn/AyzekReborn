@@ -457,6 +457,7 @@ export default class VKApi extends Api<VKApi> {
 		}
 		switch (part.type) {
 			case 'code':
+			case 'preservingWhitespace':
 				return this.textToString(part.data).replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
 			case 'mentionPart':
 				return `[id${part.data.targetId}|${part.text || part.data.name}]`

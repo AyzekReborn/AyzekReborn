@@ -51,6 +51,7 @@ export enum Gender {
 	MAN,
 	WOMAN,
 	OTHER,
+	UNSPECIFIED,
 	ANDROGYNOUS,
 	BOT,
 };
