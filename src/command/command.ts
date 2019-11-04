@@ -1,6 +1,6 @@
 import StringRange from "./range";
 import { ParsedArgument } from "./arguments";
-import { CommandNode, ParsedCommandNode, RootCommandNode, ArgumentCommandNode, LiteralCommandNode } from "./tree";
+import { CommandNode, ParsedCommandNode, RootCommandNode, LiteralCommandNode } from "./tree";
 import { SuggestionContext } from "./suggestions";
 import { LiteralArgumentBuilder } from "./builder";
 import StringReader from "./reader";
@@ -28,7 +28,7 @@ type ParseResults<S> = {
 	exceptions: Map<CommandNode<S>, Error>;
 	reader: StringReader;
 }
-type ResultConsumer<S> = (ctx: CommandContext<S>, success: boolean, result: number) => void;
+type ResultConsumer<S> = (ctx: CommandContext<S>, success: boolean) => void;
 
 export const ARGUMENT_SEPARATOR = ' ';
 export const USAGE_OPTIONAL_OPEN = '[';
@@ -67,8 +67,6 @@ export class CommandDispatcher<S> {
 				throw new UnknownThingError(ThingType.ARGUMENT, parse.reader);
 			}
 		}
-		let result = 0;
-		let successfulForks = 0;
 		let forked = false;
 		let foundCommand = false;
 		let command = parse.reader.string;
@@ -104,7 +102,7 @@ export class CommandDispatcher<S> {
 									}
 								}
 							} catch (e) {
-								this.consumer(context, false, 0);
+								this.consumer(context, false);
 								if (!forked) {
 									throw e;
 								}
@@ -114,12 +112,10 @@ export class CommandDispatcher<S> {
 				} else if (context.command != null) {
 					foundCommand = true;
 					try {
-						let value = await context.command(context);
-						result += value;
-						this.consumer(context, true, value);
-						successfulForks++;
+						await context.command(context);
+						this.consumer(context, true);
 					} catch (e) {
-						this.consumer(context, false, 0);
+						this.consumer(context, false);
 						if (!forked) {
 							throw e;
 						}
@@ -131,11 +127,9 @@ export class CommandDispatcher<S> {
 			next = null;
 		}
 		if (!foundCommand) {
-			this.consumer(original, false, 0);
+			this.consumer(original, false);
 			throw new UnknownThingError(ThingType.COMMAND, parse.reader);
 		}
-
-		return forked ? successfulForks : result;
 	}
 
 	parse(command: string | StringReader, source: S): ParseResults<S> {
@@ -509,6 +503,6 @@ export default class CommandContextBuilder<S> {
 }
 
 
-export type Command<S> = (context: CommandContext<S>) => Promise<number>;
+export type Command<S> = (context: CommandContext<S>) => any;
 export type RedirectModifier<S> = (context: CommandContext<S>) => S[];
 export type SingleRedirectModifier<S> = (context: CommandContext<S>) => S;

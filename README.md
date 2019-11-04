@@ -2,11 +2,31 @@
 
 Er ist wieder da
 
+## Features
+
+### Write once, use everywhere
+
+Supports multiple messengers, current support list is:
+
+- [VKontakte](./docs/VK_Configuration.md)
+- [Discord](./docs/DS_Configuration.md)
+
+### Plugin system
+
+See embedded plugins in `src/plugins`
+
+### Powerfull command system
+
+Inspired from mojang's brigadier
+
+### Lightweight
+
+No heavy enterprise framework used
+
 ## Development
 
 ### Prerequisites
 
-- Linux x64 with glibc (Or adjust zarbis platform module version in package.json)
 - Node.js v12.11.1
 - Yarn 1.19.1
 

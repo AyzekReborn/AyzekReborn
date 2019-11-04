@@ -272,8 +272,10 @@ export class ArgumentCommandNode<S, T> extends CommandNode<S> {
 
 	parse(reader: StringReader, contextBuilder: CommandContextBuilder<S>) {
 		let start = reader.cursor;
-		let result: T = this.type.parse(reader);
-		let parsed = new ParsedArgument<S, T>(StringRange.between(start, reader.cursor), result);
+		let parsed = {
+			range: StringRange.between(start, reader.cursor),
+			result: this.type.parse(reader),
+		};
 
 		contextBuilder.withArgument(this.name, parsed);
 		contextBuilder.withNode(this, parsed.range);

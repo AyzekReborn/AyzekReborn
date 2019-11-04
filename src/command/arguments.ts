@@ -2,6 +2,7 @@ import StringReader, { Type } from './reader';
 import { SuggestionsBuilder, Suggestions } from './suggestions';
 import StringRange from './range';
 import { CommandContext } from './command';
+
 export abstract class ArgumentType<T> {
 	abstract parse(reader: StringReader): T;
 	async listSuggestions<S>(_ctx: CommandContext<S>, _builder: SuggestionsBuilder): Promise<Suggestions> {
@@ -11,6 +12,7 @@ export abstract class ArgumentType<T> {
 		return [];
 	}
 }
+
 export class BoolArgumentType extends ArgumentType<boolean> {
 	parse(reader: StringReader): boolean {
 		return reader.readBoolean();
@@ -29,15 +31,22 @@ export class BoolArgumentType extends ArgumentType<boolean> {
 		return ['true', 'false'];
 	}
 }
+
+export function booleanArgument() {
+	return new BoolArgumentType();
+}
+
 enum FailType {
 	TOO_LOW,
 	TOO_HIGH,
 }
+
 class RangeError<T> extends Error {
 	constructor(public ctx: StringReader, public failType: FailType, public type: Type, public value: T) {
 		super(`${failType} ${type}: ${value}`);
 	}
 }
+
 class NumberArgumentType extends ArgumentType<number> {
 	constructor(public readonly int: boolean, public readonly minimum = -Infinity, public readonly maximum = Infinity) {
 		super();
@@ -70,51 +79,62 @@ class NumberArgumentType extends ArgumentType<number> {
 		}
 	}
 }
+
 export class FloatArgumentType extends NumberArgumentType {
 	constructor(minimum: number = -Infinity, maximum: number = Infinity) {
 		super(false, minimum, maximum);
 	}
 }
+
 export class IntArgumentType extends NumberArgumentType {
 	constructor(minimum: number = -Infinity, maximum: number = Infinity) {
 		super(true, minimum, maximum);
 	}
 }
-export enum StringType {
-	SINGLE_WORD,
-	QUOTABLE_PHRAZE,
-	GREEDY_PHRAZE,
+
+export function floatArgument(min?: number, max?: number) {
+	return new FloatArgumentType(min, max);
 }
+
+export function intArgument(min?: number, max?: number) {
+	return new IntArgumentType(min, max);
+}
+
+export type StringType = 'single_word' | 'quotable_phraze' | 'greedy_phraze';
+
 export class StringArgumentType extends ArgumentType<string> {
 	constructor(public readonly type: StringType) {
 		super();
 	}
 	parse(reader: StringReader): string {
 		switch (this.type) {
-			case StringType.GREEDY_PHRAZE:
+			case 'greedy_phraze':
 				let text = reader.remaining;
 				reader.cursor = reader.totalLength;
 				return text;
-			case StringType.SINGLE_WORD:
+			case 'single_word':
 				return reader.readUnquotedString();
-			case StringType.QUOTABLE_PHRAZE:
+			case 'quotable_phraze':
 				return reader.readString();
 		}
 	}
 	get examples(): string[] {
 		switch (this.type) {
-			case StringType.GREEDY_PHRAZE:
+			case 'greedy_phraze':
 				return ['word', 'words with spaces', '"and symbols"'];
-			case StringType.SINGLE_WORD:
+			case 'single_word':
 				return ['word', 'word_with_underscores'];
-			case StringType.QUOTABLE_PHRAZE:
+			case 'quotable_phraze':
 				return ['"quoted phraze"', 'word'];
 		}
 	}
 }
 
+export function stringArgument(type: StringType) {
+	return new StringArgumentType(type);
+}
 
-export class ParsedArgument<_S, T> {
-	constructor(public readonly range: StringRange, public readonly result: T) {
-	}
+export type ParsedArgument<_S, T> = {
+	range: StringRange,
+	result: T,
 }
