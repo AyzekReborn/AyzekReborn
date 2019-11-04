@@ -8,7 +8,7 @@ export default class DiscordUser extends User<DiscordApi>{
     constructor(api: DiscordApi, public user: DSUser) {
         super(
             api,
-            user.id,
+            user.dmChannel.id,
             api.encodeUserUid(user.id),
             user.username,
             null,

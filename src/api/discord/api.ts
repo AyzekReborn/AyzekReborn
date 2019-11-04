@@ -123,12 +123,13 @@ export default class DiscordApi extends Api<DiscordApi> {
         });
         this.api.on('message', message => {
             if (message.author === this.api.user) return;
-            let chat = this.wrapChat(message.channel);
+            const chat = message.channel.type === 'dm' ? null : this.wrapChat(message.channel);
+            const user = this.wrapUser(message.author);
             this.messageEvent.emit(new MessageEvent(
                 this,
-                this.wrapMember(message.member),
+                user,
                 chat,
-                chat,
+                chat || user,
                 this.parseAttachments(message.attachments.array()),
                 message.content,
                 [],
@@ -136,13 +137,14 @@ export default class DiscordApi extends Api<DiscordApi> {
                 null
             ));
         });
-        this.api.on('typingStart', (ch, user) => {
-            let chat = this.wrapChat(ch);
+        this.api.on('typingStart', (ch, apiUser) => {
+            const chat = ch.type === 'dm' ? null : this.wrapChat(ch);
+            const user = this.wrapUser(apiUser);
             this.typingEvent.emit(new TypingEvent(
                 this,
-                this.wrapUser(user),
+                user,
                 chat,
-                chat,
+                chat || user,
                 TypingEventType.WRITING_TEXT
             ));
         })
