@@ -1,4 +1,4 @@
-import { Guild, TextChannel } from "discord.js";
+import { TextChannel } from "discord.js";
 import { Chat } from "../../model/conversation";
 import DiscordApi from "./api";
 import DiscordUser from "./user";
