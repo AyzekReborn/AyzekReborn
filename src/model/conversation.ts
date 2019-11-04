@@ -88,6 +88,8 @@ export abstract class User<A extends Api<A>> extends Conversation<A> {
 		else return this.idName;
 	}
 	get fullName(): string {
+		if (this.nickName && !this.firstName && !this.lastName)
+			return this.nickName;
 		let name = '';
 		if (this.firstName)
 			name += this.firstName + ' ';
