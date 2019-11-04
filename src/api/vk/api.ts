@@ -451,7 +451,7 @@ export default class VKApi extends Api<VKApi> {
 	textToString(part: TextPart<VKApi>): string {
 		if (typeof part === 'string') return part;
 		if (part instanceof StringReader) {
-			return `${part.toStringWithCursor(`𝆄`)}`
+			return `${part.toStringWithCursor(`|`)}`
 		} else if (part instanceof Array) {
 			return part.map(l => this.textToString(l)).join('');
 		}
