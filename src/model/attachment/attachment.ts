@@ -84,7 +84,7 @@ export class File extends BaseFile {
 		let parsed = await parseUrlData(url, name, mime, 'text/plain');
 		return new File(parsed.data, parsed.size, parsed.name, parsed.mime);
 	}
-	static async fromUrlWithSizeKnown(url: string, size: number, name: string, mime: string = 'text/plain') {
+	static fromUrlWithSizeKnown(url: string, size: number, name: string, mime: string = 'text/plain') {
 		return new File(Data.fromExternalUrl(url), size, name, mime);
 	}
 	static async fromFilePath(path: string, name: string, mime: string | null = null) {
