@@ -9,6 +9,7 @@ import { LeaveGuildEvent, LeaveChatEvent } from "./events/leave";
 import { GuildTitleChangeEvent, ChatTitleChangeEvent } from "./events/titleChange";
 import { TypedEvent } from "../util/event";
 import ApiFeature from "../api/features";
+import { TypingEvent } from "./events/typing";
 
 export class NotImplementedInApiError extends Error {
 	constructor(method: string) {
@@ -20,6 +21,7 @@ export abstract class Api<A extends Api<A>> {
 	logger: Logger;
 
 	messageEvent = new TypedEvent<MessageEvent<A>>();
+	typingEvent = new TypedEvent<TypingEvent<A>>();
 
 	joinGuildEvent = new TypedEvent<JoinGuildEvent<A>>();
 	joinChatEvent = new TypedEvent<JoinChatEvent<A>>();

@@ -1,33 +1,19 @@
 import Logger from "@meteor-it/logger";
-import { TypedEvent } from "../util/event";
-import { JoinGuildEvent, JoinChatEvent } from "../model/events/join";
-import { LeaveGuildEvent, LeaveChatEvent } from "../model/events/leave";
-import { GuildTitleChangeEvent, ChatTitleChangeEvent } from "../model/events/titleChange";
-import { MessageEvent } from '../model/events/message';
+import { Disposable } from "../util/event";
 import { Api } from "../model/api";
 import { CommandDispatcher, UnknownThingError, ThingType } from "../command/command";
 import { MessageEventContext } from "./context";
 import { PluginInfo } from "./plugin";
+import ApiFeature from "../api/features";
+import { User, Chat, Guild } from "../model/conversation";
 
-export class Ayzek<A extends Api<any>> {
-	logger: Logger;
+export class Ayzek<A extends Api<any>> extends Api<A> {
 	plugins: PluginInfo[] = [];
-
-	messageEvent = new TypedEvent<MessageEvent<A>>();
-
-	joinGuildEvent = new TypedEvent<JoinGuildEvent<A>>();
-	joinChatEvent = new TypedEvent<JoinChatEvent<A>>();
-
-	leaveGuildEvent = new TypedEvent<LeaveGuildEvent<A>>();
-	leaveChatEvent = new TypedEvent<LeaveChatEvent<A>>();
-
-	guildTitleChangeEvent = new TypedEvent<GuildTitleChangeEvent<A>>();
-	chatTitleChangeEvent = new TypedEvent<ChatTitleChangeEvent<A>>();
 
 	commandDispatcher = new CommandDispatcher<MessageEventContext<A>>();
 
 	constructor(logger: string | Logger, apis: A[], commandPrefix: string, logEvents: boolean) {
-		this.logger = Logger.from(logger);
+		super(logger);
 		for (let api of apis) {
 			this.attachApi(api);
 		}
@@ -38,6 +24,10 @@ export class Ayzek<A extends Api<any>> {
 				const attachments = e.attachments.length > 0 ? ` {yellow}+${e.attachments.length}A{/yellow}` : ''
 				const forwarded = e.maybeForwarded ? ` {green}+${e.forwarded.length + (e.replyTo ? 1 : 0)}F{/green}` : '';
 				e.api.logger.log(`${e.user.fullName}${chat} {gray}»{/gray}${text}${attachments}${forwarded}`);
+			});
+			this.typingEvent.on(e => {
+				const chat = e.chat ? `{yellow}${e.chat.title}{/yellow}` : '{green}PM{/green}';
+				e.api.logger.log(`${e.user.fullName} typing in ${chat}`);
 			});
 			this.chatTitleChangeEvent.on(e => {
 				e.api.logger.log(`${e.initiator.fullName} renamed {red}${e.oldTitle || '<unknown>'}{/red} -> {green}${e.newTitle}{/green}`);
@@ -74,16 +64,51 @@ export class Ayzek<A extends Api<any>> {
 		});
 	}
 
+	public apis: Api<A>[] = [];
+	private apiDisposables: Disposable[][] = []
+
 	private attachApi(api: A) {
-		api.messageEvent.pipe(this.messageEvent);
+		const disposables = [
+			api.typingEvent.pipe(this.typingEvent),
+			api.messageEvent.pipe(this.messageEvent),
 
-		api.joinGuildEvent.pipe(this.joinGuildEvent);
-		api.joinChatEvent.pipe(this.joinChatEvent);
+			api.joinGuildEvent.pipe(this.joinGuildEvent),
+			api.joinChatEvent.pipe(this.joinChatEvent),
 
-		api.leaveGuildEvent.pipe(this.leaveGuildEvent);
-		api.leaveChatEvent.pipe(this.leaveChatEvent);
+			api.leaveGuildEvent.pipe(this.leaveGuildEvent),
+			api.leaveChatEvent.pipe(this.leaveChatEvent),
 
-		api.guildTitleChangeEvent.pipe(this.guildTitleChangeEvent);
-		api.chatTitleChangeEvent.pipe(this.chatTitleChangeEvent);
+			api.guildTitleChangeEvent.pipe(this.guildTitleChangeEvent),
+			api.chatTitleChangeEvent.pipe(this.chatTitleChangeEvent),
+		];
+		if (this.apis.push(api) !== this.apiDisposables.push(disposables))
+			throw new Error('Api list broken!');
+	}
+
+	private detachApi(api: Api<A>) {
+		const index = this.apis.indexOf(api);
+		if (index === -1)
+			throw new Error('Api not found on detach');
+		this.apis.splice(index, 1);
+		for (let disposable of this.apiDisposables.splice(index, 1)[0])
+			disposable.dispose();
+	}
+
+	async getUser(uid: string): Promise<User<A> | null> {
+		return (await Promise.all(this.apis.map(e => e.getUser(uid)))).filter(e => e !== null)[0] || null;
+	}
+	async getChat(cid: string): Promise<Chat<A> | null> {
+		return (await Promise.all(this.apis.map(e => e.getChat(cid)))).filter(e => e !== null)[0] || null;
+	}
+	async getGuild(gid: string): Promise<Guild<A> | null> {
+		return (await Promise.all(this.apis.map(e => e.getGuild(gid)))).filter(e => e !== null)[0] || null;
+	}
+
+	async doWork(): Promise<any> {
+		return Promise.all(this.apis.map(a => a.doWork()))
+	}
+
+	get supportedFeatures(): Set<ApiFeature> {
+		throw new Error('Not implemented for ayzek');
 	}
 }
