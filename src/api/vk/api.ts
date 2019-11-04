@@ -23,6 +23,7 @@ import { ChatTitleChangeEvent } from "../../model/events/titleChange";
 import StringReader from "../../command/reader";
 import { splitByMaxPossibleParts } from "../../util/split";
 import arrayChunks from "../../util/arrayChunks";
+import { TypingEvent, TypingEventType } from "../../model/events/typing";
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
@@ -303,6 +304,19 @@ export default class VKApi extends Api<VKApi> {
 			parsed.conversation, parsed.attachments, parsed.text, parsed.forwarded, parsed.messageId, parsed.replyTo
 		));
 	}
+	async processMessageTypingStateUpdate(update: any) {
+		// TODO: Distinct event types? (VK always sends "typing")
+		if (update.state !== 'typing') throw new Error(`Unknown typing state: ${update.state}`);
+		const user = await this.getApiUser(update.from_id);
+		if (!user) throw new Error(`Bad user: ${update.from_id}`);
+		this.typingEvent.emit(new TypingEvent(
+			this,
+			user,
+			null,
+			user,
+			TypingEventType.WRITING_TEXT
+		));
+	}
 	async processUpdate(update: { type: string, object: any }) {
 		switch (update.type) {
 			case 'message_new':
@@ -311,6 +325,9 @@ export default class VKApi extends Api<VKApi> {
 			case 'message_reply':
 				// TODO: Use for message editing. Not supported by vk yet.
 				// TODO: (Message id === 0)
+				break;
+			case 'message_typing_state':
+				await this.processMessageTypingStateUpdate(update.object);
 				break;
 			default:
 				this.logger.error(`Unknown update type: ${update.type}`);

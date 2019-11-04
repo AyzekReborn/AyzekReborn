@@ -26,5 +26,5 @@ function parseApi(apiDesc: any) {
 	const pps = new ModernPluginSystem(ayzek,
 		() => (require as any).context('./privatePlugins', true, /Plugin\/index\.([jt]sx?|coffee)$/, 'lazy'),
 		(acceptor, getContext) => (module as any).hot.accept(getContext().id, acceptor))
-	await Promise.all([pps.load(), ps.load(), Promise.all(apis.map(e => e.doWork()))]);
+	await Promise.all([pps.load(), ps.load(), ayzek.doWork()]);
 })();
