@@ -36,6 +36,7 @@ export const USAGE_OPTIONAL_CLOSE = ']';
 export const USAGE_REQUIRED_OPEN = '(';
 export const USAGE_REQUIRED_CLOSE = ')';
 export const USAGE_OR = '|';
+
 function hasCommand<S>(node: CommandNode<S>): boolean {
 	return node !== null && (node.command !== null || node.children.some(hasCommand))
 }
@@ -132,15 +133,15 @@ export class CommandDispatcher<S> {
 		}
 	}
 
-	parse(command: string | StringReader, source: S): ParseResults<S> {
+	parse<P>(ctx: ParseEntryPoint<P>, command: string | StringReader, source: S): Promise<ParseResults<S>> {
 		if (typeof command === "string")
 			command = new StringReader(command)
 
 		let context: CommandContextBuilder<S> = new CommandContextBuilder(this, source, this.root, command.cursor);
-		return this.parseNodes(this.root, command, context);
+		return this.parseNodes(ctx, this.root, command, context);
 	}
 
-	private parseNodes(node: CommandNode<S>, originalReader: StringReader, contextSoFar: CommandContextBuilder<S>): ParseResults<S> {
+	private async parseNodes<P>(ctx: ParseEntryPoint<P>, node: CommandNode<S>, originalReader: StringReader, contextSoFar: CommandContextBuilder<S>): Promise<ParseResults<S>> {
 		let source: S = contextSoFar.source;
 		let errors: Map<CommandNode<S>, Error> | null = null;
 		let potentials: ParseResults<S>[] | null = null;
@@ -152,7 +153,7 @@ export class CommandDispatcher<S> {
 			let context: CommandContextBuilder<S> = contextSoFar.copy();
 			let reader: StringReader = originalReader.clone();
 			try {
-				child.parse(reader, context);
+				await child.parse(ctx, reader, context);
 
 				if (reader.canReadAnything)
 					if (reader.peek() != ARGUMENT_SEPARATOR)
@@ -172,7 +173,7 @@ export class CommandDispatcher<S> {
 				reader.skip();
 				if (!(child.redirect == null)) {
 					let childContext: CommandContextBuilder<S> = new CommandContextBuilder(this, source, child.redirect, reader.cursor);
-					let parse: ParseResults<S> = this.parseNodes(child.redirect, reader, childContext);
+					let parse: ParseResults<S> = await this.parseNodes(ctx, child.redirect, reader, childContext);
 					context.withChild(parse.context);
 					return {
 						context,
@@ -181,7 +182,7 @@ export class CommandDispatcher<S> {
 					};
 				}
 				else {
-					let parse: ParseResults<S> = this.parseNodes(child, reader, context);
+					let parse: ParseResults<S> = await this.parseNodes(ctx, child, reader, context);
 					if (potentials == null) {
 						potentials = [];
 					}
@@ -354,6 +355,11 @@ export class CommandDispatcher<S> {
 		return result;
 	}
 }
+
+export type ParseEntryPoint<P> = {
+	sourceProvider: P;
+}
+
 export class CommandContext<S> {
 	constructor(
 		public source: S,

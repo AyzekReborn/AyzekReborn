@@ -49,8 +49,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 			if (e.text.startsWith(commandPrefix)) {
 				const command = e.text.replace(commandPrefix, '');
 				try {
-					const parseResult = this.commandDispatcher.parse(command, new MessageEventContext(this, e));
-					console.log(parseResult);
+					const parseResult = await this.commandDispatcher.parse({ sourceProvider: e.api }, command, new MessageEventContext(this, e));
 					await this.commandDispatcher.executeResults(parseResult);
 				} catch (err) {
 					if (err instanceof UnknownThingError) {
@@ -58,6 +57,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 						e.conversation.send([`Неизвестн${err.thing === ThingType.COMMAND ? 'ая комманда' : 'ый аргумент'}: ${commandPrefix}`, err.reader]);
 					} else {
 						this.logger.error(err.stack);
+						e.conversation.send(`Ашипка, жди разраба.`);
 					}
 				}
 			}
@@ -67,7 +67,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 	public apis: Api<A>[] = [];
 	private apiDisposables: Disposable[][] = []
 
-	private attachApi(api: A) {
+	public attachApi(api: A) {
 		const disposables = [
 			api.typingEvent.pipe(this.typingEvent),
 			api.messageEvent.pipe(this.messageEvent),
@@ -85,7 +85,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 			throw new Error('Api list broken!');
 	}
 
-	private detachApi(api: Api<A>) {
+	public detachApi(api: Api<A>) {
 		const index = this.apis.indexOf(api);
 		if (index === -1)
 			throw new Error('Api not found on detach');

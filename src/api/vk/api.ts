@@ -16,7 +16,7 @@ import { lookup as lookupMime } from '@meteor-it/mime';
 import { MessageEvent } from '../../model/events/message';
 import { JoinChatEvent, JoinReason } from "../../model/events/join";
 import { LeaveChatEvent, LeaveReason } from "../../model/events/leave";
-import { Conversation } from "../../model/conversation";
+import { Conversation, User } from "../../model/conversation";
 import { Text, TextPart } from '../../model/text';
 import ApiFeature from "../features";
 import { ChatTitleChangeEvent } from "../../model/events/titleChange";
@@ -24,6 +24,8 @@ import StringReader from "../../command/reader";
 import { splitByMaxPossibleParts } from "../../util/split";
 import arrayChunks from "../../util/arrayChunks";
 import { TypingEvent, TypingEventType } from "../../model/events/typing";
+import { ArgumentType } from "../../command/arguments";
+import { ParseEntryPoint } from "../../command/command";
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
@@ -472,6 +474,10 @@ export default class VKApi extends Api<VKApi> {
 		await this.loop();
 	}
 
+	get apiLocalUserArgumentType(): ArgumentType<VKUser> {
+		return vkUserArgumentTypeInstance;
+	}
+
 	supportedFeatures = new Set([
 		ApiFeature.IncomingMessageWithMultipleAttachments,
 		ApiFeature.OutgoingMessageWithMultipleAttachments,
@@ -480,3 +486,57 @@ export default class VKApi extends Api<VKApi> {
 		ApiFeature.EditMessage,
 	]);
 }
+
+class ExpectedVKUserError extends Error {
+	constructor(public reader: StringReader) {
+		super();
+	}
+}
+
+class NoSuchUserError extends Error {
+	constructor(public reader: StringReader, id: string) {
+		super();
+	}
+}
+
+class VKUserArgumentType extends ArgumentType<VKUser>{
+	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<VKUser> {
+		if (reader.peek() !== '[') throw new ExpectedVKUserError(reader);
+		const api = ctx.sourceProvider as unknown as VKApi;
+		const cursor = reader.cursor;
+		reader.skip();
+		const remaining = reader.remaining;
+		let isBot;
+		if (remaining.startsWith('id')) {
+			isBot = false;
+			reader.skipMulti(2);
+		} else if (remaining.startsWith('club')) {
+			isBot = true;
+			reader.skipMulti(4);
+		} else {
+			reader.cursor = cursor;
+			throw new ExpectedVKUserError(reader);
+		}
+		let id;
+		try {
+			id = reader.readInt();
+		} catch{
+			reader.cursor = cursor;
+			throw new ExpectedVKUserError(reader);
+		}
+		if (reader.readChar() !== '|') {
+			reader.cursor = cursor;
+			throw new ExpectedVKUserError(reader);
+		}
+		const charsToSkip = reader.remaining.indexOf(']') + 1;
+		if (charsToSkip === 0) {
+			reader.cursor = cursor;
+			throw new ExpectedVKUserError(reader);
+		}
+		reader.cursor += charsToSkip;
+		const user = await api.getApiUser(isBot ? -id : id);
+		if (!user) throw new NoSuchUserError(reader, (isBot ? -id : id).toString());
+		return user;
+	}
+}
+const vkUserArgumentTypeInstance = new VKUserArgumentType();

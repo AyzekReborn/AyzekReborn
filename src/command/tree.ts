@@ -1,11 +1,11 @@
 /// <reference path="tree.d.ts"/>
 import StringRange from "./range";
-import CommandContextBuilder, { Command, CommandContext, RedirectModifier } from "./command";
+import CommandContextBuilder, { Command, CommandContext, RedirectModifier, ParseEntryPoint } from "./command";
 import { Requirement } from "./requirement";
 import isEqual from 'is-equal';
 import StringReader from "./reader";
 import { SuggestionsBuilder, Suggestions, SuggestionProvider } from "./suggestions";
-import { ArgumentType, ParsedArgument } from "./arguments";
+import { ArgumentType } from "./arguments";
 import { RequiredArgumentBuilder, LiteralArgumentBuilder, ArgumentBuilder } from "./builder";
 
 
@@ -56,14 +56,14 @@ export abstract class CommandNode<S> {
 		}
 		this.childrenMap = new Map(Array.from(this.childrenMap.entries()).sort((a, b) => a[1].compareTo(b[1])))
 	}
-	findAmbiguities(consumer: AmbiguityConsumer<S>) {
+	async findAmbiguities<P>(ctx: ParseEntryPoint<P>, consumer: AmbiguityConsumer<S>) {
 		let matches = new Set<string>();
 		for (let child of this.children) {
 			for (let sibling of this.children) {
 				if (child === sibling)
 					continue;
 				for (let input of child.examples) {
-					if (sibling.isValidInput(input)) {
+					if (await sibling.isValidInput(ctx, input)) {
 						matches.add(input);
 					}
 				}
@@ -72,10 +72,10 @@ export abstract class CommandNode<S> {
 					matches = new Set<string>();
 				}
 			}
-			child.findAmbiguities(consumer);
+			await child.findAmbiguities(ctx, consumer);
 		}
 	}
-	abstract isValidInput(input: string): boolean;
+	abstract async isValidInput<P>(ctx: ParseEntryPoint<P>, input: string): Promise<boolean>;
 	equals(other: CommandNode<S>): boolean {
 		if (this === other) return true;
 		if (!isEqual(this.childrenMap, other.childrenMap)) return false;
@@ -84,7 +84,7 @@ export abstract class CommandNode<S> {
 	}
 	abstract get name(): string;
 	abstract get usage(): string;
-	abstract parse(reader: StringReader, contextBuilder: CommandContextBuilder<S>): void;
+	abstract parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader, contextBuilder: CommandContextBuilder<S>): Promise<void>;
 	abstract async listSuggestions(context: CommandContext<S>, builder: SuggestionsBuilder): Promise<Suggestions>;
 
 	abstract createBuilder(): ArgumentBuilder<S, any>;
@@ -139,7 +139,7 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 	get name(): string {
 		return this.literal;
 	}
-	parse(reader: StringReader, contextBuilder: CommandContextBuilder<S>) {
+	async parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader, contextBuilder: CommandContextBuilder<S>) {
 		let start = reader.cursor;
 		let end = this._parse(reader);
 		if (end > -1) {
@@ -173,8 +173,8 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 		}
 	}
 
-	isValidInput(input: string): boolean {
-		return this._parse(new StringReader(input)) > -1;
+	isValidInput<P>(_ctx: ParseEntryPoint<P>, input: string): Promise<boolean> {
+		return Promise.resolve(this._parse(new StringReader(input)) > -1);
 	}
 
 	equals(other: CommandNode<S>): boolean {
@@ -221,11 +221,11 @@ export class RootCommandNode<S> extends CommandNode<S> {
 	get usage() {
 		return '';
 	}
-	parse() { };
+	async parse() { };
 	async listSuggestions(): Promise<Suggestions> {
 		return Suggestions.empty;
 	}
-	isValidInput() {
+	async isValidInput() {
 		return false;
 	}
 
@@ -270,11 +270,11 @@ export class ArgumentCommandNode<S, T> extends CommandNode<S> {
 		return `<${this.name}>`;
 	}
 
-	parse(reader: StringReader, contextBuilder: CommandContextBuilder<S>) {
+	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader, contextBuilder: CommandContextBuilder<S>) {
 		let start = reader.cursor;
 		let parsed = {
 			range: StringRange.between(start, reader.cursor),
-			result: this.type.parse(reader),
+			result: await this.type.parse(ctx, reader),
 		};
 
 		contextBuilder.withArgument(this.name, parsed);
@@ -300,10 +300,10 @@ export class ArgumentCommandNode<S, T> extends CommandNode<S> {
 		return builder;
 	}
 
-	isValidInput(input: string) {
+	async isValidInput<P>(ctx: ParseEntryPoint<P>, input: string) {
 		try {
 			let reader = new StringReader(input);
-			this.type.parse(reader);
+			await this.type.parse(ctx, reader);
 			return !reader.canReadAnything || reader.peek() == ' ';
 		} catch {
 			return false;

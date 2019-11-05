@@ -1,10 +1,10 @@
 import StringReader, { Type } from './reader';
 import { SuggestionsBuilder, Suggestions } from './suggestions';
 import StringRange from './range';
-import { CommandContext } from './command';
+import { CommandContext, ParseEntryPoint } from './command';
 
 export abstract class ArgumentType<T> {
-	abstract parse(reader: StringReader): T;
+	abstract parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<T>;
 	async listSuggestions<S>(_ctx: CommandContext<S>, _builder: SuggestionsBuilder): Promise<Suggestions> {
 		return Suggestions.empty;
 	}
@@ -14,8 +14,8 @@ export abstract class ArgumentType<T> {
 }
 
 export class BoolArgumentType extends ArgumentType<boolean> {
-	parse(reader: StringReader): boolean {
-		return reader.readBoolean();
+	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): Promise<boolean> {
+		return Promise.resolve(reader.readBoolean());
 	}
 	async listSuggestions<S>(_ctx: CommandContext<S>, builder: SuggestionsBuilder) {
 		let buffer = builder.remaining.toLowerCase();
@@ -51,7 +51,7 @@ class NumberArgumentType extends ArgumentType<number> {
 	constructor(public readonly int: boolean, public readonly minimum = -Infinity, public readonly maximum = Infinity) {
 		super();
 	}
-	parse(reader: StringReader): number {
+	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): Promise<number> {
 		let start = reader.cursor;
 		let value = this.int ? reader.readInt() : reader.readFloat();
 		if (value < this.minimum) {
@@ -61,7 +61,7 @@ class NumberArgumentType extends ArgumentType<number> {
 			reader.cursor = start;
 			throw new RangeError(reader, FailType.TOO_HIGH, this.int ? Type.INT : Type.FLOAT, value);
 		} else {
-			return value;
+			return Promise.resolve(value);
 		}
 	}
 	get examples(): string[] {
@@ -106,16 +106,16 @@ export class StringArgumentType extends ArgumentType<string> {
 	constructor(public readonly type: StringType) {
 		super();
 	}
-	parse(reader: StringReader): string {
+	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): Promise<string> {
 		switch (this.type) {
 			case 'greedy_phraze':
 				let text = reader.remaining;
 				reader.cursor = reader.totalLength;
-				return text;
+				return Promise.resolve(text);
 			case 'single_word':
-				return reader.readUnquotedString();
+				return Promise.resolve(reader.readUnquotedString());
 			case 'quotable_phraze':
-				return reader.readString();
+				return Promise.resolve(reader.readString());
 		}
 	}
 	get examples(): string[] {

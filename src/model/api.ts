@@ -10,6 +10,7 @@ import { GuildTitleChangeEvent, ChatTitleChangeEvent } from "./events/titleChang
 import { TypedEvent } from "../util/event";
 import ApiFeature from "../api/features";
 import { TypingEvent } from "./events/typing";
+import { ArgumentType } from "../command/arguments";
 
 export class NotImplementedInApiError extends Error {
 	constructor(method: string) {
@@ -55,4 +56,6 @@ export abstract class Api<A extends Api<A>> {
 	}
 
 	public abstract async doWork(): Promise<void>;
+
+	abstract get apiLocalUserArgumentType(): ArgumentType<User<A>>;
 }

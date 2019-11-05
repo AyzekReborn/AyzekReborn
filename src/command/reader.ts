@@ -62,8 +62,16 @@ export default class StringReader {
 	readChar() {
 		return this.string.charAt(this.cursor++);
 	}
+	readChars(count: number) {
+		const str = this.string.slice(this.cursor, this.cursor + count);
+		this.cursor += count;
+		return str;
+	}
 	skip() {
 		this.cursor++;
+	}
+	skipMulti(count: number) {
+		this.cursor += count;
 	}
 	skipWhitespace() {
 		while (this.canReadAnything && /\s/.test(this.peek())) {
@@ -83,6 +91,7 @@ export default class StringReader {
 	static isEscape(char: string) {
 		return /\\/.test(char);
 	}
+
 	private readBeforeTestFailsWithEscapes(test: (char: string) => boolean) {
 		let inEscape = false;
 		return this.readBeforeTestFails(char => {
