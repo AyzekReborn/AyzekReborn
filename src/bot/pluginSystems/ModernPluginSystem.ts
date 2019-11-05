@@ -22,12 +22,34 @@ export default class ModernPluginSystem extends WebpackPluginLoader<void, Plugin
 		}).map(c => {
 			return this.ayzek.commandDispatcher.register(c);
 		});
+		if (module.userAttachments)
+			for (const attachment of module.userAttachments)
+				this.ayzek.userAttachmentRepository.addCreator(attachment);
+		if (module.chatAttachments)
+			for (const attachment of module.chatAttachments)
+				this.ayzek.chatAttachmentRepository.addCreator(attachment);
+		if (module.conversationAttachments)
+			for (const attachment of module.conversationAttachments) {
+				this.ayzek.userAttachmentRepository.addCreator(attachment);
+				this.ayzek.chatAttachmentRepository.addCreator(attachment);
+			}
 		this.ayzek.plugins.push(module);
 	}
 	async onUnload(module: PluginInfo & PluginInfoAttachment): Promise<void> {
 		module.registered!.forEach(c => {
 			this.ayzek.commandDispatcher.unregister(c);
 		});
+		if (module.userAttachments)
+			for (const attachment of module.userAttachments)
+				this.ayzek.userAttachmentRepository.removeCreator(attachment);
+		if (module.chatAttachments)
+			for (const attachment of module.chatAttachments)
+				this.ayzek.chatAttachmentRepository.removeCreator(attachment);
+		if (module.conversationAttachments)
+			for (const attachment of module.conversationAttachments) {
+				this.ayzek.userAttachmentRepository.removeCreator(attachment);
+				this.ayzek.chatAttachmentRepository.removeCreator(attachment);
+			}
 		this.ayzek.plugins.splice(this.ayzek.plugins.indexOf(module), 1);
 	}
 	async onReload(module: PluginInfo & PluginInfoAttachment): Promise<void> {

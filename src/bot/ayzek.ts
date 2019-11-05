@@ -6,11 +6,25 @@ import { MessageEventContext } from "./context";
 import { PluginInfo } from "./plugin";
 import ApiFeature from "../api/features";
 import { User, Chat, Guild } from "../model/conversation";
+import { ArgumentType } from "../command/arguments";
+import { AttachmentRepository } from "./attachment/attachment";
 
 export class Ayzek<A extends Api<any>> extends Api<A> {
 	plugins: PluginInfo[] = [];
 
+	userAttachmentRepository: AttachmentRepository<User<any>> = new AttachmentRepository();
+	chatAttachmentRepository: AttachmentRepository<Chat<any>> = new AttachmentRepository();
+
 	commandDispatcher = new CommandDispatcher<MessageEventContext<A>>();
+
+	async attachToUser(user: User<any>) {
+		user.attachmentStorage = await this.userAttachmentRepository.getStorageFor(user);
+	}
+
+	async attachToChat(chat: Chat<any>) {
+		chat.attachmentStorage = await this.chatAttachmentRepository.getStorageFor(chat);
+		await Promise.all([...chat.users, ...chat.admins].map(user => this.attachToUser(user)));
+	}
 
 	constructor(logger: string | Logger, apis: A[], commandPrefix: string, logEvents: boolean) {
 		super(logger);
@@ -46,6 +60,10 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 			});
 		}
 		this.messageEvent.on(async e => {
+			await this.attachToUser(e.user);
+			if (e.chat)
+				await this.attachToChat(e.chat);
+
 			if (e.text.startsWith(commandPrefix)) {
 				const command = e.text.replace(commandPrefix, '');
 				try {
@@ -110,5 +128,9 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 
 	get supportedFeatures(): Set<ApiFeature> {
 		throw new Error('Not implemented for ayzek');
+	}
+
+	get apiLocalUserArgumentType(): ArgumentType<User<A>> {
+		throw new Error("Method not implemented.");
 	}
 }

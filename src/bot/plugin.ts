@@ -2,6 +2,8 @@ import { MessageEventContext } from "./context";
 import { literal as defaultLiteral, argument as defaultArgument } from '../command';
 import { ArgumentType } from "../command/arguments";
 import { LiteralArgumentBuilder } from "../command/builder";
+import { AttachmentCreator } from "./attachment/attachment";
+import { User, Chat, Conversation } from "../model/conversation";
 
 type IMessageListener = {
 	name: string,
@@ -15,7 +17,10 @@ export enum PluginCategory {
 type PluginInfo = {
 	category: PluginCategory,
 	commands: LiteralArgumentBuilder<MessageEventContext<any>>[],
-	listeners: IMessageListener[]
+	listeners: IMessageListener[],
+	userAttachments?: AttachmentCreator<User<any>, any>[],
+	chatAttachments?: AttachmentCreator<Chat<any>, any>[],
+	conversationAttachments?: AttachmentCreator<Conversation<any>, any>[],
 } & {
 	name: string;
 	author?: string;
