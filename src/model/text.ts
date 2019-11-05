@@ -27,7 +27,7 @@ export type PreservingWhitespaceTextPart<A extends Api<A>> = {
 	type: 'preservingWhitespace',
 	data: Text<A>,
 }
-export type TextPart<A extends Api<A>> = string | MentionTextPart<A> | ChatReferenceTextPart<A> | UnderlinedTextPart<A> | StringReader | TextPartArray<A> | CodeTextPart<A> | PreservingWhitespaceTextPart<A>;
+export type TextPart<A extends Api<A>> = undefined | null | string | MentionTextPart<A> | ChatReferenceTextPart<A> | UnderlinedTextPart<A> | StringReader | TextPartArray<A> | CodeTextPart<A> | PreservingWhitespaceTextPart<A>;
 interface TextPartArray<A extends Api<A>> extends Array<TextPart<A>> { }
 export type Text<A extends Api<A>> = TextPart<A>;
 

@@ -4,6 +4,7 @@ import { stringArgument } from "../../command/arguments";
 import { Ayzek } from "../../bot/ayzek";
 import { Text } from '../../model/text';
 import { padList } from "../../util/pad";
+import { MessageEventContext } from "../../bot/context";
 
 function padAllListItemExceptFirst(list: string[]) {
 	return [
@@ -12,7 +13,7 @@ function padAllListItemExceptFirst(list: string[]) {
 	];
 }
 
-function describePlugin(ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
+function describePlugin(ctx: MessageEventContext<any>, ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
 	return [
 		`🧩 ${plugin.name}${plugin.category ? ` в категории ${plugin.category}` : ''}\n`,
 		`🕵‍ Разработчик: ${plugin.author}\n`,
@@ -21,16 +22,16 @@ function describePlugin(ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
 			`\n\nСписок фич:\n`,
 			textJoin([
 				textJoin(plugin.commands.map(command => {
-					const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal);
+					const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal)!;
+					if (!commandNode.canUse(ctx)) return null;
 					return [
 						`⚡ /${command.literal} `,
-						// TODO: Restricted
 						{
 							type: 'preservingWhitespace',
-							data: textJoin(padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode!, null as any, false)), '\n')
+							data: textJoin(padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode, ctx, true)), '\n')
 						}
 					];
-				}), '\n'),
+				}).filter(e => e !== null).map(e => e!) as any, '\n'),
 				textJoin(plugin.listeners.map(listener => [
 					`👁‍🗨 ${listener.name}${listener.description ? ` — ${listener.description}` : ''}`
 				]), '\n')
@@ -48,18 +49,27 @@ const debugCommand = literal('debug')
 			ctx.source.event.chat && ctx.source.event.chat.reference || 'no chat',
 		]);
 	}))
+	.then(literal('id').executes(ctx => {
+		ctx.source.event.conversation.send([
+			`UID: ${ctx.source.event.user.uid}\n`,
+			`Full name: ${ctx.source.event.user.fullName}\n`,
+			`Name: ${ctx.source.event.user.name}\n`
+		]);
+	}))
 
 const helpCommand = literal('help')
-	.then(argument('name', stringArgument('greedy_phraze')).executes(async ({ source: { ayzek, event }, getArgument }) => {
+	.then(argument('name', stringArgument('greedy_phraze')).executes(async ctx => {
+		const { source: { event, ayzek }, getArgument } = ctx;
 		const name = getArgument<string>('name');
 		const found = ayzek.plugins.find(plugin => plugin.name === name);
 		if (!found) event.conversation.send(['Неизвестное название плагина: ', name]);
-		else event.conversation.send(describePlugin(ayzek, found));
+		else event.conversation.send(describePlugin(ctx.source, ayzek, found));
 	}))
-	.then(literal('all').executes(async ({ source: { ayzek, event } }) => {
+	.then(literal('all').executes(async ctx => {
+		const { source: { event, ayzek } } = ctx;
 		if (event.conversation.isChat)
 			await event.conversation.send('Смотри в ЛС, нехуй сюда портянки слать.');
-		event.user.send(textJoin(ayzek.plugins.map(p => describePlugin(ayzek, p)), { type: 'preservingWhitespace', data: '\n \n \n' }));
+		event.user.send(textJoin(ayzek.plugins.map(p => describePlugin(ctx.source, ayzek, p)), { type: 'preservingWhitespace', data: '\n \n \n' }));
 	}))
 	.executes(async ({ source: { ayzek, event } }) => {
 		event.conversation.send([

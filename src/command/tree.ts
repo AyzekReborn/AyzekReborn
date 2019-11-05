@@ -25,8 +25,11 @@ export abstract class CommandNode<S> {
 	getChild(name: string) {
 		return this.childrenMap.get(name);
 	}
-	canUse(source: S) {
-		return this.requirement(source);
+	canUse(source: S): boolean {
+		if (!this.requirement(source)) return false;
+		if (this.command) return true;
+		if (this.redirect && this.redirect.canUse(source)) return true;
+		return this.children.some(child => child.canUse(source));
 	}
 	removeChild(node: CommandNode<S>) {
 		this.childrenMap.delete(node.name);

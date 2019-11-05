@@ -26,19 +26,19 @@ export abstract class PermissionAttachment extends Attachment {
 	}
 }
 
-export abstract class PermissionAttachmentCreator<A extends PermissionAttachment, RA extends RoleAttachment, R extends RoleAttachmentCreator<RA>> extends AttachmentCreator<User<any>, A>{
+export abstract class PermissionAttachmentCreator<A extends PermissionAttachment> extends AttachmentCreator<User<any>, A>{
 	abstract thisConstructor: AttachmentConstructor<A>;
 	abstract async getAttachmentFor(owner: User<any>, storage: AttachmentStorage<User<any>>): Promise<A>;
 }
 
-export function requirePermission<P extends PermissionAttachment>(constructor: AttachmentConstructor<PermissionAttachment>, permission: string): Requirement<MessageEventContext<any>> {
+export function requirePermission<P extends PermissionAttachment>(constructor: AttachmentConstructor<P>, permission: string): Requirement<MessageEventContext<any>> {
 	return ctx => {
 		const attachment = ctx.event.user.attachmentStorage!.get(constructor);
 		return attachment.hasPermission(permission);
 	}
 }
 
-export function requireRole<P extends PermissionAttachment>(constructor: AttachmentConstructor<RoleAttachment>, role: string): Requirement<MessageEventContext<any>> {
+export function requireRole<P extends RoleAttachment>(constructor: AttachmentConstructor<P>, role: string): Requirement<MessageEventContext<any>> {
 	return ctx => {
 		const attachment = ctx.event.user.attachmentStorage!.get(constructor);
 		return attachment.hasRole(role);

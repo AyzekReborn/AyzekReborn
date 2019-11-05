@@ -158,6 +158,7 @@ export default class DiscordApi extends Api<DiscordApi> {
     }
 
     textToString(part: TextPart<DiscordApi>): string {
+        if (!part) return part + '';
         if (typeof part === 'string')
             return part
                 .replace(/`/g, '\\`')
