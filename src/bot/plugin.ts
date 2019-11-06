@@ -4,6 +4,7 @@ import { ArgumentType } from "../command/arguments";
 import { LiteralArgumentBuilder } from "../command/builder";
 import { AttachmentCreator } from "./attachment/attachment";
 import { User, Chat, Conversation } from "../model/conversation";
+import { Ayzek } from "./ayzek";
 
 type IMessageListener = {
 	name: string,
@@ -15,12 +16,17 @@ export enum PluginCategory {
 	FUN,
 }
 type PluginInfo = {
+	// Injected by ModernPluginSystem
+	ayzek?: Ayzek<any>,
+
 	category: PluginCategory,
 	commands: LiteralArgumentBuilder<MessageEventContext<any>>[],
 	listeners: IMessageListener[],
 	userAttachments?: AttachmentCreator<User<any>, any>[],
 	chatAttachments?: AttachmentCreator<Chat<any>, any>[],
 	conversationAttachments?: AttachmentCreator<Conversation<any>, any>[],
+
+	ayzekAttachments?: AttachmentCreator<Ayzek<any>, any>[],
 } & {
 	name: string;
 	author?: string;

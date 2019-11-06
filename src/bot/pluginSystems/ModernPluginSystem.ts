@@ -7,11 +7,17 @@ type PluginInfoAttachment = {
 	registered?: CommandNode<any>[];
 	file: string;
 };
-export default class ModernPluginSystem extends WebpackPluginLoader<void, PluginInfo & PluginInfoAttachment> {
 
+export type ModernPluginContext = {
+	ayzek: Ayzek<any>;
+}
+
+export default class ModernPluginSystem extends WebpackPluginLoader<ModernPluginContext, PluginInfo & PluginInfoAttachment> {
 	constructor(public ayzek: Ayzek<any>, requireContextGetter: () => any, acceptor: (acceptor: () => void, getContext: () => any) => void) {
 		super(`modern`, requireContextGetter, acceptor);
+		this.pluginContext = { ayzek };
 	}
+
 	async onLoad(module: PluginInfo & PluginInfoAttachment): Promise<void> {
 		module.registered = module.commands.filter(e => {
 			if (this.ayzek.commandDispatcher.root.literals.has(e.literal)) {
@@ -33,6 +39,13 @@ export default class ModernPluginSystem extends WebpackPluginLoader<void, Plugin
 				this.ayzek.userAttachmentRepository.addCreator(attachment);
 				this.ayzek.chatAttachmentRepository.addCreator(attachment);
 			}
+		if (module.ayzekAttachments) {
+			for (const attachment of module.ayzekAttachments) {
+				this.ayzek.ayzekAttachmentRepository.addCreator(attachment);
+			}
+			if (module.ayzekAttachments.length !== 0)
+				await this.ayzek.onAyzekAttachmentRepositoryChange();
+		}
 		this.ayzek.plugins.push(module);
 	}
 	async onUnload(module: PluginInfo & PluginInfoAttachment): Promise<void> {
@@ -50,6 +63,13 @@ export default class ModernPluginSystem extends WebpackPluginLoader<void, Plugin
 				this.ayzek.userAttachmentRepository.removeCreator(attachment);
 				this.ayzek.chatAttachmentRepository.removeCreator(attachment);
 			}
+		if (module.ayzekAttachments) {
+			for (const attachment of module.ayzekAttachments) {
+				this.ayzek.ayzekAttachmentRepository.removeCreator(attachment);
+			}
+			if (module.ayzekAttachments.length !== 0)
+				await this.ayzek.onAyzekAttachmentRepositoryChange();
+		}
 		this.ayzek.plugins.splice(this.ayzek.plugins.indexOf(module), 1);
 	}
 	async onReload(module: PluginInfo & PluginInfoAttachment): Promise<void> {

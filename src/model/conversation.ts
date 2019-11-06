@@ -3,7 +3,7 @@ import { Attachment, Image } from "./attachment/attachment";
 import { IMessageOptions, IMessage } from "./message";
 import { nonenumerable } from 'nonenumerable';
 import { Text, TextPart, MentionTextPart, ChatReferenceTextPart } from './text';
-import { AttachmentStorage } from "../bot/attachment/attachment";
+import { AttachmentStorage, ownerlessEmptyAttachmentStorage } from "../bot/attachment/attachment";
 
 enum ConversationType {
 	USER,
@@ -28,7 +28,7 @@ export abstract class Conversation<A extends Api<A>> implements IConversation<A>
 		this.api = api;
 	}
 
-	attachmentStorage: AttachmentStorage<this> | null = null;
+	attachmentStorage: AttachmentStorage<this> = ownerlessEmptyAttachmentStorage;
 
 	async send(text: Text<A>, attachments: Attachment[] = [], options: IMessageOptions = {}) {
 		return await this.api.send(this, text, attachments, options);

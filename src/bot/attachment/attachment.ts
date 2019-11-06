@@ -41,7 +41,7 @@ export class AttachmentRepository<O> {
 export class AttachmentStorage<O> {
 	resolved: Map<AttachmentConstructor<any>, Attachment> = new Map();
 	resolutionErrors: Map<AttachmentConstructor<any>, Error> = new Map();
-	constructor(public owner: O, public remainingCreators: Set<AttachmentCreator<O, any>>) { }
+	constructor(private owner: O, private remainingCreators: Set<AttachmentCreator<O, any>>) { }
 	async fill() {
 		while (this.remainingCreators.size !== 0) {
 			let resolvedOnThisStep = 0;
@@ -82,6 +82,8 @@ export class AttachmentStorage<O> {
 		return null;
 	}
 }
+
+export const ownerlessEmptyAttachmentStorage = new AttachmentStorage<any>(null, new Set())
 
 function getDependencyErrors(creator: AttachmentCreator<any, any>, storage: AttachmentStorage<any>): Error[] {
 	return creator.dependencies.map(e => storage.resolutionErrors.get(e)).filter(e => e !== undefined).map(e => e!);

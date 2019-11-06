@@ -7,13 +7,20 @@ import { PluginInfo } from "./plugin";
 import ApiFeature from "../api/features";
 import { User, Chat, Guild } from "../model/conversation";
 import { ArgumentType } from "../command/arguments";
-import { AttachmentRepository } from "./attachment/attachment";
+import { AttachmentRepository, AttachmentStorage, ownerlessEmptyAttachmentStorage } from "./attachment/attachment";
 
 export class Ayzek<A extends Api<any>> extends Api<A> {
 	plugins: PluginInfo[] = [];
 
 	userAttachmentRepository: AttachmentRepository<User<any>> = new AttachmentRepository();
 	chatAttachmentRepository: AttachmentRepository<Chat<any>> = new AttachmentRepository();
+
+	ayzekAttachmentRepository: AttachmentRepository<Ayzek<A>> = new AttachmentRepository();
+	attachmentStorage: AttachmentStorage<Ayzek<A>> = ownerlessEmptyAttachmentStorage;
+
+	async onAyzekAttachmentRepositoryChange() {
+		this.attachmentStorage = await this.ayzekAttachmentRepository.getStorageFor(this);
+	}
 
 	commandDispatcher = new CommandDispatcher<MessageEventContext<A>>();
 
