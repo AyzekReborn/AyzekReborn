@@ -27,10 +27,10 @@
   resolved "https://registry.yarnpkg.com/@meteor-it/mime/-/mime-0.4.21.tgz#5ff235c3d6bcb40ed3df74392402504f5d74eac8"
   integrity sha512-hNxp40HduC3JiVk+s93cGGaWkqJBL6spw/n610t8XXHowlt6Np0vF209IloPnGlhlTPNZ4f9QHzu2g6kiHn9+g==
 
-"@meteor-it/plugin-loader@^1.6.1":
-  version "1.6.1"
-  resolved "https://registry.yarnpkg.com/@meteor-it/plugin-loader/-/plugin-loader-1.6.1.tgz#791ad27f909791a611a62be2e97396dac79ad990"
-  integrity sha512-+rZamcX8wtIoLYXV8vfIJBDpCahY2Ya0XnT7wgCFvkyq4W/ajE5PZBVAhT5oj3VWT+3+AeSpidg0K4d1dRqFMw==
+"@meteor-it/plugin-loader@^1.6.2":
+  version "1.6.2"
+  resolved "https://registry.yarnpkg.com/@meteor-it/plugin-loader/-/plugin-loader-1.6.2.tgz#370c87347333a0a4356ae94fd1db73135ec83f65"
+  integrity sha512-BFcyvzM6rE+qEv5M9br4z/NiSmsBbEFVx57xjLRKdotbe97d7m5mjNvU+BLba9rQOyspRwm5oub78xKoNrhMBA==
   dependencies:
     "@meteor-it/fs" "^1.2.14"
     "@meteor-it/logger" "^2.3.38"

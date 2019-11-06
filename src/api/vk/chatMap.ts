@@ -36,7 +36,7 @@ export default class VKChatMap extends PromiseMap<number, VKChat> {
 				chat_settings: {
 					owner_id: 1,
 					admin_ids: [],
-					title: 'Unprivileged',
+					title: `Unprivileged #${key}`,
 				}
 			}
 		}
