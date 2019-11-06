@@ -5,7 +5,7 @@ import { CommandDispatcher, UnknownThingError, ThingType } from "../command/comm
 import { MessageEventContext } from "./context";
 import { PluginInfo } from "./plugin";
 import ApiFeature from "../api/features";
-import { User, Chat, Guild } from "../model/conversation";
+import { User, Chat, Guild, Conversation } from "../model/conversation";
 import { ArgumentType } from "../command/arguments";
 import { AttachmentRepository, AttachmentStorage, ownerlessEmptyAttachmentStorage } from "./attachment/attachment";
 
@@ -125,6 +125,12 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 	async getChat(cid: string): Promise<Chat<A> | null> {
 		return (await Promise.all(this.apis.map(e => e.getChat(cid)))).filter(e => e !== null)[0] || null;
 	}
+	async getConversation(id: string): Promise<Conversation<A> | null> {
+		const [chat, user] = await Promise.all([this.getUser(id), this.getChat(id)]);
+		if (chat) return chat;
+		return user;
+	}
+
 	async getGuild(gid: string): Promise<Guild<A> | null> {
 		return (await Promise.all(this.apis.map(e => e.getGuild(gid)))).filter(e => e !== null)[0] || null;
 	}

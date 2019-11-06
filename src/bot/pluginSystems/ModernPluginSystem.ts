@@ -3,7 +3,7 @@ import { PluginInfo } from '../plugin';
 import { Ayzek } from '../ayzek';
 import { CommandNode } from '../../command/tree';
 
-type PluginInfoAttachment = {
+export type PluginInfoAttachment = {
 	registered?: CommandNode<any>[];
 	file: string;
 };
@@ -46,6 +46,7 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 			if (module.ayzekAttachments.length !== 0)
 				await this.ayzek.onAyzekAttachmentRepositoryChange();
 		}
+		module.ayzek = this.ayzek;
 		this.ayzek.plugins.push(module);
 	}
 	async onUnload(module: PluginInfo & PluginInfoAttachment): Promise<void> {

@@ -43,19 +43,18 @@ function describePlugin(ctx: MessageEventContext<any>, ayzek: Ayzek<any>, plugin
 const debugCommand = literal('debug')
 	.then(literal('mentions').executes(ctx => {
 		ctx.source.event.conversation.send([
-			'User mention:\n',
-			ctx.source.event.user.reference, '\n',
-			'Chat mention:\n',
-			ctx.source.event.chat && ctx.source.event.chat.reference || 'no chat',
+			'User mention: ', ctx.source.event.user.reference, '\n',
+			'Chat mention: ', ctx.source.event.chat && ctx.source.event.chat.reference || 'no chat',
 		]);
 	}))
 	.then(literal('id').executes(ctx => {
 		ctx.source.event.conversation.send([
 			`UID: ${ctx.source.event.user.uid}\n`,
+			`CID: `, ctx.source.event.chat && ctx.source.event.chat.cid || 'no chat', '\n',
 			`Full name: ${ctx.source.event.user.fullName}\n`,
 			`Name: ${ctx.source.event.user.name}\n`
 		]);
-	}))
+	}));
 
 const helpCommand = literal('help')
 	.then(argument('name', stringArgument('greedy_phraze')).executes(async ctx => {

@@ -216,7 +216,7 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 
 export class RootCommandNode<S> extends CommandNode<S> {
 	constructor() {
-		super(null, () => false, null, s => [s.source], false);
+		super(null, () => true, null, s => [s.source], false);
 	}
 	get name() {
 		return '';
