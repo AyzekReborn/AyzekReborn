@@ -66,15 +66,15 @@ export abstract class ArgumentBuilder<S, T extends ArgumentBuilder<S, T>> {
 }
 
 export class LiteralArgumentBuilder<S> extends ArgumentBuilder<S, LiteralArgumentBuilder<S>> {
-	constructor(public readonly literal: string) {
+	constructor(public readonly literals: string[]) {
 		super();
 	}
-	static literal<S>(name: string): LiteralArgumentBuilder<S> {
+	static literal<S>(...name: string[]): LiteralArgumentBuilder<S> {
 		return new LiteralArgumentBuilder(name);
 	}
 
 	build() {
-		let result = new LiteralCommandNode(this.literal, this.command, this.requirement, this.target, this.modifier, this.forks);
+		let result = new LiteralCommandNode(this.literals, this.command, this.requirement, this.target, this.modifier, this.forks);
 		for (let argument of this.argumentList) {
 			result.addChild(argument);
 		}

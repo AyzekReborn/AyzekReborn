@@ -130,7 +130,7 @@ export class LiteralError extends Error {
 
 export class LiteralCommandNode<S> extends CommandNode<S> {
 	constructor(
-		public readonly literal: string,
+		public readonly literalNames: string[],
 		command: Command<S> | null,
 		requirement: Requirement<S>,
 		redirect: CommandNode<S> | null,
@@ -140,7 +140,7 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 		super(command, requirement, redirect, modifier, forks);
 	}
 	get name(): string {
-		return this.literal;
+		return this.literalNames[0];
 	}
 	async parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader, contextBuilder: CommandContextBuilder<S>) {
 		let start = reader.cursor;
@@ -149,19 +149,21 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 			contextBuilder.withNode(this, StringRange.between(start, end));
 			return;
 		}
-		throw new LiteralError(reader, this.literal);
+		throw new LiteralError(reader, this.name);
 	}
 
 	private _parse(reader: StringReader) {
 		let start = reader.cursor;
-		if (reader.canRead(this.literal.length)) {
-			let end = start + this.literal.length;
-			if (reader.string.substring(start, end) === this.literal) {
-				reader.cursor = end;
-				if (!reader.canReadAnything || reader.peek() === ' ') {
-					return end;
-				} else {
-					reader.cursor = start;
+		for (const literal in this.literalNames) {
+			if (reader.canRead(literal.length)) {
+				let end = start + literal.length;
+				if (reader.string.substring(start, end) === literal) {
+					reader.cursor = end;
+					if (!reader.canReadAnything || reader.peek() === ' ') {
+						return end;
+					} else {
+						reader.cursor = start;
+					}
 				}
 			}
 		}
@@ -169,11 +171,13 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 	}
 
 	async listSuggestions(_context: CommandContext<S>, builder: SuggestionsBuilder): Promise<Suggestions> {
-		if (this.literal.toLowerCase().startsWith(builder.remaining.toLowerCase())) {
-			return builder.suggest(this.literal, null).build();
-		} else {
-			return Suggestions.empty;
+		const remaining = builder.remaining.toLowerCase();
+		for (const literal in this.literalNames) {
+			if (literal.toLowerCase().startsWith(remaining)) {
+				return builder.suggest(literal, null).build();
+			}
 		}
+		return Suggestions.empty;
 	}
 
 	isValidInput<P>(_ctx: ParseEntryPoint<P>, input: string): Promise<boolean> {
@@ -183,16 +187,16 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 	equals(other: CommandNode<S>): boolean {
 		if (this === other) return true;
 		if (!(other instanceof LiteralCommandNode)) return false;
-		if (this.literal !== other.literal) return false;
+		if (this.literalNames !== other.literalNames) return false;
 		return super.equals(other);
 	}
 
 	get usage() {
-		return this.literal;
+		return this.name;
 	}
 
 	createBuilder() {
-		let builder: LiteralArgumentBuilder<S> = LiteralArgumentBuilder.literal(this.literal);
+		let builder: LiteralArgumentBuilder<S> = LiteralArgumentBuilder.literal(...this.literalNames);
 		builder.requires(this.requirement);
 		builder.forward(this.redirect, this.modifier, this.forks);
 		if (this.command !== null) {
@@ -202,15 +206,15 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 	}
 
 	get sortedKey() {
-		return this.literal;
+		return this.name;
 	}
 
 	get examples() {
-		return [this.literal];
+		return [this.name];
 	}
 
 	toString() {
-		return `<literal ${this.literal}>`;
+		return `<literal ${this.name}>`;
 	}
 }
 
