@@ -15,6 +15,8 @@ import { Conversation } from "../../model/conversation";
 import { Text, TextPart } from "../../model/text";
 import { IMessageOptions } from "../../model/message";
 import StringReader from "../../command/reader";
+import { ArgumentType } from "../../command/arguments";
+import { ParseEntryPoint } from "../../command/command";
 
 export default class DiscordApi extends Api<DiscordApi> {
 
@@ -187,6 +189,10 @@ export default class DiscordApi extends Api<DiscordApi> {
         await this.init();
     }
 
+    get apiLocalUserArgumentType(): ArgumentType<DiscordUser> {
+        return dsUserArgumentTypeInstance;
+    }
+
     supportedFeatures = new Set([
         ApiFeature.IncomingMessageWithMultipleAttachments,
         ApiFeature.OutgoingMessageWithMultipleAttachments,
@@ -194,3 +200,41 @@ export default class DiscordApi extends Api<DiscordApi> {
         ApiFeature.MessageReactions
     ]);
 }
+
+
+class ExpectedDSUserError extends Error {
+    constructor(public reader: StringReader) {
+        super();
+    }
+}
+
+class NoSuchUserError extends Error {
+    constructor(public reader: StringReader, id: string) {
+        super();
+    }
+}
+
+class DSUserArgumentType extends ArgumentType<DiscordUser>{
+    async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<DiscordUser> {
+        if (reader.peek() !== '<') throw new ExpectedDSUserError(reader);
+        const api = ctx.sourceProvider as unknown as DiscordApi;
+        const cursor = reader.cursor;
+        reader.skip();
+        if (reader.peek() !== '@') {
+            reader.cursor = cursor;
+            throw new ExpectedDSUserError(reader);
+        }
+        reader.skip();
+        const id = reader.readBeforeTestFails(char => /[0-9]/.test(char));
+        if (reader.peek() !== '>') {
+            reader.cursor = cursor;
+            throw new ExpectedDSUserError(reader);
+        }
+        reader.skip();
+
+        const user = await api.getApiUser(id);
+        if (!user) throw new NoSuchUserError(reader, id.toString());
+        return user;
+    }
+}
+const dsUserArgumentTypeInstance = new DSUserArgumentType();

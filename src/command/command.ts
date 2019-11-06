@@ -398,6 +398,12 @@ export class CommandContext<S> {
 		}
 		return result;
 	}
+	getArgumentIfExists<V>(name: string): V | null {
+		let argument = this.parsedArguments.get(name);
+		if (!argument) return null;
+		let { result } = argument;
+		return result as V;
+	}
 	getArgument<V>(name: string): V {
 		let argument = this.parsedArguments.get(name);
 		if (!argument) throw new Error(`No such argument "${name}" exists on this command`);
