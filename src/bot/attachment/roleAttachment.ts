@@ -33,14 +33,16 @@ export abstract class PermissionAttachmentCreator<A extends PermissionAttachment
 
 export function requirePermission<P extends PermissionAttachment>(constructor: AttachmentConstructor<P>, permission: string): Requirement<MessageEventContext<any>> {
 	return ctx => {
-		const attachment = ctx.event.user.attachmentStorage!.get(constructor);
+		const attachment = ctx.event.user.attachmentStorage!.getIfAvailable(constructor);
+		if (!attachment) return false;
 		return attachment.hasPermission(permission);
 	}
 }
 
 export function requireRole<P extends RoleAttachment>(constructor: AttachmentConstructor<P>, role: string): Requirement<MessageEventContext<any>> {
 	return ctx => {
-		const attachment = ctx.event.user.attachmentStorage!.get(constructor);
+		const attachment = ctx.event.user.attachmentStorage!.getIfAvailable(constructor);
+		if (!attachment) return false;
 		return attachment.hasRole(role);
 	}
 }
