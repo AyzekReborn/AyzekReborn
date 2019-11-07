@@ -189,7 +189,7 @@ export default class DiscordApi extends Api<DiscordApi> {
                 // TODO: Multiline comments
                 return `\`${this.textToString(part.data)}\``;
             case 'mentionPart':
-                return `<@${part.data.targetId}>`
+                return `<@${(part.data as any as DiscordUser).user.id}>`
             case 'chatRefPart':
                 return `<#${part.data.targetId}>`;
             case 'underlinedPart':

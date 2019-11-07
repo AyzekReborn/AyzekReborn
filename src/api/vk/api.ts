@@ -463,7 +463,7 @@ export default class VKApi extends Api<VKApi> {
 			case 'preservingWhitespace':
 				return this.textToString(part.data).replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
 			case 'mentionPart':
-				return `[id${part.data.targetId}|${part.text || part.data.name}]`
+				return `[${part.data.profileUrl.slice(15)}|${part.text || part.data.name}]`
 			case 'chatRefPart':
 				return `<Чат ${part.data.title}>`;
 			case 'underlinedPart':
