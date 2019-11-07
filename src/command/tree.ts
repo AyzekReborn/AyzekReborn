@@ -100,7 +100,7 @@ export abstract class CommandNode<S> {
 				input.skip();
 			let text = input.string.substring(cursor, input.cursor);
 			input.cursor = cursor;
-			let literal = [...this.literals.values()].filter(l => l.literalNames.includes(text.toLowerCase()))[0];
+			let literal = [...this.literals.values()].filter(l => l.isMe(text))[0];
 			if (literal) {
 				return [literal];
 			} else {
@@ -140,9 +140,23 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 	) {
 		super(command, requirement, redirect, modifier, forks);
 	}
+
 	get name(): string {
+		return this.literal;
+	}
+
+	get literal(): string {
 		return this.literalNames[0];
 	}
+
+	get aliases(): string[] {
+		return this.literalNames.slice(1);
+	}
+
+	isMe(name: string) {
+		return this.literalNames.includes(name.toLowerCase());
+	}
+
 	async parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader, contextBuilder: CommandContextBuilder<S>) {
 		let start = reader.cursor;
 		let end = this._parse(reader);

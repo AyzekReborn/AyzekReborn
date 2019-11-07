@@ -70,8 +70,11 @@ const helpCommand = literal('help')
 			await event.user.send(textJoin(ayzek.plugins.map(p => describePlugin(ctx.source, ayzek, p)), { type: 'preservingWhitespace', data: '\n \n \n' }));
 			if (event.conversation.isChat)
 				await event.conversation.send('Смотри в ЛС, нехуй сюда портянки слать.');
-		} catch{
-			await event.conversation.send('У тебя закрыты ЛС, или я хз. Разбирайся сам крч');
+		} catch (e) {
+			if (event.conversation.isChat)
+				await event.conversation.send('У тебя закрыты ЛС, или я хз. Разбирайся сам крч');
+			else
+				console.error(e.stack);
 		}
 	}))
 	.executes(async ({ source: { ayzek, event } }) => {
