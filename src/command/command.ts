@@ -5,6 +5,7 @@ import { SuggestionContext } from "./suggestions";
 import { LiteralArgumentBuilder } from "./builder";
 import StringReader from "./reader";
 import { padList } from "../util/pad";
+import { Ayzek } from "../bot/ayzek";
 
 export enum ThingType {
 	COMMAND = 'Command',
@@ -357,6 +358,7 @@ export class CommandDispatcher<S> {
 }
 
 export type ParseEntryPoint<P> = {
+	ayzek: Ayzek<any>,
 	sourceProvider: P;
 }
 
@@ -397,6 +399,12 @@ export class CommandContext<S> {
 			result = result.child;
 		}
 		return result;
+	}
+	getArgumentIfExists<V>(name: string): V | null {
+		let argument = this.parsedArguments.get(name);
+		if (!argument) return null;
+		let { result } = argument;
+		return result as V;
 	}
 	getArgument<V>(name: string): V {
 		let argument = this.parsedArguments.get(name);

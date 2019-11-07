@@ -81,7 +81,7 @@ export default class StringReader {
 	static isNumberChar(char: string) {
 		return /[0-9.,-]/.test(char);
 	}
-	private readBeforeTestFails(test: (char: string) => boolean) {
+	readBeforeTestFails(test: (char: string) => boolean) {
 		let start = this.cursor;
 		while (this.canReadAnything && test(this.peek())) {
 			this.skip();

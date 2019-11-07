@@ -32,6 +32,5 @@ interface TextPartArray<A extends Api<A>> extends Array<TextPart<A>> { }
 export type Text<A extends Api<A>> = TextPart<A>;
 
 export function textJoin<A extends Api<A>>(arr: Text<A>[], joiner: Text<A>): Text<any>[] {
-	// Wtf, ts doesn't provide typings for flatMap?
-	return (arr as any).flatMap((e: any, index: number) => index ? [joiner, e] : [e])
+	return arr.flatMap((e: any, index: number) => index ? [joiner, e] : [e])
 }

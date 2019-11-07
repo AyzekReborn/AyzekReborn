@@ -66,9 +66,13 @@ const helpCommand = literal('help')
 	}))
 	.then(literal('all').executes(async ctx => {
 		const { source: { event, ayzek } } = ctx;
-		if (event.conversation.isChat)
-			await event.conversation.send('Смотри в ЛС, нехуй сюда портянки слать.');
-		event.user.send(textJoin(ayzek.plugins.map(p => describePlugin(ctx.source, ayzek, p)), { type: 'preservingWhitespace', data: '\n \n \n' }));
+		try {
+			await event.user.send(textJoin(ayzek.plugins.map(p => describePlugin(ctx.source, ayzek, p)), { type: 'preservingWhitespace', data: '\n \n \n' }));
+			if (event.conversation.isChat)
+				await event.conversation.send('Смотри в ЛС, нехуй сюда портянки слать.');
+		} catch{
+			await event.conversation.send('У тебя закрыты ЛС, или я хз. Разбирайся сам крч');
+		}
 	}))
 	.executes(async ({ source: { ayzek, event } }) => {
 		event.conversation.send([
