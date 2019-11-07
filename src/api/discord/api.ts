@@ -194,6 +194,11 @@ export default class DiscordApi extends Api<DiscordApi> {
                 return `<#${part.data.targetId}>`;
             case 'underlinedPart':
                 return `__${this.textToString(part.data)}__`;
+            case 'boldPart':
+                return `**${this.textToString(part.data)}**`;
+            case 'hashTagPart':
+                if (part.hideOnNoSupport) return '';
+                return this.textToString(part.data);
         }
     }
 

@@ -27,7 +27,16 @@ export type PreservingWhitespaceTextPart<A extends Api<A>> = {
 	type: 'preservingWhitespace',
 	data: Text<A>,
 }
-export type TextPart<A extends Api<A>> = undefined | null | string | MentionTextPart<A> | ChatReferenceTextPart<A> | UnderlinedTextPart<A> | StringReader | TextPartArray<A> | CodeTextPart<A> | PreservingWhitespaceTextPart<A>;
+export type BoldTextPart<A extends Api<A>> = {
+	type: 'boldPart',
+	data: Text<A>,
+}
+export type HashTagTextPart<A extends Api<A>> = {
+	type: 'hashTagPart',
+	data: Text<A>,
+	hideOnNoSupport?: boolean
+}
+export type TextPart<A extends Api<A>> = undefined | null | string | MentionTextPart<A> | ChatReferenceTextPart<A> | UnderlinedTextPart<A> | StringReader | TextPartArray<A> | CodeTextPart<A> | PreservingWhitespaceTextPart<A> | BoldTextPart<A> | HashTagTextPart<A>;
 interface TextPartArray<A extends Api<A>> extends Array<TextPart<A>> { }
 export type Text<A extends Api<A>> = TextPart<A>;
 

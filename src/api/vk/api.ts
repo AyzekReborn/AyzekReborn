@@ -467,7 +467,10 @@ export default class VKApi extends Api<VKApi> {
 			case 'chatRefPart':
 				return `<Чат ${part.data.title}>`;
 			case 'underlinedPart':
+			case 'boldPart':
 				return this.textToString(part.data);
+			case 'hashTagPart':
+				return this.textToString(part.data).split(' ').map(e => e.length !== 0 ? `#${e}` : e).join(' ')
 		}
 	}
 
