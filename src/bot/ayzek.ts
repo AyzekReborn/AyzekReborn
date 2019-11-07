@@ -74,7 +74,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 			if (e.text.startsWith(commandPrefix)) {
 				const command = e.text.replace(commandPrefix, '');
 				try {
-					const parseResult = await this.commandDispatcher.parse({ sourceProvider: e.api }, command, new MessageEventContext(this, e));
+					const parseResult = await this.commandDispatcher.parse({ ayzek: this, sourceProvider: e.api }, command, new MessageEventContext(this, e));
 					await this.commandDispatcher.executeResults(parseResult);
 				} catch (err) {
 					if (err instanceof UnknownThingError) {
@@ -120,10 +120,14 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 	}
 
 	async getUser(uid: string): Promise<User<A> | null> {
-		return (await Promise.all(this.apis.map(e => e.getUser(uid)))).filter(e => e !== null)[0] || null;
+		const user = (await Promise.all(this.apis.map(e => e.getUser(uid)))).filter(e => e !== null)[0] || null;
+		if (user) await this.attachToUser(user);
+		return user;
 	}
 	async getChat(cid: string): Promise<Chat<A> | null> {
-		return (await Promise.all(this.apis.map(e => e.getChat(cid)))).filter(e => e !== null)[0] || null;
+		const chat = (await Promise.all(this.apis.map(e => e.getChat(cid)))).filter(e => e !== null)[0] || null;
+		if (chat) await this.attachToChat(chat);
+		return chat;
 	}
 	async getConversation(id: string): Promise<Conversation<A> | null> {
 		const [chat, user] = await Promise.all([this.getUser(id), this.getChat(id)]);

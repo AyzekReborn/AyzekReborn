@@ -5,6 +5,7 @@ import { SuggestionContext } from "./suggestions";
 import { LiteralArgumentBuilder } from "./builder";
 import StringReader from "./reader";
 import { padList } from "../util/pad";
+import { Ayzek } from "../bot/ayzek";
 
 export enum ThingType {
 	COMMAND = 'Command',
@@ -357,6 +358,7 @@ export class CommandDispatcher<S> {
 }
 
 export type ParseEntryPoint<P> = {
+	ayzek: Ayzek<any>,
 	sourceProvider: P;
 }
 
