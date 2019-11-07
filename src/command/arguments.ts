@@ -44,6 +44,7 @@ enum FailType {
 class RangeError<T> extends Error {
 	constructor(public ctx: StringReader, public failType: FailType, public type: Type, public value: T) {
 		super(`${failType} ${type}: ${value}`);
+		this.name = 'RangeError';
 	}
 }
 

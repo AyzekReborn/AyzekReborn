@@ -12,6 +12,7 @@ export class ContextAttachment {
 export class MissingAttachmentError extends Error {
 	constructor(attachment: ContextAttachmentConstructor<any>) {
 		super(`Missing attachment required in context: ${attachment.name}`);
+		this.name = 'MissingAttachmentError';
 	}
 }
 type ContextAttachmentConstructor<T extends ContextAttachment> = new () => T;

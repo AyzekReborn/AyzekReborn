@@ -36,8 +36,8 @@ type PluginInfo = {
 	deinit?(): Promise<void>
 };
 export { PluginInfo };
-export function literal(name: string) {
-	return defaultLiteral<MessageEventContext<any>>(name);
+export function literal(...names: string[]) {
+	return defaultLiteral<MessageEventContext<any>>(...names);
 }
 export function argument<T>(name: string, type: ArgumentType<T>) {
 	return defaultArgument<MessageEventContext<any>, T>(name, type);

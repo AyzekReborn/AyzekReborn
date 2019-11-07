@@ -15,6 +15,7 @@ import { ArgumentType } from "../command/arguments";
 export class NotImplementedInApiError extends Error {
 	constructor(method: string) {
 		super(`Not implemented in api: ${method}`);
+		this.name = 'NotImplementedInApiError';
 	}
 }
 

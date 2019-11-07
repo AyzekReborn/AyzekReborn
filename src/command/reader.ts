@@ -12,19 +12,19 @@ export enum MissingCharType {
 export class ExpectedError extends Error {
 	constructor(public readonly reader: StringReader, public readonly type: Type) {
 		super(type.toString());
-		Object.setPrototypeOf(this, new.target.prototype);
+		this.name = 'ExpectedError';
 	}
 }
 export class BadValueError<T> extends Error {
 	constructor(public readonly reader: StringReader, public readonly type: Type, public readonly value: T) {
 		super(type.toString());
-		Object.setPrototypeOf(this, new.target.prototype);
+		this.name = 'BadValueError';
 	}
 }
 export class MissingChar<T> extends Error {
 	constructor(public readonly reader: StringReader, public readonly type: Type, public readonly missingType: MissingCharType, public readonly char: T) {
 		super(type.toString());
-		Object.setPrototypeOf(this, new.target.prototype);
+		this.name = 'MissingChar';
 	}
 }
 export default class StringReader {
