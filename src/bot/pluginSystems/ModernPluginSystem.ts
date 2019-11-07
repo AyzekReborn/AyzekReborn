@@ -19,9 +19,11 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 	}
 
 	async onLoad(module: PluginInfo & PluginInfoAttachment): Promise<void> {
-		module.registered = module.commands.filter(e => {
-			if (this.ayzek.commandDispatcher.root.literals.has(e.literal)) {
-				this.logger.warn(`Command ${e.literal} is already registered`);
+		// TODO: Also perform in-plugin conflict search (currently only cross-plugin check is done)
+		module.registered = module.commands.filter(command => {
+			// FIXME: O(n*m), somehow add alias map to make it O(1)
+			if ([...this.ayzek.commandDispatcher.root.literals.values()].some(otherCommand => command.literals.some(name => otherCommand.isMe(name)))) {
+				this.logger.warn(`Command ${command.literal} is already registered`);
 				return false;
 			}
 			return true;

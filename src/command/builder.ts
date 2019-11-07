@@ -73,6 +73,13 @@ export class LiteralArgumentBuilder<S> extends ArgumentBuilder<S, LiteralArgumen
 		return new LiteralArgumentBuilder(names);
 	}
 
+	get literal(): string {
+		return this.literals[0];
+	}
+	get aliases(): string[] {
+		return this.literals.slice(1);
+	}
+
 	build() {
 		let result = new LiteralCommandNode(this.literals, this.command, this.requirement, this.target, this.modifier, this.forks);
 		for (let argument of this.argumentList) {
