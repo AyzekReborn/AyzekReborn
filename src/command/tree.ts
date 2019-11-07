@@ -100,7 +100,7 @@ export abstract class CommandNode<S> {
 				input.skip();
 			let text = input.string.substring(cursor, input.cursor);
 			input.cursor = cursor;
-			let literal = this.literals.get(text.toLowerCase());
+			let literal = [...this.literals.values()].filter(l => l.literalNames.includes(text.toLowerCase()))[0];
 			if (literal) {
 				return [literal];
 			} else {
@@ -124,7 +124,8 @@ export abstract class CommandNode<S> {
 
 export class LiteralError extends Error {
 	constructor(public reader: StringReader, public literal: string) {
-		super(`${reader}: ${literal}`);
+		super(`Unknown literal at ${reader}: ${literal}`);
+		this.name = 'LiteralError';
 	}
 }
 
@@ -154,7 +155,7 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 
 	private _parse(reader: StringReader) {
 		let start = reader.cursor;
-		for (const literal in this.literalNames) {
+		for (const literal of this.literalNames) {
 			if (reader.canRead(literal.length)) {
 				let end = start + literal.length;
 				if (reader.string.substring(start, end) === literal) {
@@ -172,7 +173,7 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 
 	async listSuggestions(_context: CommandContext<S>, builder: SuggestionsBuilder): Promise<Suggestions> {
 		const remaining = builder.remaining.toLowerCase();
-		for (const literal in this.literalNames) {
+		for (const literal of this.literalNames) {
 			if (literal.toLowerCase().startsWith(remaining)) {
 				return builder.suggest(literal, null).build();
 			}

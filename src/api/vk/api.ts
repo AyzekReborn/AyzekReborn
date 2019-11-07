@@ -491,12 +491,14 @@ export default class VKApi extends Api<VKApi> {
 class ExpectedVKUserError extends Error {
 	constructor(public reader: StringReader) {
 		super();
+		this.name = 'ExpectedVKUserError';
 	}
 }
 
 class NoSuchUserError extends Error {
 	constructor(public reader: StringReader, id: string) {
 		super();
+		this.name = 'NoSuchUserError';
 	}
 }
 

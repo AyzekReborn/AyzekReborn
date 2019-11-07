@@ -205,12 +205,14 @@ export default class DiscordApi extends Api<DiscordApi> {
 class ExpectedDSUserError extends Error {
     constructor(public reader: StringReader) {
         super();
+        this.name = 'ExpectedDSUserError';
     }
 }
 
 class NoSuchUserError extends Error {
     constructor(public reader: StringReader, id: string) {
         super();
+        this.name = 'NoSuchUserError';
     }
 }
 

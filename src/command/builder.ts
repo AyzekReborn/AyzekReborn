@@ -69,8 +69,8 @@ export class LiteralArgumentBuilder<S> extends ArgumentBuilder<S, LiteralArgumen
 	constructor(public readonly literals: string[]) {
 		super();
 	}
-	static literal<S>(...name: string[]): LiteralArgumentBuilder<S> {
-		return new LiteralArgumentBuilder(name);
+	static literal<S>(...names: string[]): LiteralArgumentBuilder<S> {
+		return new LiteralArgumentBuilder(names);
 	}
 
 	build() {

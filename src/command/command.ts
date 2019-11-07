@@ -15,12 +15,12 @@ export class UnknownThingError extends Error {
 	constructor(public thing: ThingType, public reader: StringReader) {
 		super(`Unknown ${thing} at ${reader}`);
 		this.name = 'UnknownThingError';
-		Object.setPrototypeOf(this, UnknownThingError.prototype);
 	}
 }
 export class ExpectedArgumentSeparatorError extends Error {
 	constructor(public reader: StringReader) {
 		super(`Expected argument separator at ${reader}`);
+		this.name = 'ExpectedArgumentSeparatorError';
 	}
 }
 
