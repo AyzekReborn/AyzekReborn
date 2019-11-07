@@ -81,12 +81,24 @@ export default class DiscordApi extends Api<DiscordApi> {
         return this.wrapUser(await this.api.fetchUser(id, true));
     }
 
+    async getApiChat(id: string): Promise<DiscordChat> {
+        return this.wrapChat(this.api.channels.get(id));
+    }
+
     getUser(uid: string): Promise<DiscordUser | null> {
         if (!uid.startsWith(this.userPrefix)) {
             return Promise.resolve(null);
         }
         const id = uid.replace(this.userPrefix, '');
         return this.getApiUser(id);
+    }
+
+    getChat(cid: string): Promise<DiscordChat | null> {
+        if (!cid.startsWith(this.chatPrefix)) {
+            return Promise.resolve(null);
+        }
+        const id = cid.replace(this.chatPrefix, '');
+        return this.getApiChat(id);
     }
 
     parseAttachments(attachments: MessageAttachment[]): Attachment[] {
