@@ -69,10 +69,10 @@ const helpCommand = literal('help')
 		try {
 			await event.user.send(textJoin(ayzek.plugins.map(p => describePlugin(ctx.source, ayzek, p)), { type: 'preservingWhitespace', data: '\n \n \n' }));
 			if (event.conversation.isChat)
-				await event.conversation.send('Смотри в ЛС, нехуй сюда портянки слать.');
+				await event.conversation.send('Помощь отправлена тебе в ЛС');
 		} catch (e) {
 			if (event.conversation.isChat)
-				await event.conversation.send('У тебя закрыты ЛС, или я хз. Разбирайся сам крч');
+				await event.conversation.send('У тебя закрыты ЛС, \n/help all отсылает ответ только туда, т.к это слишком длинное сообщение');
 			else
 				console.error(e.stack);
 		}

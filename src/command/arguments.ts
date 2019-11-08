@@ -2,6 +2,7 @@ import StringReader, { Type } from './reader';
 import { SuggestionsBuilder, Suggestions } from './suggestions';
 import StringRange from './range';
 import { CommandContext, ParseEntryPoint } from './command';
+import { UserDisplayableError } from './error';
 
 export abstract class ArgumentType<T> {
 	abstract parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<T>;
@@ -37,11 +38,11 @@ export function booleanArgument() {
 }
 
 enum FailType {
-	TOO_LOW,
-	TOO_HIGH,
+	TOO_LOW = 'too high',
+	TOO_HIGH = 'too low',
 }
 
-class RangeError<T> extends Error {
+class RangeError<T> extends UserDisplayableError {
 	constructor(public ctx: StringReader, public failType: FailType, public type: Type, public value: T) {
 		super(`${failType} ${type}: ${value}`);
 		this.name = 'RangeError';

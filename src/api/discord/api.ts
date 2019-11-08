@@ -17,6 +17,8 @@ import { IMessageOptions } from "../../model/message";
 import StringReader from "../../command/reader";
 import { ArgumentType } from "../../command/arguments";
 import { ParseEntryPoint } from "../../command/command";
+import { ExpectedSomethingError, UserDisplayableError } from "../../command/error";
+import { NoSuchUserError } from "../../bot/argument";
 
 export default class DiscordApi extends Api<DiscordApi> {
 
@@ -77,8 +79,13 @@ export default class DiscordApi extends Api<DiscordApi> {
         return new DiscordChat(this, this.wrapGuild(chat.guild), chat, [], members); // TODO fill one last parameter
     }
 
-    async getApiUser(id: string): Promise<DiscordUser> {
-        return this.wrapUser(await this.api.fetchUser(id, true));
+    async getApiUser(id: string): Promise<DiscordUser | null> {
+        try {
+            return this.wrapUser(await this.api.fetchUser(id, true));
+        } catch (e) {
+            this.logger.error(e.stack);
+            return null;
+        }
     }
 
     async getApiChat(id: string): Promise<DiscordChat> {
@@ -219,17 +226,9 @@ export default class DiscordApi extends Api<DiscordApi> {
 }
 
 
-class ExpectedDSUserError extends Error {
-    constructor(public reader: StringReader) {
-        super();
-        this.name = 'ExpectedDSUserError';
-    }
-}
-
-class NoSuchUserError extends Error {
-    constructor(public reader: StringReader, id: string) {
-        super();
-        this.name = 'NoSuchUserError';
+class ExpectedDSUserError extends ExpectedSomethingError {
+    constructor(reader: StringReader) {
+        super(reader, `discord user mention`);
     }
 }
 
@@ -252,8 +251,13 @@ class DSUserArgumentType extends ArgumentType<DiscordUser>{
         reader.skip();
 
         const user = await api.getApiUser(id);
-        if (!user) throw new NoSuchUserError(reader, id.toString());
+        if (!user) {
+            reader.cursor = cursor;
+            throw new NoSuchUserError(id.toString(), reader);
+        }
+
         return user;
     }
 }
+
 const dsUserArgumentTypeInstance = new DSUserArgumentType();
