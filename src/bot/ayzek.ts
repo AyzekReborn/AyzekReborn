@@ -1,7 +1,7 @@
 import Logger from "@meteor-it/logger";
 import { Disposable } from "../util/event";
 import { Api } from "../model/api";
-import { CommandDispatcher, UnknownThingError, ThingType } from "../command/command";
+import { CommandDispatcher } from "../command/command";
 import { MessageEventContext } from "./context";
 import { PluginInfo } from "./plugin";
 import ApiFeature from "../api/features";
@@ -80,11 +80,13 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 				} catch (err) {
 					if (err instanceof CommandSyntaxError) {
 						// TODO: Messenger specific formatting & i18n
+						/*
 						const cursor = err.reader.cursor;
 						const part = err.reader.readString();
 						err.reader.cursor = cursor;
-						e.conversation.send([err.message, ` instead of ${part}`, '\n', `${commandPrefix}`, err.reader]);
-						err.reader.cursor = cursor;
+						*/
+						e.conversation.send([err.message, /*` instead of ${part}`, */'\n', `${commandPrefix}`, err.reader]);
+						// err.reader.cursor = cursor;
 					} else if (err instanceof UserDisplayableError) {
 						e.conversation.send([err.message, '\n', `${commandPrefix}`, err.reader]);
 					} else {

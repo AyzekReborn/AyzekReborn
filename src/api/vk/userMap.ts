@@ -15,8 +15,9 @@ export default class VKUserMap extends PromiseMap<number, VKRealUser> {
 			}
 		}), (v) => v, u => +u.id);
 	}
-	protected async getPromise(key: number): Promise<VKRealUser> {
+	protected async getPromise(key: number): Promise<VKRealUser | null> {
 		const apiUser = await this.processor.runTask(key);
+		if (apiUser === null) return null;
 		return new VKRealUser(this.api, apiUser);
 	}
 }
