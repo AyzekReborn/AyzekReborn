@@ -111,7 +111,7 @@ export abstract class AttachmentCreator<O, A extends Attachment> {
 	abstract async getAttachmentFor(owner: O, storage: AttachmentStorage<O>): Promise<A>;
 }
 
-export function requireAttachment<P extends Attachment>(constructor: AttachmentConstructor<P>, role: string): Requirement<MessageEventContext<any>> {
+export function requireAttachment<P extends Attachment>(constructor: AttachmentConstructor<P>): Requirement<MessageEventContext<any>> {
 	return ctx => {
 		const attachment = ctx.event.user.attachmentStorage!.getIfAvailable(constructor);
 		return !!attachment;
