@@ -6,20 +6,16 @@ import { LiteralArgumentBuilder } from "./builder";
 import StringReader from "./reader";
 import { padList } from "../util/pad";
 import { Ayzek } from "../bot/ayzek";
+import { CommandSyntaxError, UnknownSomethingError } from "./error";
 
 export enum ThingType {
 	COMMAND = 'Command',
 	ARGUMENT = 'Argument',
 }
-export class UnknownThingError extends Error {
-	constructor(public thing: ThingType, public reader: StringReader) {
-		super(`Unknown ${thing} at ${reader}`);
-		this.name = 'UnknownThingError';
-	}
-}
-export class ExpectedArgumentSeparatorError extends Error {
+
+export class ExpectedArgumentSeparatorError extends CommandSyntaxError {
 	constructor(public reader: StringReader) {
-		super(`Expected argument separator at ${reader}`);
+		super(reader, `Expected next argument`);
 		this.name = 'ExpectedArgumentSeparatorError';
 	}
 }
@@ -64,9 +60,9 @@ export class CommandDispatcher<S> {
 			if (parse.exceptions.size === 1) {
 				throw parse.exceptions.values().next().value;
 			} else if (parse.context.range.isEmpty) {
-				throw new UnknownThingError(ThingType.COMMAND, parse.reader);
+				throw new UnknownSomethingError(parse.reader, 'argument');
 			} else {
-				throw new UnknownThingError(ThingType.ARGUMENT, parse.reader);
+				throw new UnknownSomethingError(parse.reader, 'command');
 			}
 		}
 		let forked = false;
@@ -130,7 +126,7 @@ export class CommandDispatcher<S> {
 		}
 		if (!foundCommand) {
 			this.consumer(original, false);
-			throw new UnknownThingError(ThingType.COMMAND, parse.reader);
+			throw new UnknownSomethingError(parse.reader, 'command');
 		}
 	}
 

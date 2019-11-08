@@ -1,3 +1,6 @@
+import { Requirement } from "../../command/requirement";
+import { MessageEventContext } from "../context";
+
 class DependencyResolutionErrors extends Error {
 	constructor(public constructor: AttachmentConstructor<any>, public reasons: Error[]) {
 		super(`Failed to resolve dependencies for ${constructor.name}`);
@@ -106,4 +109,11 @@ export abstract class AttachmentCreator<O, A extends Attachment> {
 	abstract thisConstructor: AttachmentConstructor<A>;
 	abstract dependencies: AttachmentConstructor<any>[];
 	abstract async getAttachmentFor(owner: O, storage: AttachmentStorage<O>): Promise<A>;
+}
+
+export function requireAttachment<P extends Attachment>(constructor: AttachmentConstructor<P>): Requirement<MessageEventContext<any>> {
+	return ctx => {
+		const attachment = ctx.event.user.attachmentStorage!.getIfAvailable(constructor);
+		return !!attachment;
+	}
 }

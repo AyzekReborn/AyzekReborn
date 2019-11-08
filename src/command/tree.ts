@@ -7,6 +7,7 @@ import StringReader from "./reader";
 import { SuggestionsBuilder, Suggestions, SuggestionProvider } from "./suggestions";
 import { ArgumentType } from "./arguments";
 import { RequiredArgumentBuilder, LiteralArgumentBuilder, ArgumentBuilder } from "./builder";
+import { UserDisplayableError, CommandSyntaxError } from "./error";
 
 
 export type AmbiguityConsumer<S> = (parent: CommandNode<S>, child: CommandNode<S>, sibling: CommandNode<S>, inputs: Set<string>) => void;
@@ -122,9 +123,9 @@ export abstract class CommandNode<S> {
 	abstract get examples(): string[];
 }
 
-export class LiteralError extends Error {
+export class LiteralError extends CommandSyntaxError {
 	constructor(public reader: StringReader, public literal: string) {
-		super(`Unknown literal at ${reader}: ${literal}`);
+		super(reader, `Unknown literal at ${reader}: ${literal}`);
 		this.name = 'LiteralError';
 	}
 }

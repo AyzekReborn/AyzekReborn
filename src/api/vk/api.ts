@@ -26,6 +26,8 @@ import arrayChunks from "../../util/arrayChunks";
 import { TypingEvent, TypingEventType } from "../../model/events/typing";
 import { ArgumentType } from "../../command/arguments";
 import { ParseEntryPoint } from "../../command/command";
+import { ExpectedSomethingError } from "../../command/error";
+import { NoSuchUserError } from "../../bot/argument";
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
@@ -491,17 +493,9 @@ export default class VKApi extends Api<VKApi> {
 	]);
 }
 
-class ExpectedVKUserError extends Error {
+class ExpectedVKUserError extends ExpectedSomethingError {
 	constructor(public reader: StringReader) {
-		super();
-		this.name = 'ExpectedVKUserError';
-	}
-}
-
-class NoSuchUserError extends Error {
-	constructor(public reader: StringReader, id: string) {
-		super();
-		this.name = 'NoSuchUserError';
+		super(reader, 'vk user mention');
 	}
 }
 
@@ -541,7 +535,7 @@ class VKUserArgumentType extends ArgumentType<VKUser>{
 		}
 		reader.cursor += charsToSkip;
 		const user = await api.getApiUser(isBot ? -id : id);
-		if (!user) throw new NoSuchUserError(reader, (isBot ? -id : id).toString());
+		if (!user) throw new NoSuchUserError((isBot ? -id : id).toString(), reader);
 		return user;
 	}
 }

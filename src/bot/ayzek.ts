@@ -8,6 +8,7 @@ import ApiFeature from "../api/features";
 import { User, Chat, Guild, Conversation } from "../model/conversation";
 import { ArgumentType } from "../command/arguments";
 import { AttachmentRepository, AttachmentStorage, ownerlessEmptyAttachmentStorage } from "./attachment/attachment";
+import { CommandSyntaxError, UserDisplayableError } from "../command/error";
 
 export class Ayzek<A extends Api<any>> extends Api<A> {
 	plugins: PluginInfo[] = [];
@@ -77,9 +78,15 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 					const parseResult = await this.commandDispatcher.parse({ ayzek: this, sourceProvider: e.api }, command, new MessageEventContext(this, e));
 					await this.commandDispatcher.executeResults(parseResult);
 				} catch (err) {
-					if (err instanceof UnknownThingError) {
+					if (err instanceof CommandSyntaxError) {
 						// TODO: Messenger specific formatting & i18n
-						e.conversation.send([`Неизвестн${err.thing === ThingType.COMMAND ? 'ая комманда' : 'ый аргумент'}: ${commandPrefix}`, err.reader]);
+						const cursor = err.reader.cursor;
+						const part = err.reader.readString();
+						err.reader.cursor = cursor;
+						e.conversation.send([err.message, ` instead of ${part}`, '\n', `${commandPrefix}`, err.reader]);
+						err.reader.cursor = cursor;
+					} else if (err instanceof UserDisplayableError) {
+						e.conversation.send([err.message, '\n', `${commandPrefix}`, err.reader]);
 					} else {
 						this.logger.error(err.stack);
 						e.conversation.send(`Ашипка, жди разраба.`);

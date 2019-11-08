@@ -1,29 +1,31 @@
+import { CommandSyntaxError, ExpectedSomethingError } from "./error";
+
 export enum Type {
-	INT,
-	FLOAT,
-	BOOLEAN,
-	QUOTED,
-	UNQUOUTED,
-	STRING,
+	INT = 'integer',
+	FLOAT = 'float',
+	BOOLEAN = 'boolean',
+	QUOTED = 'quoted string',
+	UNQUOUTED = 'unquoted string',
+	STRING = 'string',
 }
 export enum MissingCharType {
-	QUOTE
+	QUOTE = 'quote'
 }
-export class ExpectedError extends Error {
+export class ExpectedError extends ExpectedSomethingError {
 	constructor(public readonly reader: StringReader, public readonly type: Type) {
-		super(type.toString());
+		super(reader, type);
 		this.name = 'ExpectedError';
 	}
 }
-export class BadValueError<T> extends Error {
+export class BadValueError<T> extends CommandSyntaxError {
 	constructor(public readonly reader: StringReader, public readonly type: Type, public readonly value: T) {
-		super(type.toString());
+		super(reader, `Bad value for ${type}: ${value}`);
 		this.name = 'BadValueError';
 	}
 }
-export class MissingChar<T> extends Error {
+export class MissingChar<T> extends CommandSyntaxError {
 	constructor(public readonly reader: StringReader, public readonly type: Type, public readonly missingType: MissingCharType, public readonly char: T) {
-		super(type.toString());
+		super(reader, `Missing ${missingType} (${char}) in ${type}`);
 		this.name = 'MissingChar';
 	}
 }
