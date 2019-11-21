@@ -4,7 +4,7 @@ import CommandContextBuilder, { Command, CommandContext, RedirectModifier, Parse
 import { Requirement } from "./requirement";
 import isEqual from 'is-equal';
 import StringReader from "./reader";
-import { SuggestionsBuilder, Suggestions, SuggestionProvider } from "./suggestions";
+import { SuggestionsBuilder, Suggestions, SuggestionProvider, Suggestion } from "./suggestions";
 import { ArgumentType } from "./arguments";
 import { RequiredArgumentBuilder, LiteralArgumentBuilder, ArgumentBuilder } from "./builder";
 import { UserDisplayableError, CommandSyntaxError } from "./error";
@@ -190,7 +190,8 @@ export class LiteralCommandNode<S> extends CommandNode<S> {
 		const remaining = builder.remaining.toLowerCase();
 		for (const literal of this.literalNames) {
 			if (literal.toLowerCase().startsWith(remaining)) {
-				return builder.suggest(literal, null).build();
+				const other = this.literalNames.filter(e => e !== literal);
+				return builder.suggest(literal, other.length === 0 ? null : `${other.join(', ')}`).build();
 			}
 		}
 		return Suggestions.empty;
@@ -279,7 +280,7 @@ export class ArgumentCommandNode<S, T> extends CommandNode<S> {
 	constructor(
 		public readonly name: string,
 		public readonly type: ArgumentType<T>,
-		public readonly customSuggestions: SuggestionProvider<S>,
+		public readonly customSuggestions: SuggestionProvider<S> | null,
 		command: Command<S> | null,
 		requirement: Requirement<S>,
 		redirect: CommandNode<S> | null,
@@ -305,18 +306,21 @@ export class ArgumentCommandNode<S, T> extends CommandNode<S> {
 	}
 
 	async listSuggestions(ctx: CommandContext<S>, builder: SuggestionsBuilder): Promise<Suggestions> {
+		let got: Suggestions;
 		if (this.customSuggestions) {
-			return this.customSuggestions(ctx, builder);
+			got = await this.customSuggestions(ctx, builder);
 		} else {
-			return this.type.listSuggestions(ctx, builder);
+			got = await this.type.listSuggestions(ctx, builder);
 		}
+		return got;
 	}
 
 	createBuilder(): RequiredArgumentBuilder<S, T> {
 		let builder: RequiredArgumentBuilder<S, T> = RequiredArgumentBuilder.argument(this.name, this.type);
 		builder.requires(this.requirement);
 		builder.forward(this.redirect, this.modifier, this.forks);
-		builder.suggests(this.customSuggestions);
+		if (this.customSuggestions)
+			builder.suggests(this.customSuggestions);
 		if (this.command !== null) {
 			builder.executes(this.command);
 		}

@@ -1,7 +1,7 @@
 import StringRange from "./range";
 import { ParsedArgument } from "./arguments";
 import { CommandNode, ParsedCommandNode, RootCommandNode, LiteralCommandNode } from "./tree";
-import { SuggestionContext } from "./suggestions";
+import { SuggestionContext, Suggestions, SuggestionsBuilder } from "./suggestions";
 import { LiteralArgumentBuilder } from "./builder";
 import StringReader from "./reader";
 import { padList } from "../util/pad";
@@ -130,6 +130,29 @@ export class CommandDispatcher<S> {
 		}
 	}
 
+	public async getCompletionSuggestions(parse: ParseResults<S>, cursor = parse.reader.totalLength, source: S): Promise<Suggestions> {
+		let context: CommandContextBuilder<S> = parse.context;
+		let nodeBeforeCursor: SuggestionContext<S> = context.findSuggestionContext(cursor);
+		let parent: CommandNode<S> = nodeBeforeCursor.parent;
+		let start = Math.min(nodeBeforeCursor.startPos, cursor);
+		let fullInput = parse.reader.string;
+		let truncatedInput = fullInput.substring(0, cursor);
+		let futures = [];
+		for (let node of parent.children) {
+			if (!node.canUse(source))
+				continue;
+			let future = Suggestions.empty;
+			try {
+				future = await node.listSuggestions(context.build(truncatedInput), new SuggestionsBuilder(truncatedInput, start));
+			}
+			catch (ignored) {
+			}
+			futures.push(future);
+		}
+
+		return Promise.resolve(Suggestions.merge(fullInput, futures));
+	}
+
 	parse<P>(ctx: ParseEntryPoint<P>, command: string | StringReader, source: S): Promise<ParseResults<S>> {
 		if (typeof command === "string")
 			command = new StringReader(command)
@@ -242,7 +265,7 @@ export class CommandDispatcher<S> {
 
 		if (node.redirect != null) {
 			const redirect = node.redirect === this.root ? "..." : "-> " + node.redirect.usage;
-			result.push(prefix.length === 0 ? node.usage + ARGUMENT_SEPARATOR + redirect : prefix + ARGUMENT_SEPARATOR + redirect);
+			result.push(prefix.length === 0 ? ARGUMENT_SEPARATOR + redirect : prefix + ARGUMENT_SEPARATOR + redirect);
 		}
 		else if (node.children.length > 0) {
 			for (let child of node.children) {

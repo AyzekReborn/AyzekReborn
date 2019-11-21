@@ -36,7 +36,7 @@ export default class StringReader {
 		return reader;
 	}
 	cursor: number = 0;
-	constructor(public readonly string: string) { }
+	constructor(public string: string) { }
 	get remainingLength() {
 		return this.string.length - this.cursor;
 	}

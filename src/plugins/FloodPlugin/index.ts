@@ -14,11 +14,16 @@ const whatCommand = literal('what')
 				event.conversation.send(`${random.randomArrayElement(phrazes.what.start)} ${random.randomArrayElement(phrazes.what.end)}`);
 			}));
 
+const shrugCommand = literal('shrug')
+	.executes(({ source: { event } }) => {
+		event.conversation.send(`¯\\_(ツ)_/¯`)
+	})
+
 export default class implements PluginInfo {
 	name = 'FloodPlugin';
 	author = 'НекийЛач';
 	description = 'Плагин для флуда';
 	category = PluginCategory.FUN;
-	commands = [whatCommand];
+	commands = [shrugCommand, whatCommand];
 	listeners = [];
 }

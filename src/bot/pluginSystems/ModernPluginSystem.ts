@@ -1,5 +1,5 @@
 import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
-import { PluginInfo } from '../plugin';
+import { PluginInfo, IMessageListener } from '../plugin';
 import { Ayzek } from '../ayzek';
 import { CommandNode } from '../../command/tree';
 
@@ -48,6 +48,9 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 			if (module.ayzekAttachments.length !== 0)
 				await this.ayzek.onAyzekAttachmentRepositoryChange();
 		}
+		if (module.listeners) {
+			this.ayzek.listeners.push(...module.listeners);
+		}
 		module.ayzek = this.ayzek;
 		this.ayzek.plugins.push(module);
 	}
@@ -72,6 +75,9 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 			}
 			if (module.ayzekAttachments.length !== 0)
 				await this.ayzek.onAyzekAttachmentRepositoryChange();
+		}
+		if (module.listeners) {
+			this.ayzek.listeners.splice(this.ayzek.listeners.indexOf(module.listeners[0]), module.listeners.length);
 		}
 		this.ayzek.plugins.splice(this.ayzek.plugins.indexOf(module), 1);
 	}

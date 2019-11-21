@@ -90,7 +90,7 @@ export class LiteralArgumentBuilder<S> extends ArgumentBuilder<S, LiteralArgumen
 }
 
 export class RequiredArgumentBuilder<S, T> extends ArgumentBuilder<S, RequiredArgumentBuilder<S, T>> {
-	suggestionsProvider: SuggestionProvider<S> = () => Promise.resolve(Suggestions.empty);
+	suggestionsProvider: SuggestionProvider<S> | null = null;
 	constructor(public readonly name: string, public readonly type: ArgumentType<T>) {
 		super();
 	}
