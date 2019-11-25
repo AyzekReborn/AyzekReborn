@@ -6,7 +6,7 @@ import { AttachmentCreator } from "./attachment/attachment";
 import { User, Chat, Conversation } from "../model/conversation";
 import { Ayzek } from "./ayzek";
 
-type IMessageListener = {
+export type IMessageListener = {
 	name: string,
 	description?: string,
 	handler: (ctx: MessageEventContext<any>) => Promise<void>,

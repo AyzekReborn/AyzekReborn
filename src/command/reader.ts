@@ -7,6 +7,7 @@ export enum Type {
 	QUOTED = 'quoted string',
 	UNQUOUTED = 'unquoted string',
 	STRING = 'string',
+	AMOUNT = 'amount'
 }
 export enum MissingCharType {
 	QUOTE = 'quote'
@@ -36,7 +37,7 @@ export default class StringReader {
 		return reader;
 	}
 	cursor: number = 0;
-	constructor(public readonly string: string) { }
+	constructor(public string: string) { }
 	get remainingLength() {
 		return this.string.length - this.cursor;
 	}

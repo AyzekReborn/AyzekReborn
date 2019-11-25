@@ -1,7 +1,7 @@
 import StringReader, { Type } from './reader';
 import { SuggestionsBuilder, Suggestions } from './suggestions';
 import StringRange from './range';
-import { CommandContext, ParseEntryPoint } from './command';
+import { CommandContext, ParseEntryPoint, ExpectedArgumentSeparatorError, ARGUMENT_SEPARATOR } from './command';
 import { UserDisplayableError } from './error';
 
 export abstract class ArgumentType<T> {
@@ -139,4 +139,41 @@ export function stringArgument(type: StringType) {
 export type ParsedArgument<_S, T> = {
 	range: StringRange,
 	result: T,
+}
+
+export class LazyArgumentType<V> extends ArgumentType<() => Promise<V>>{
+	constructor(public wrapperReader: ArgumentType<string>, public wrapped: ArgumentType<V>) {
+		super();
+	}
+	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<() => Promise<V>> {
+		let readed = await this.wrapperReader.parse(ctx, reader);
+		return () => this.wrapped.parse(ctx, new StringReader(readed));
+	}
+}
+
+export function lazyArgument<V>(wrappedReader: ArgumentType<string>, wrapped: ArgumentType<V>) {
+	return new LazyArgumentType(wrappedReader, wrapped);
+}
+
+export class ListArgumentType<V> extends ArgumentType<V[]> {
+	constructor(public singleArgumentType: ArgumentType<V>, public readonly minimum = 0, public readonly maximum = Infinity) {
+		super();
+	}
+	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<V[]> {
+		const got: V[] = [];
+		while (reader.canReadAnything) {
+			const value = await this.singleArgumentType.parse(ctx, reader);
+			got.push(value);
+			if (reader.canReadAnything && reader.peek() !== ARGUMENT_SEPARATOR)
+				throw new ExpectedArgumentSeparatorError(reader);
+		}
+		if (got.length < this.minimum || got.length > this.maximum) {
+			throw new RangeError(reader, got.length < this.minimum ? FailType.TOO_LOW : FailType.TOO_HIGH, Type.AMOUNT, got.length);
+		}
+		return got;
+	}
+}
+
+export function listArgument<V>(wrapped: ArgumentType<V>, minimum = 0, maximum = Infinity) {
+	return new ListArgumentType(wrapped, minimum, maximum);
 }

@@ -15,7 +15,7 @@ function padAllListItemExceptFirst(list: string[]) {
 
 function describePlugin(ctx: MessageEventContext<any>, ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
 	return [
-		`🧩 ${plugin.name}${plugin.category ? ` в категории ${plugin.category}` : ''}\n`,
+		`🔌 ${plugin.name}${plugin.category ? ` в категории ${plugin.category}` : ''}\n`,
 		`🕵‍ Разработчик: ${plugin.author}\n`,
 		`💬 ${plugin.description}`,
 		...((plugin.commands.length > 0 || plugin.listeners.length > 0) ? [
@@ -53,6 +53,17 @@ const debugCommand = literal('debug')
 			`CID: `, ctx.source.event.chat && ctx.source.event.chat.cid || 'no chat', '\n',
 			`Full name: ${ctx.source.event.user.fullName}\n`,
 			`Name: ${ctx.source.event.user.name}\n`
+		]);
+	}))
+	.then(literal('msg').executes(ctx => {
+		const forwarded = ctx.source.event.maybeForwarded;
+		if (!forwarded) {
+			ctx.source.event.conversation.send(['No forwarded']);
+			return;
+		}
+		ctx.source.event.conversation.send([
+			`UID: ${forwarded.user.uid}\n`,
+			`Full name: ${forwarded.user.fullName}\n`,
 		]);
 	}));
 

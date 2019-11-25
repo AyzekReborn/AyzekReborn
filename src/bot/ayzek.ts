@@ -3,7 +3,7 @@ import { Disposable } from "../util/event";
 import { Api } from "../model/api";
 import { CommandDispatcher } from "../command/command";
 import { MessageEventContext } from "./context";
-import { PluginInfo } from "./plugin";
+import { PluginInfo, IMessageListener } from "./plugin";
 import ApiFeature from "../api/features";
 import { User, Chat, Guild, Conversation } from "../model/conversation";
 import { ArgumentType } from "../command/arguments";
@@ -24,6 +24,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 	}
 
 	commandDispatcher = new CommandDispatcher<MessageEventContext<A>>();
+	listeners: IMessageListener[] = [];
 
 	async attachToUser(user: User<any>) {
 		user.attachmentStorage = await this.userAttachmentRepository.getStorageFor(user);
@@ -74,25 +75,89 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 
 			if (e.text.startsWith(commandPrefix)) {
 				const command = e.text.replace(commandPrefix, '');
+				if (command.length === 0)
+					return;
+				let parseResult;
+				const source = new MessageEventContext(this, e);
 				try {
-					const parseResult = await this.commandDispatcher.parse({ ayzek: this, sourceProvider: e.api }, command, new MessageEventContext(this, e));
+					parseResult = await this.commandDispatcher.parse({ ayzek: this, sourceProvider: e.api }, command, source);
 					await this.commandDispatcher.executeResults(parseResult);
 				} catch (err) {
+					const suggestionListNextCommand = [];
+					const suggestionList = [];
+					const suggestionThisArgument = [];
+					if (parseResult) {
+						if (parseResult.reader.string.length === parseResult.reader.cursor) {
+							const oldString = parseResult.reader.string;
+							const oldCursor = parseResult.reader.cursor;
+							parseResult.reader.string += ' ';
+							parseResult.reader.cursor++;
+							const suggestions = await this.commandDispatcher.getCompletionSuggestions(parseResult, parseResult.reader.cursor, source);
+							for (let suggestion of suggestions.suggestions) {
+								suggestionListNextCommand.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
+							}
+							parseResult.reader.string = oldString;
+							parseResult.reader.cursor = oldCursor;
+						}
+						{
+							const suggestions = await this.commandDispatcher.getCompletionSuggestions(parseResult, parseResult.reader.cursor, source);
+							for (let suggestion of suggestions.suggestions) {
+								suggestionList.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
+							}
+						}
+						if (parseResult.reader.string.length !== parseResult.reader.cursor) {
+							const oldCursor = parseResult.reader.cursor;
+							parseResult.reader.cursor = parseResult.reader.string.length;
+							const suggestions = await this.commandDispatcher.getCompletionSuggestions(parseResult, parseResult.reader.cursor, source);
+							for (let suggestion of suggestions.suggestions) {
+								suggestionThisArgument.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
+							}
+							parseResult.reader.cursor = oldCursor;
+						}
+					}
+					const suggestionText = [
+						suggestionList.length === 0 ? [] : [
+							'\n\n',
+							`Пример того, что можно поставить в этом месте:\n`,
+							suggestionList.join(', ')
+						], '\n\n',
+						suggestionListNextCommand.length === 0 ? [] : [
+							'\n\n',
+							`Пример того, что можно поставить следующей командой:\n`,
+							suggestionListNextCommand.join(', ')
+						], '\n\n',
+						suggestionThisArgument.length === 0 ? [] : [
+							'\n\n',
+							`Пример того, как можно продолжить текущий аргумент:\n`,
+							suggestionThisArgument.join(', ')
+						]
+					];
 					if (err instanceof CommandSyntaxError) {
+
 						// TODO: Messenger specific formatting & i18n
 						/*
 						const cursor = err.reader.cursor;
 						const part = err.reader.readString();
 						err.reader.cursor = cursor;
 						*/
-						e.conversation.send([err.message, /*` instead of ${part}`, */'\n', `${commandPrefix}`, err.reader]);
+						e.conversation.send([
+							err.message, /*` instead of ${part}`, */
+							'\n',
+							`${commandPrefix}`, err.reader,
+							suggestionText
+						]);
 						// err.reader.cursor = cursor;
 					} else if (err instanceof UserDisplayableError) {
-						e.conversation.send([err.message, '\n', `${commandPrefix}`, err.reader]);
+						e.conversation.send([err.message, err.reader ? ['\n', `${commandPrefix}`, err.reader] : [], suggestionText]);
 					} else {
 						this.logger.error(err.stack);
-						e.conversation.send(`Ашипка, жди разраба.`);
+						e.conversation.send([`Ашипка, жди разраба.`, suggestionText]);
 					}
+				}
+			} else {
+				const source = new MessageEventContext(this, e);
+				for (let listener of this.listeners) {
+					listener.handler(source);
 				}
 			}
 		});

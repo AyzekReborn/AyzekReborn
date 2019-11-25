@@ -2,8 +2,17 @@ import { Api } from "../api";
 import { User, Chat, Guild } from "../conversation";
 
 export enum LeaveReason {
+	/**
+	 * User is kicked, may return back
+	 */
 	KICKED,
+	/**
+	 * User is banned from chat, can't return himself
+	 */
 	BANNED,
+	/**
+	 * User leaved himself, and can return in future
+	 */
 	SELF,
 }
 

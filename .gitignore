@@ -2,3 +2,6 @@
 /node_modules
 dist
 yarn-error.log
+.vscode
+# To workaround https://github.com/microsoft/vscode/issues/37947
+.gitmodules
