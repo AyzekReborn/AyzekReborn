@@ -63,3 +63,14 @@ node -r source-map-support/register dist/development/start
 # or, if you ok with broken stack traces
 node dist/development/start
 ```
+
+### Private plugin development
+
+Because of [this issue](https://github.com/microsoft/vscode/issues/37947), private plugins in src/privatePlugins are not visible in source control in vscode
+To resolve this issue, write this in top level .gitmodules (Which is already placed in .gitignore)
+
+```txt
+[submodule "some"]
+path = src/privatePlugins/SomePlugin
+url = dummy
+```
