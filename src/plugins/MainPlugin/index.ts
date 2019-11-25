@@ -54,6 +54,17 @@ const debugCommand = literal('debug')
 			`Full name: ${ctx.source.event.user.fullName}\n`,
 			`Name: ${ctx.source.event.user.name}\n`
 		]);
+	}))
+	.then(literal('msg').executes(ctx => {
+		const forwarded = ctx.source.event.maybeForwarded;
+		if (!forwarded) {
+			ctx.source.event.conversation.send(['No forwarded']);
+			return;
+		}
+		ctx.source.event.conversation.send([
+			`UID: ${forwarded.user.uid}\n`,
+			`Full name: ${forwarded.user.fullName}\n`,
+		]);
 	}));
 
 const helpCommand = literal('help')

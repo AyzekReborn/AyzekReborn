@@ -7,6 +7,7 @@ export enum Type {
 	QUOTED = 'quoted string',
 	UNQUOUTED = 'unquoted string',
 	STRING = 'string',
+	AMOUNT = 'amount'
 }
 export enum MissingCharType {
 	QUOTE = 'quote'
