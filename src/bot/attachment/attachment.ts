@@ -24,6 +24,10 @@ class UnknownDependencyError extends Error {
 	}
 }
 
+/**
+ * Holds all attachment creators and can issue
+ * new attachment storage for specified owner
+ */
 export class AttachmentRepository<O> {
 	private creators: AttachmentCreator<O, any>[] = [];
 	addCreator(creator: AttachmentCreator<O, any>) {
@@ -33,14 +37,19 @@ export class AttachmentRepository<O> {
 		this.creators.splice(this.creators.indexOf(creator), 1);
 	}
 	async getStorageFor(owner: O): Promise<AttachmentStorage<O>> {
+		if (this.creators.length === 0) return ownerlessEmptyAttachmentStorage;
 		const storage = new AttachmentStorage(owner, new Set(this.creators));
 		await storage.fill();
 		return storage;
 	}
 }
 
-// TODO: Build dependency graph instead of brute-forcing creator list, or, at
-// TODO: least, trace&cache resulution path
+/**
+ * Contains all attachments for user, can handle dependencies
+ *
+ * TODO: Build dependency graph instead of brute-forcing creator list, or, at
+ * TODO: least, trace&cache resulution path
+ */
 export class AttachmentStorage<O> {
 	resolved: Map<AttachmentConstructor<any>, Attachment> = new Map();
 	resolutionErrors: Map<AttachmentConstructor<any>, Error> = new Map();
@@ -72,6 +81,10 @@ export class AttachmentStorage<O> {
 			}
 		}
 	}
+	/**
+	 * Gets attachment by constructor, throws if attachment is
+	 * failed to resolve or doesn't exits
+	 */
 	get<A extends Attachment>(constructor: AttachmentConstructor<A>): A {
 		if (this.resolutionErrors.has(constructor))
 			throw this.resolutionErrors.get(constructor);
@@ -79,6 +92,10 @@ export class AttachmentStorage<O> {
 			return this.resolved.get(constructor)! as A;
 		throw new UnknownDependencyError(constructor);
 	}
+
+	/**
+	 * Returns attachment if available, null otherwise
+	 */
 	getIfAvailable<A extends Attachment>(constructor: AttachmentConstructor<A>): A | null {
 		if (this.resolved.has(constructor))
 			return this.resolved.get(constructor)! as A;
@@ -86,6 +103,7 @@ export class AttachmentStorage<O> {
 	}
 }
 
+// Used when no attachments is attached
 export const ownerlessEmptyAttachmentStorage = new AttachmentStorage<any>(null, new Set())
 
 function getDependencyErrors(creator: AttachmentCreator<any, any>, storage: AttachmentStorage<any>): Error[] {
@@ -101,6 +119,9 @@ function isCreatorHaveAllDependenciesResolved(creator: AttachmentCreator<any, an
 	return creator.dependencies.every(d => storage.resolved.has(d));
 }
 
+/**
+ * Any set of probally persistent values/methods attached to user/chat
+ */
 export abstract class Attachment { }
 
 export type AttachmentConstructor<A extends Attachment> = new (...args: any[]) => A;
@@ -108,9 +129,23 @@ export type AttachmentConstructor<A extends Attachment> = new (...args: any[]) =
 export abstract class AttachmentCreator<O, A extends Attachment> {
 	abstract thisConstructor: AttachmentConstructor<A>;
 	abstract dependencies: AttachmentConstructor<any>[];
+	/**
+	 * Constructs attachment for specified owner, receiving all needed dependencies in storage argument
+	 *
+	 * @remarks
+	 * This method is never called if any of dependency resolution is failed
+	 *
+	 * @param owner attachment owner
+	 * @param storage holds resolved dependencies
+	 *
+	 * @returns constructed attachment
+	 */
 	abstract async getAttachmentFor(owner: O, storage: AttachmentStorage<O>): Promise<A>;
 }
 
+/**
+ * Fails if message sender doesn't have needed attachment
+ */
 export function requireAttachment<P extends Attachment>(constructor: AttachmentConstructor<P>): Requirement<MessageEventContext<any>> {
 	return ctx => {
 		const attachment = ctx.event.user.attachmentStorage!.getIfAvailable(constructor);

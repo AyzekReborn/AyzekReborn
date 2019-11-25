@@ -4,8 +4,17 @@ import { Api } from "../api";
 export abstract class TitleChangeEvent<A extends Api<A>> {
 	constructor(
 		public api: A,
+		/**
+		 * Title before change
+		 */
 		public oldTitle: string | null,
+		/**
+		 * Title after change
+		 */
 		public newTitle: string,
+		/**
+		 * Who is changing the title
+		 */
 		public initiator: User<A>,
 	) { }
 }
