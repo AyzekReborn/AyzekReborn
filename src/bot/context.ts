@@ -1,9 +1,9 @@
 import { Api } from "../model/api";
-import { MessageEvent } from "../model/events/message";
+import { Attachment } from "../model/attachment/attachment";
 import { IConversation } from "../model/conversation";
+import { MessageEvent } from "../model/events/message";
 import { IMessage, IMessageOptions } from "../model/message";
 import { Text } from '../model/text';
-import { Attachment } from "../model/attachment/attachment";
 import { Ayzek } from "./ayzek";
 
 export class ContextAttachment {

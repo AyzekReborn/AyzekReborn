@@ -1,10 +1,10 @@
-import { Readable } from 'stream';
-import { readStreamToBuffer, createReadStream } from '@meteor-it/utils';
-import cloneable from 'cloneable-readable';
-import temp from 'temp';
-import { writeFile, unlink, readFile, getReadStream } from '@meteor-it/fs';
+import { getReadStream, readFile, unlink, writeFile } from '@meteor-it/fs';
+import { createReadStream, readStreamToBuffer } from '@meteor-it/utils';
 import { emit } from '@meteor-it/xrest';
+import cloneable from 'cloneable-readable';
+import { Readable } from 'stream';
 import { readable as streamReadableNow } from 'stream-now';
+import temp from 'temp';
 
 interface MaybeTemporary {
 	path: string;

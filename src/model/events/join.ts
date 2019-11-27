@@ -1,5 +1,5 @@
 import { Api } from "../api";
-import { User, Chat, Guild } from "../conversation";
+import { Chat, Guild, User } from "../conversation";
 
 export enum JoinReason {
 	INVITED,

@@ -1,11 +1,11 @@
 import Logger from "@meteor-it/logger";
 import ConsoleReceiver from '@meteor-it/logger/receivers/node';
+import DiscordApi from "./api/discord/api";
 import VKApi from "./api/vk/api";
 import { Ayzek } from "./bot/ayzek";
 import ModernPluginSystem from "./bot/pluginSystems/ModernPluginSystem";
-import { Api } from "./model/api";
 import config from "./config.yaml";
-import DiscordApi from "./api/discord/api";
+import { Api } from "./model/api";
 
 Logger.addReceiver(new ConsoleReceiver());
 
@@ -35,5 +35,5 @@ function parseApi(apiDesc: any) {
 	const pps = new ModernPluginSystem(ayzek,
 		() => (require as any).context('./privatePlugins', true, /Plugin\/index\.([jt]sx?|coffee)$/, 'lazy'),
 		(acceptor, getContext) => (module as any).hot.accept(getContext().id, acceptor))
-	await Promise.all([pps.load(), ps.load(), ayzek.doWork()]);
+	await Promise.all([pps.load({ ayzek }), ps.load({ ayzek }), ayzek.doWork()]);
 })();

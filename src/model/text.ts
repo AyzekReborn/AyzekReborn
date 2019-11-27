@@ -1,6 +1,6 @@
+import StringReader from "../command/reader";
 import { Api } from "./api";
 import { Chat, User } from "./conversation";
-import StringReader from "../command/reader";
 
 export type MentionTextPart<A extends Api<A>> = {
 	type: 'mentionPart',

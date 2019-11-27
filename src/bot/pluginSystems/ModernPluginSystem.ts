@@ -1,10 +1,10 @@
 import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
-import { PluginInfo, IMessageListener } from '../plugin';
-import { Ayzek } from '../ayzek';
 import { CommandNode } from '../../command/tree';
+import { Ayzek } from '../ayzek';
+import { PluginInfo } from '../plugin';
 
 export type PluginInfoAttachment = {
-	registered?: CommandNode<any>[];
+	registered?: CommandNode<any, any>[];
 	file: string;
 };
 

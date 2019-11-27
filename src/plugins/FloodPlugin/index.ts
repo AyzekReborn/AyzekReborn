@@ -1,20 +1,18 @@
-import { PluginInfo, literal, PluginCategory, argument } from "../../bot/plugin";
 import Random from '@meteor-it/random';
-import * as phrazes from './phrazes.yml';
 import { userArgument } from "../../bot/argument";
-import { User } from "../../model/conversation";
+import { command, PluginCategory, PluginInfo } from "../../bot/plugin";
+import * as phrazes from './phrazes.yml';
 
-const whatCommand = literal('what')
-	.then(
-		argument('person', userArgument())
-			.executes(({ source: { event }, getArgument }) => {
-				const date = new Date();
-				const seed = getArgument<User<any>>('person').uid + '|' + Math.floor(date.getMinutes() / 5) + '|' + date.getHours() + '|' + date.getDay();
-				const random = new Random(seed);
-				event.conversation.send(`${random.randomArrayElement(phrazes.what.start)} ${random.randomArrayElement(phrazes.what.end)}`);
-			}));
+const whatCommand = command('what')
+	.thenArgument('person', userArgument(), b => b
+		.executes(({ source: { event }, getArgument }) => {
+			const date = new Date();
+			const seed = getArgument('person').uid + '|' + Math.floor(date.getMinutes() / 5) + '|' + date.getHours() + '|' + date.getDay();
+			const random = new Random(seed);
+			event.conversation.send(`${random.randomArrayElement(phrazes.what.start)} ${random.randomArrayElement(phrazes.what.end)}`);
+		}));
 
-const shrugCommand = literal('shrug')
+const shrugCommand = command('shrug')
 	.executes(({ source: { event } }) => {
 		event.conversation.send(`¯\\_(ツ)_/¯`)
 	})

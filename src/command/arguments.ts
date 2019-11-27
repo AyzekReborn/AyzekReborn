@@ -1,12 +1,12 @@
-import StringReader, { Type } from './reader';
-import { SuggestionsBuilder, Suggestions } from './suggestions';
-import StringRange from './range';
-import { CommandContext, ParseEntryPoint, ExpectedArgumentSeparatorError, ARGUMENT_SEPARATOR } from './command';
+import { ARGUMENT_SEPARATOR, CommandContext, ExpectedArgumentSeparatorError, ParseEntryPoint } from './command';
 import { UserDisplayableError } from './error';
+import StringRange from './range';
+import StringReader, { Type } from './reader';
+import { Suggestions, SuggestionsBuilder } from './suggestions';
 
 export abstract class ArgumentType<T> {
 	abstract parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<T>;
-	async listSuggestions<S>(_ctx: CommandContext<S>, _builder: SuggestionsBuilder): Promise<Suggestions> {
+	async listSuggestions<S>(_ctx: CommandContext<S, any>, _builder: SuggestionsBuilder): Promise<Suggestions> {
 		return Suggestions.empty;
 	}
 	get examples(): string[] {
@@ -18,7 +18,7 @@ export class BoolArgumentType extends ArgumentType<boolean> {
 	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): Promise<boolean> {
 		return Promise.resolve(reader.readBoolean());
 	}
-	async listSuggestions<S>(_ctx: CommandContext<S>, builder: SuggestionsBuilder) {
+	async listSuggestions<S>(_ctx: CommandContext<S, any>, builder: SuggestionsBuilder) {
 		let buffer = builder.remaining.toLowerCase();
 		if ('true'.startsWith(buffer)) {
 			builder.suggest('true', null);

@@ -1,9 +1,9 @@
+import { nonenumerable } from 'nonenumerable';
+import { AttachmentStorage, ownerlessEmptyAttachmentStorage } from "../bot/attachment/attachment";
 import { Api } from "./api";
 import { Attachment, Image } from "./attachment/attachment";
-import { IMessageOptions, IMessage } from "./message";
-import { nonenumerable } from 'nonenumerable';
-import { Text, TextPart, MentionTextPart, ChatReferenceTextPart } from './text';
-import { AttachmentStorage, ownerlessEmptyAttachmentStorage } from "../bot/attachment/attachment";
+import { IMessage, IMessageOptions } from "./message";
+import { ChatReferenceTextPart, MentionTextPart, Text, TextPart } from './text';
 
 enum ConversationType {
 	USER,
@@ -79,11 +79,17 @@ export abstract class User<A extends Api<A>> extends Conversation<A> {
 		super(api, targetId, ConversationType.USER);
 	}
 
+	/**
+	 * API specific user representation
+	 */
+	abstract apiUser: any;
+
 	abstract get photoImage(): Promise<Image | null>;
 
 	private get idName() {
 		return `<Unknown ${this.uid}>`;
 	}
+
 	get name(): string {
 		if (this.nickName)
 			return this.nickName;
@@ -91,6 +97,7 @@ export abstract class User<A extends Api<A>> extends Conversation<A> {
 			return this.firstName;
 		else return this.idName;
 	}
+
 	get fullName(): string {
 		if (this.nickName && !this.firstName && !this.lastName)
 			return this.nickName;
@@ -135,6 +142,11 @@ export abstract class Chat<A extends Api<A>> extends Conversation<A> {
 	) {
 		super(api, targetId, ConversationType.CHAT);
 	}
+
+	/**
+	* API specific chat representation
+	*/
+	abstract apiChat: any;
 
 	abstract get photoImage(): Promise<Image | null>;
 

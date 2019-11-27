@@ -1,13 +1,14 @@
+import { CommandContext } from "./command";
 import StringRange from "./range";
 import { CommandNode } from './tree';
-import { CommandContext } from "./command";
 
 export class SuggestionContext<S> {
-	constructor(public readonly parent: CommandNode<S>, public readonly startPos: number) { }
+	constructor(public readonly parent: CommandNode<S, any>, public readonly startPos: number) { }
 }
 
 export class Suggestion {
 	constructor(public readonly range: StringRange, public readonly text: string, public readonly tooltip: string | null) { }
+
 	apply(input: string) {
 		if (this.range.start === 0 && this.range.end === input.length)
 			return input
@@ -19,6 +20,7 @@ export class Suggestion {
 			result += input.substring(this.range.end);
 		return result;
 	}
+
 	expand(command: string, range: StringRange) {
 		if (range.equals(this.range))
 			return this;
@@ -38,12 +40,15 @@ export class Suggestions {
 	constructor(public readonly range: StringRange, public readonly suggestions: Suggestion[]) {
 
 	}
+
 	get isEmpty() {
 		return this.suggestions.length === 0;
 	}
+
 	static get empty(): Suggestions {
 		return EMPTY_SUGGESTIONS;
 	}
+
 	static merge(command: string, input: Suggestions[]): Suggestions {
 		if (input.length === 0) return EMPTY_SUGGESTIONS;
 		if (input.length === 1) return input[0];
@@ -55,6 +60,7 @@ export class Suggestions {
 		}
 		return Suggestions.create(command, Array.from(texts));
 	}
+
 	static create(command: string, suggestions: Suggestion[]) {
 		if (suggestions.length === 0)
 			return EMPTY_SUGGESTIONS;
@@ -82,9 +88,11 @@ export class SuggestionsBuilder {
 	constructor(public readonly input: string, public readonly start: number) {
 		this.remaining = input.substring(start);
 	}
+
 	build() {
 		return Suggestions.create(this.input, this.result);
 	}
+
 	suggest(text: string, tooltip: string | null): this {
 		if (text === this.remaining) {
 			return this;
@@ -92,16 +100,19 @@ export class SuggestionsBuilder {
 		this.result.push(new Suggestion(StringRange.between(this.start, this.input.length), text, tooltip));
 		return this;
 	}
+
 	add(other: SuggestionsBuilder) {
 		this.result.push(...other.result);
 		return this;
 	}
+
 	createOffset(start: number) {
 		return new SuggestionsBuilder(this.input, start);
 	}
+
 	restart() {
 		return new SuggestionsBuilder(this.input, this.start);
 	}
 }
 
-export type SuggestionProvider<S> = (ctx: CommandContext<S>, builder: SuggestionsBuilder) => Promise<Suggestions>;
+export type SuggestionProvider<S> = (ctx: CommandContext<S, any>, builder: SuggestionsBuilder) => Promise<Suggestions>;

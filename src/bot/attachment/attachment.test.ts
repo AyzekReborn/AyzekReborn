@@ -1,4 +1,4 @@
-import { AttachmentRepository, Attachment, AttachmentCreator, AttachmentStorage } from "./attachment";
+import { Attachment, AttachmentCreator, AttachmentRepository, AttachmentStorage } from "./attachment";
 
 describe('no deps', () => {
 	const repository = new AttachmentRepository();
