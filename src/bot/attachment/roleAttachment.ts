@@ -1,7 +1,7 @@
-import { Attachment, AttachmentCreator, AttachmentStorage, AttachmentConstructor } from "./attachment";
-import { User } from "../../model/conversation";
 import { Requirement } from "../../command/requirement";
+import { User } from "../../model/conversation";
 import { MessageEventContext } from "../context";
+import { Attachment, AttachmentConstructor, AttachmentCreator, AttachmentStorage } from "./attachment";
 
 export abstract class RoleAttachment extends Attachment {
 	public constructor(public roles: string[]) {

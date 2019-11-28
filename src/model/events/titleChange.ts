@@ -1,5 +1,5 @@
-import { User, Chat, Guild } from "../conversation";
 import { Api } from "../api";
+import { Chat, Guild, User } from "../conversation";
 
 export abstract class TitleChangeEvent<A extends Api<A>> {
 	constructor(

@@ -1,16 +1,16 @@
 import Logger from "@meteor-it/logger";
-import { User, Chat, Conversation, Guild } from "./conversation";
-import { Text } from './text';
-import { Attachment } from "./attachment/attachment";
-import { IMessageOptions } from "./message";
-import { MessageEvent } from './events/message';
-import { JoinChatEvent, JoinGuildEvent } from "./events/join";
-import { LeaveGuildEvent, LeaveChatEvent } from "./events/leave";
-import { GuildTitleChangeEvent, ChatTitleChangeEvent } from "./events/titleChange";
-import { TypedEvent } from "../util/event";
 import ApiFeature from "../api/features";
-import { TypingEvent } from "./events/typing";
 import { ArgumentType } from "../command/arguments";
+import { TypedEvent } from "../util/event";
+import { Attachment } from "./attachment/attachment";
+import { Chat, Conversation, Guild, User } from "./conversation";
+import { JoinChatEvent, JoinGuildEvent } from "./events/join";
+import { LeaveChatEvent, LeaveGuildEvent } from "./events/leave";
+import { MessageEvent } from './events/message';
+import { ChatTitleChangeEvent, GuildTitleChangeEvent } from "./events/titleChange";
+import { TypingEvent } from "./events/typing";
+import { IMessageOptions } from "./message";
+import { Text } from './text';
 
 export class NotImplementedInApiError extends Error {
 	constructor(method: string) {

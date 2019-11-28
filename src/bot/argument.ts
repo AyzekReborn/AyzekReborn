@@ -1,9 +1,9 @@
-import { ParseEntryPoint } from "../command/command";
 import { ArgumentType } from "../command/arguments";
-import StringReader from "../command/reader";
-import { User } from "../model/conversation";
-import { Api } from "../model/api";
+import { ParseEntryPoint } from "../command/command";
 import { UserDisplayableError } from "../command/error";
+import StringReader from "../command/reader";
+import { Api } from "../model/api";
+import { User } from "../model/conversation";
 
 export class UserArgumentType extends ArgumentType<User<any>> {
 	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<User<any>> {

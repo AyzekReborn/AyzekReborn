@@ -1,6 +1,6 @@
-import { Api } from "../api";
-import { User, Conversation, Chat } from "../conversation";
 import StringReader from "../../command/reader";
+import { Api } from "../api";
+import { Chat, Conversation, User } from "../conversation";
 
 export enum TypingEventType {
 	/**

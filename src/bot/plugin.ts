@@ -1,10 +1,8 @@
-import { MessageEventContext } from "./context";
-import { literal as defaultLiteral, argument as defaultArgument } from '../command';
-import { ArgumentType } from "../command/arguments";
 import { LiteralArgumentBuilder } from "../command/builder";
+import { Chat, Conversation, User } from "../model/conversation";
 import { AttachmentCreator } from "./attachment/attachment";
-import { User, Chat, Conversation } from "../model/conversation";
 import { Ayzek } from "./ayzek";
+import { MessageEventContext } from "./context";
 
 export type IMessageListener = {
 	name: string,
@@ -20,7 +18,7 @@ type PluginInfo = {
 	ayzek?: Ayzek<any>,
 
 	category: PluginCategory,
-	commands: LiteralArgumentBuilder<MessageEventContext<any>>[],
+	commands: LiteralArgumentBuilder<MessageEventContext<any>, any>[],
 	listeners: IMessageListener[],
 	userAttachments?: AttachmentCreator<User<any>, any>[],
 	chatAttachments?: AttachmentCreator<Chat<any>, any>[],
@@ -36,11 +34,9 @@ type PluginInfo = {
 	deinit?(): Promise<void>
 };
 export { PluginInfo };
-export function literal(...names: string[]) {
-	return defaultLiteral<MessageEventContext<any>>(...names);
-}
-export function argument<T>(name: string, type: ArgumentType<T>) {
-	return defaultArgument<MessageEventContext<any>, T>(name, type);
+
+export function command(names: string | string[]) {
+	return new LiteralArgumentBuilder<MessageEventContext<any>, {}>((typeof names === 'string' ? [names] : names));
 }
 
 export function listener(name: string, description: string, handler: (ctx: MessageEventContext<any>) => Promise<void>): IMessageListener {

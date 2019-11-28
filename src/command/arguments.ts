@@ -1,16 +1,29 @@
-import StringReader, { Type } from './reader';
-import { SuggestionsBuilder, Suggestions } from './suggestions';
-import StringRange from './range';
-import { CommandContext, ParseEntryPoint, ExpectedArgumentSeparatorError, ARGUMENT_SEPARATOR } from './command';
+import { ARGUMENT_SEPARATOR, CommandContext, ExpectedArgumentSeparatorError, ParseEntryPoint } from './command';
 import { UserDisplayableError } from './error';
+import StringRange from './range';
+import StringReader, { Type } from './reader';
+import { Suggestions, SuggestionsBuilder } from './suggestions';
 
 export abstract class ArgumentType<T> {
 	abstract parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<T>;
-	async listSuggestions<S>(_ctx: CommandContext<S>, _builder: SuggestionsBuilder): Promise<Suggestions> {
+	async listSuggestions<S>(_ctx: CommandContext<S, any>, _builder: SuggestionsBuilder): Promise<Suggestions> {
 		return Suggestions.empty;
 	}
+
 	get examples(): string[] {
 		return [];
+	}
+
+	list(minimum: number = 0, maximum: number = Infinity): ListArgumentType<T> {
+		return new ListArgumentType(this, minimum, maximum);
+	}
+
+	lazy(stringReader: ArgumentType<string>): LazyArgumentType<T> {
+		return new LazyArgumentType(stringReader, this);
+	}
+
+	errorable(elseReader: ArgumentType<string>): ErrorableArgumentType<T> {
+		return new ErrorableArgumentType(elseReader, this);
 	}
 }
 
@@ -18,7 +31,7 @@ export class BoolArgumentType extends ArgumentType<boolean> {
 	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): Promise<boolean> {
 		return Promise.resolve(reader.readBoolean());
 	}
-	async listSuggestions<S>(_ctx: CommandContext<S>, builder: SuggestionsBuilder) {
+	async listSuggestions<S>(_ctx: CommandContext<S, any>, builder: SuggestionsBuilder) {
 		let buffer = builder.remaining.toLowerCase();
 		if ('true'.startsWith(buffer)) {
 			builder.suggest('true', null);
@@ -141,6 +154,35 @@ export type ParsedArgument<_S, T> = {
 	result: T,
 }
 
+export type ErrorableArgumentValue<T> = {
+	value: T,
+} | {
+	value: null,
+	error: Error,
+	input: string,
+}
+
+export class ErrorableArgumentType<V> extends ArgumentType<ErrorableArgumentValue<V>>{
+	constructor(public elseReader: ArgumentType<string>, public wrapped: ArgumentType<V>) {
+		super();
+	}
+	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<ErrorableArgumentValue<V>> {
+		const cursor = reader.cursor;
+		try {
+			return {
+				value: await this.wrapped.parse(ctx, reader),
+			};
+		} catch (error) {
+			reader.cursor = cursor;
+			return {
+				value: null,
+				error,
+				input: await this.elseReader.parse(ctx, reader),
+			};
+		}
+	}
+}
+
 export class LazyArgumentType<V> extends ArgumentType<() => Promise<V>>{
 	constructor(public wrapperReader: ArgumentType<string>, public wrapped: ArgumentType<V>) {
 		super();
@@ -149,10 +191,6 @@ export class LazyArgumentType<V> extends ArgumentType<() => Promise<V>>{
 		let readed = await this.wrapperReader.parse(ctx, reader);
 		return () => this.wrapped.parse(ctx, new StringReader(readed));
 	}
-}
-
-export function lazyArgument<V>(wrappedReader: ArgumentType<string>, wrapped: ArgumentType<V>) {
-	return new LazyArgumentType(wrappedReader, wrapped);
 }
 
 export class ListArgumentType<V> extends ArgumentType<V[]> {
@@ -164,16 +202,16 @@ export class ListArgumentType<V> extends ArgumentType<V[]> {
 		while (reader.canReadAnything) {
 			const value = await this.singleArgumentType.parse(ctx, reader);
 			got.push(value);
-			if (reader.canReadAnything && reader.peek() !== ARGUMENT_SEPARATOR)
-				throw new ExpectedArgumentSeparatorError(reader);
+			if (reader.canReadAnything) {
+				if (reader.peek() !== ARGUMENT_SEPARATOR)
+					throw new ExpectedArgumentSeparatorError(reader);
+				else
+					reader.skip();
+			}
 		}
 		if (got.length < this.minimum || got.length > this.maximum) {
 			throw new RangeError(reader, got.length < this.minimum ? FailType.TOO_LOW : FailType.TOO_HIGH, Type.AMOUNT, got.length);
 		}
 		return got;
 	}
-}
-
-export function listArgument<V>(wrapped: ArgumentType<V>, minimum = 0, maximum = Infinity) {
-	return new ListArgumentType(wrapped, minimum, maximum);
 }

@@ -1,14 +1,14 @@
 import Logger from "@meteor-it/logger";
-import { Disposable } from "../util/event";
-import { Api } from "../model/api";
-import { CommandDispatcher } from "../command/command";
-import { MessageEventContext } from "./context";
-import { PluginInfo, IMessageListener } from "./plugin";
 import ApiFeature from "../api/features";
-import { User, Chat, Guild, Conversation } from "../model/conversation";
 import { ArgumentType } from "../command/arguments";
-import { AttachmentRepository, AttachmentStorage, ownerlessEmptyAttachmentStorage } from "./attachment/attachment";
+import { CommandDispatcher } from "../command/command";
 import { CommandSyntaxError, UserDisplayableError } from "../command/error";
+import { Api } from "../model/api";
+import { Chat, Conversation, Guild, User } from "../model/conversation";
+import { Disposable } from "../util/event";
+import { AttachmentRepository, AttachmentStorage, ownerlessEmptyAttachmentStorage } from "./attachment/attachment";
+import { MessageEventContext } from "./context";
+import { IMessageListener, PluginInfo } from "./plugin";
 
 export class Ayzek<A extends Api<any>> extends Api<A> {
 	plugins: PluginInfo[] = [];

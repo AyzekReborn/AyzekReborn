@@ -1,8 +1,8 @@
-import { Data, EmptyData } from "./data";
-import { emitStreaming } from '@meteor-it/xrest';
-import { constants } from 'http2';
 import { isFile, stat } from "@meteor-it/fs";
 import { lookupByPath } from '@meteor-it/mime';
+import { emitStreaming } from '@meteor-it/xrest';
+import { constants } from 'http2';
+import { Data, EmptyData } from "./data";
 
 export class Attachment {
 	type: string;
