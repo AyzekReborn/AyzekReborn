@@ -13,12 +13,16 @@ export abstract class ArgumentBuilder<S, T extends ArgumentBuilder<S, T, O>, O e
 	forks: boolean = false;
 
 	thenLiteral(names: string | string[], builderFiller: (builder: LiteralArgumentBuilder<S, O>) => void): this {
-		builderFiller(new LiteralArgumentBuilder(typeof names === 'string' ? [names] : names));
+		const builder = new LiteralArgumentBuilder<S, O>(typeof names === 'string' ? [names] : names);
+		builderFiller(builder);
+		this.arguments.addChild(builder.build() as any);
 		return this;
 	}
 
 	thenArgument<N extends string, T>(name: N, type: ArgumentType<T>, builderFiller: (builder: RequiredArgumentBuilder<N, S, T, O & { [key in N]: T }>) => void): this {
-		builderFiller(new RequiredArgumentBuilder(name, type));
+		const builder = new RequiredArgumentBuilder<N, S, T, O & { [key in N]: T }>(name, type)
+		builderFiller(builder);
+		this.arguments.addChild(builder.build() as any);
 		return this;
 	}
 

@@ -202,8 +202,12 @@ export class ListArgumentType<V> extends ArgumentType<V[]> {
 		while (reader.canReadAnything) {
 			const value = await this.singleArgumentType.parse(ctx, reader);
 			got.push(value);
-			if (reader.canReadAnything && reader.peek() !== ARGUMENT_SEPARATOR)
-				throw new ExpectedArgumentSeparatorError(reader);
+			if (reader.canReadAnything) {
+				if (reader.peek() !== ARGUMENT_SEPARATOR)
+					throw new ExpectedArgumentSeparatorError(reader);
+				else
+					reader.skip();
+			}
 		}
 		if (got.length < this.minimum || got.length > this.maximum) {
 			throw new RangeError(reader, got.length < this.minimum ? FailType.TOO_LOW : FailType.TOO_HIGH, Type.AMOUNT, got.length);
