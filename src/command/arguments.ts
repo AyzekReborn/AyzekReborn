@@ -9,8 +9,21 @@ export abstract class ArgumentType<T> {
 	async listSuggestions<S>(_ctx: CommandContext<S, any>, _builder: SuggestionsBuilder): Promise<Suggestions> {
 		return Suggestions.empty;
 	}
+
 	get examples(): string[] {
 		return [];
+	}
+
+	list(minimum: number = 0, maximum: number = Infinity): ListArgumentType<T> {
+		return new ListArgumentType(this, minimum, maximum);
+	}
+
+	lazy(stringReader: ArgumentType<string>): LazyArgumentType<T> {
+		return new LazyArgumentType(stringReader, this);
+	}
+
+	errorable(elseReader: ArgumentType<string>): ErrorableArgumentType<T> {
+		return new ErrorableArgumentType(elseReader, this);
 	}
 }
 
@@ -141,6 +154,35 @@ export type ParsedArgument<_S, T> = {
 	result: T,
 }
 
+export type ErrorableArgumentValue<T> = {
+	value: T,
+} | {
+	value: null,
+	error: Error,
+	input: string,
+}
+
+export class ErrorableArgumentType<V> extends ArgumentType<ErrorableArgumentValue<V>>{
+	constructor(public elseReader: ArgumentType<string>, public wrapped: ArgumentType<V>) {
+		super();
+	}
+	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<ErrorableArgumentValue<V>> {
+		const cursor = reader.cursor;
+		try {
+			return {
+				value: await this.wrapped.parse(ctx, reader),
+			};
+		} catch (error) {
+			reader.cursor = cursor;
+			return {
+				value: null,
+				error,
+				input: await this.elseReader.parse(ctx, reader),
+			};
+		}
+	}
+}
+
 export class LazyArgumentType<V> extends ArgumentType<() => Promise<V>>{
 	constructor(public wrapperReader: ArgumentType<string>, public wrapped: ArgumentType<V>) {
 		super();
@@ -149,10 +191,6 @@ export class LazyArgumentType<V> extends ArgumentType<() => Promise<V>>{
 		let readed = await this.wrapperReader.parse(ctx, reader);
 		return () => this.wrapped.parse(ctx, new StringReader(readed));
 	}
-}
-
-export function lazyArgument<V>(wrappedReader: ArgumentType<string>, wrapped: ArgumentType<V>) {
-	return new LazyArgumentType(wrappedReader, wrapped);
 }
 
 export class ListArgumentType<V> extends ArgumentType<V[]> {
@@ -172,8 +210,4 @@ export class ListArgumentType<V> extends ArgumentType<V[]> {
 		}
 		return got;
 	}
-}
-
-export function listArgument<V>(wrapped: ArgumentType<V>, minimum = 0, maximum = Infinity) {
-	return new ListArgumentType(wrapped, minimum, maximum);
 }
