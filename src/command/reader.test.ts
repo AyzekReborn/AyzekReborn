@@ -1,6 +1,25 @@
-import StringReader from './reader';
+import StringReader, { InvalidCursorPositionError } from './reader';
 
-describe('Sayings Greeter', () => {
+describe('Reader', () => {
+	it('should correctly clone', () => {
+		const original = new StringReader('test 123123');
+		original.cursor = 8;
+		const cloned = original.clone();
+		expect(original).not.toBe(cloned);
+		expect(original).toEqual(cloned);
+	});
+	it('should throw on incorrect cursor position', () => {
+		const reader = new StringReader('hello');
+		expect(() => {
+			reader.cursor = -1;
+		}).toThrow(new InvalidCursorPositionError(reader, -1));
+		expect(() => {
+			reader.cursor = 7;
+		}).toThrow(new InvalidCursorPositionError(reader, 7));
+		expect(() => {
+			reader.skipMulti(10);
+		}).toThrow(new InvalidCursorPositionError(reader, 10));
+	});
 	it('should should correctly do cursor manipilations', () => {
 		let reader = new StringReader('ab');
 		expect(reader.peek()).toBe('a');

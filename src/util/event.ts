@@ -6,7 +6,6 @@ export interface Disposable {
 	dispose(): void;
 }
 
-/** passes through events as they happen. You will not get events from before you start listening */
 export class TypedEvent<T> {
 	private listeners: Listener<T>[] = [];
 	private listenersOncer: Listener<T>[] = [];

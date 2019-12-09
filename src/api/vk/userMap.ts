@@ -1,7 +1,7 @@
 import PromiseMap from "../promiseMap";
-import VKRealUser from "./user/realUser";
-import GroupingVKApiRequester from "./groupingRequester";
 import VKApi from "./api";
+import GroupingVKApiRequester from "./groupingRequester";
+import VKRealUser from "./user/realUser";
 
 export default class VKUserMap extends PromiseMap<number, VKRealUser> {
 	processor: GroupingVKApiRequester<number>;

@@ -1,6 +1,6 @@
+import { Image } from '../../../model/attachment/attachment';
 import { Gender } from "../../../model/conversation";
 import VKApi from "../api";
-import { Image } from '../../../model/attachment/attachment';
 import VKUser from "./user";
 
 export default class VKRealUser extends VKUser {

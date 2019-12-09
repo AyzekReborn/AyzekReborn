@@ -1,5 +1,5 @@
 import { ARGUMENT_SEPARATOR, CommandContext, ExpectedArgumentSeparatorError, ParseEntryPoint } from './command';
-import { UserDisplayableError } from './error';
+import { CommandSyntaxError, UserDisplayableError } from './error';
 import StringRange from './range';
 import StringReader, { Type } from './reader';
 import { Suggestions, SuggestionsBuilder } from './suggestions';
@@ -14,8 +14,8 @@ export abstract class ArgumentType<T> {
 		return [];
 	}
 
-	list(minimum: number = 0, maximum: number = Infinity): ListArgumentType<T> {
-		return new ListArgumentType(this, minimum, maximum);
+	list(strategy: ListParsingStrategy, minimum: number = 0, maximum: number = Infinity): ListArgumentType<T> {
+		return new ListArgumentType(strategy, this, minimum, maximum);
 	}
 
 	lazy(stringReader: ArgumentType<string>): LazyArgumentType<T> {
@@ -51,14 +51,21 @@ export function booleanArgument() {
 }
 
 enum FailType {
-	TOO_LOW = 'too high',
-	TOO_HIGH = 'too low',
+	TOO_LOW = 'too low',
+	TOO_HIGH = 'too high',
 }
 
 class RangeError<T> extends UserDisplayableError {
 	constructor(public ctx: StringReader, public failType: FailType, public type: Type, public value: T) {
 		super(`${failType} ${type}: ${value}`);
 		this.name = 'RangeError';
+	}
+}
+
+class BadSeparatorError extends CommandSyntaxError {
+	constructor(public ctx: StringReader, separator: string) {
+		super(ctx, `bad input error for separator = "${separator}"`);
+		this.name = 'BadSeparatorError';
 	}
 }
 
@@ -193,21 +200,65 @@ export class LazyArgumentType<V> extends ArgumentType<() => Promise<V>>{
 	}
 }
 
+export type ListParsingStrategy = {
+	type: 'repeatBeforeError',
+} | {
+	type: 'noSpacesWithSeparator',
+	// "," by default
+	separator?: string,
+}
+
 export class ListArgumentType<V> extends ArgumentType<V[]> {
-	constructor(public singleArgumentType: ArgumentType<V>, public readonly minimum = 0, public readonly maximum = Infinity) {
+	/**
+	 * @param separator if null - then arguments will be separated as any other,
+	 * if specified - inner argument must not contain them, because only string before them will be feed
+	 */
+	constructor(public strategy: ListParsingStrategy, public singleArgumentType: ArgumentType<V>, public readonly minimum = 0, public readonly maximum = Infinity) {
 		super();
 	}
+
 	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<V[]> {
 		const got: V[] = [];
-		while (reader.canReadAnything) {
-			const value = await this.singleArgumentType.parse(ctx, reader);
-			got.push(value);
-			if (reader.canReadAnything) {
-				if (reader.peek() !== ARGUMENT_SEPARATOR)
-					throw new ExpectedArgumentSeparatorError(reader);
-				else
-					reader.skip();
+		if (this.strategy.type === 'repeatBeforeError') {
+			while (reader.canReadAnything) {
+				let lastSuccessPos = reader.cursor;
+				try {
+					const value = await this.singleArgumentType.parse(ctx, reader);
+					got.push(value);
+					if (reader.canReadAnything) {
+						if (reader.peek() !== ARGUMENT_SEPARATOR)
+							throw new ExpectedArgumentSeparatorError(reader);
+						else
+							reader.skip();
+					}
+					lastSuccessPos = reader.cursor;
+				} catch (error) {
+					reader.cursor = lastSuccessPos;
+					break;
+				}
 			}
+		} if (this.strategy.type === 'noSpacesWithSeparator') {
+			const separator = this.strategy.separator ?? ',';
+			while (reader.canReadAnything) {
+				const gotValue = new StringReader(reader.readBeforeTestFails(t => t !== separator && t !== ' '));
+				const value = await this.singleArgumentType.parse(ctx, gotValue);
+				if (gotValue.cursor !== gotValue.string.length)
+					throw new BadSeparatorError(gotValue, separator);
+				got.push(value);
+				if (reader.canReadAnything) {
+					if (reader.peek() === separator) {
+						reader.skip();
+					} else {
+						break;
+					}
+					if (!reader.canReadAnything)
+						throw new ExpectedArgumentSeparatorError(reader);
+					if (reader.peek() === ARGUMENT_SEPARATOR)
+						reader.skip();
+				}
+			}
+		} else {
+			throw new Error('Not handled');
 		}
 		if (got.length < this.minimum || got.length > this.maximum) {
 			throw new RangeError(reader, got.length < this.minimum ? FailType.TOO_LOW : FailType.TOO_HIGH, Type.AMOUNT, got.length);

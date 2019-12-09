@@ -1,10 +1,10 @@
 import { getReadStream, readFile, unlink, writeFile } from '@meteor-it/fs';
 import { createReadStream, readStreamToBuffer } from '@meteor-it/utils';
 import { emit } from '@meteor-it/xrest';
-import cloneable from 'cloneable-readable';
+import * as cloneable from 'cloneable-readable';
 import { Readable } from 'stream';
 import { readable as streamReadableNow } from 'stream-now';
-import temp from 'temp';
+import * as temp from 'temp';
 
 interface MaybeTemporary {
 	path: string;
@@ -169,7 +169,7 @@ export class ExternalUrlData extends Data {
 	}
 	async toBuffer() {
 		let got = await emit('GET', this.url, {});
-		return got.body;
+		return got.rawBody!;
 	}
 	toStream(): Readable {
 		return streamReadableNow(this.toBuffer().then(v => createReadStream(v)));

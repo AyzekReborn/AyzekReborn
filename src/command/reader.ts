@@ -12,12 +12,21 @@ export enum Type {
 export enum MissingCharType {
 	QUOTE = 'quote'
 }
+
+export class InvalidCursorPositionError extends Error {
+	constructor(public readonly reader: StringReader, public newPosition: number) {
+		super();
+		this.name = 'InvalidCursorPositionError';
+	}
+}
+
 export class ExpectedError extends ExpectedSomethingError {
 	constructor(public readonly reader: StringReader, public readonly type: Type) {
 		super(reader, type);
 		this.name = 'ExpectedError';
 	}
 }
+
 export class BadValueError<T> extends CommandSyntaxError {
 	constructor(public readonly reader: StringReader, public readonly type: Type, public readonly value: T) {
 		super(reader, `Bad value for ${type}: ${value}`);
@@ -36,7 +45,15 @@ export default class StringReader {
 		reader.cursor = this.cursor;
 		return reader;
 	}
-	cursor: number = 0;
+	private _cursor: number = 0;
+	get cursor() {
+		return this._cursor;
+	}
+	set cursor(newValue: number) {
+		if (newValue > this.string.length || newValue < 0)
+			throw new InvalidCursorPositionError(this, newValue);
+		this._cursor = newValue;
+	}
 	constructor(public string: string) { }
 	get remainingLength() {
 		return this.string.length - this.cursor;

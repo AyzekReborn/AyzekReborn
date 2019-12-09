@@ -1,33 +1,31 @@
-import { Api } from "../../model/api";
-import VKApiProcessor from "./apiProcessor";
-import { IMessage, IMessageOptions } from "../../model/message";
-import { emit } from "@meteor-it/xrest";
-import { nonenumerable } from 'nonenumerable';
-
-import VKUser from "./user/user";
-import VKChat from "./chat";
-
-import VKUserMap from "./userMap";
-import VKChatMap from "./chatMap";
-import VKBotMap from "./botMap";
-
-import { Attachment, Image, Audio, File, Video, Location, MessengerSpecificUnknownAttachment, Voice } from "../../model/attachment/attachment";
 import { lookup as lookupMime } from '@meteor-it/mime';
-import { MessageEvent } from '../../model/events/message';
-import { JoinChatEvent, JoinReason } from "../../model/events/join";
-import { LeaveChatEvent, LeaveReason } from "../../model/events/leave";
-import { Conversation, User } from "../../model/conversation";
-import { Text, TextPart } from '../../model/text';
-import ApiFeature from "../features";
-import { ChatTitleChangeEvent } from "../../model/events/titleChange";
-import StringReader from "../../command/reader";
-import { splitByMaxPossibleParts } from "../../util/split";
-import arrayChunks from "../../util/arrayChunks";
-import { TypingEvent, TypingEventType } from "../../model/events/typing";
+import { emit } from "@meteor-it/xrest";
+import * as multipart from '@meteor-it/xrest/multipart';
+import { nonenumerable } from 'nonenumerable';
+import { NoSuchUserError } from "../../bot/argument";
 import { ArgumentType } from "../../command/arguments";
 import { ParseEntryPoint } from "../../command/command";
 import { ExpectedSomethingError } from "../../command/error";
-import { NoSuchUserError } from "../../bot/argument";
+import StringReader from "../../command/reader";
+import { Api } from "../../model/api";
+import { Attachment, Audio, File, Image, Location, MessengerSpecificUnknownAttachment, Video, Voice } from "../../model/attachment/attachment";
+import { Conversation } from "../../model/conversation";
+import { JoinChatEvent, JoinReason } from "../../model/events/join";
+import { LeaveChatEvent, LeaveReason } from "../../model/events/leave";
+import { MessageEvent } from '../../model/events/message';
+import { ChatTitleChangeEvent } from "../../model/events/titleChange";
+import { TypingEvent, TypingEventType } from "../../model/events/typing";
+import { IMessage, IMessageOptions } from "../../model/message";
+import { Text, TextPart } from '../../model/text';
+import arrayChunks from "../../util/arrayChunks";
+import { splitByMaxPossibleParts } from "../../util/split";
+import ApiFeature from "../features";
+import VKApiProcessor from "./apiProcessor";
+import VKBotMap from "./botMap";
+import VKChat from "./chat";
+import VKChatMap from "./chatMap";
+import VKUser from "./user/user";
+import VKUserMap from "./userMap";
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
@@ -147,7 +145,7 @@ export default class VKApi extends Api<VKApi> {
 	async parseReplyMessage(message: any): Promise<IMessage<VKApi>> {
 		const [user, attachments, extraAttachments] = await Promise.all([
 			this.getApiUser(message.from_id),
-			Promise.all(message.attachments.map((e: any) => this.parseAttachment(e))),
+			Promise.all(message.attachments.map((e: any) => this.parseAttachment(e))) as Promise<Attachment[]>,
 			this.parseExtraAttachments(message)
 		]);
 		if (!user) throw new Error(`Bad user: ${message.from_id}`);
@@ -157,8 +155,8 @@ export default class VKApi extends Api<VKApi> {
 			chat: null,
 			conversation: user,
 			attachments: [
-				...attachments,
-				...extraAttachments
+				...(attachments as Attachment[]),
+				...(extraAttachments as Attachment[])
 			] as Attachment[],
 			text: message.text || '',
 			// Replies have no forwarded messages
@@ -183,13 +181,13 @@ export default class VKApi extends Api<VKApi> {
 			api: this,
 			user: user,
 			chat: chat,
-			conversation: chat || user,
+			conversation: chat ?? user,
 			attachments: [
-				...attachments,
-				...extraAttachments
+				...(attachments as Attachment[]),
+				...(extraAttachments as Attachment[])
 			] as Attachment[],
-			text: message.text || '',
-			forwarded,
+			text: message.text ?? '',
+			forwarded: forwarded ?? [],
 			messageId: '0',
 			replyTo,
 		};
@@ -361,7 +359,7 @@ export default class VKApi extends Api<VKApi> {
 						mode: 66,
 					},
 					timeout: 0
-				})).body;
+				})).jsonBody!;
 
 				if (events.failed) {
 					switch (events.failed) {
@@ -393,9 +391,33 @@ export default class VKApi extends Api<VKApi> {
 		}
 	}
 
-	async uploadAttachment(attachment: Attachment): Promise<string> {
+	async uploadAttachment(attachment: Attachment, peerId: string): Promise<string> {
+		if (attachment instanceof Image) {
+			return await this.uploadImage(attachment, peerId);
+		}
 		throw new Error('Not implemented');
 	}
+
+	async uploadImage(attachment: Image, peerId: string): Promise<string> {
+		// TODO: Upload server pool/cache
+		let server = await this.execute('photos.getMessagesUploadServer', { peer_id: peerId });
+		const stream = attachment.data.toStream();
+		let res = await emit('POST', server.upload_url, {
+			multipart: true,
+			timeout: 50000,
+			data: {
+				// attachment.name MUST contain extension
+				photo: new multipart.FileStream(stream, attachment.name, attachment.size, 'binary', 'image/jpeg')
+			}
+		});
+		let uploadedImage = await this.execute('photos.saveMessagesPhoto', {
+			photo: res.jsonBody!.photo,
+			server: res.jsonBody!.server,
+			hash: res.jsonBody!.hash
+		});
+		return `photo${uploadedImage[0].owner_id}_${uploadedImage[0].id}`;
+	}
+
 	addExtraAttachment(message: any, attachment: ExtraAttachment) {
 		if (attachment instanceof Location) {
 			message.lat = attachment.lat;
@@ -422,7 +444,7 @@ export default class VKApi extends Api<VKApi> {
 				// TODO: Buttons?
 			};
 			if (isLast && attachmentsChunks.length >= 1) {
-				apiObject.attachment = await Promise.all(attachmentsChunks.shift()!.map(this.uploadAttachment));
+				apiObject.attachment = await Promise.all(attachmentsChunks.shift()!.map(name => this.uploadAttachment(name, peer_id.toString())));
 			}
 			if (isLast && attachmentsChunks.length === 0 && extraAttachments.length >= 1) {
 				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
@@ -435,7 +457,7 @@ export default class VKApi extends Api<VKApi> {
 				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
 				peer_id,
 			};
-			apiObject.attachment = await Promise.all(attachmentsChunks[i]!.map(this.uploadAttachment));
+			apiObject.attachment = await Promise.all(attachmentsChunks[i]!.map(name => this.uploadAttachment(name, peer_id.toString())));
 			if (isLast && extraAttachments.length >= 1) {
 				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
 			}
