@@ -169,7 +169,7 @@ export class ExternalUrlData extends Data {
 	}
 	async toBuffer() {
 		let got = await emit('GET', this.url, {});
-		return got.body;
+		return got.rawBody!;
 	}
 	toStream(): Readable {
 		return streamReadableNow(this.toBuffer().then(v => createReadStream(v)));

@@ -106,6 +106,9 @@ export class Image extends BaseFile {
 		let parsed = await parseFilePathData(path, name, mime, mime);
 		return new Image(parsed.data, parsed.size, parsed.name, parsed.mime);
 	}
+	static async fromBuffer(buffer: Buffer, name: string, mime: string) {
+		return new Image(Data.fromBuffer(buffer), buffer.length, name, mime);
+	}
 	// FIXME: canvas.js integration
 	// static async fromCanvas(canvas: any) {
 	// 	let fullStream = canvas.jpegStream({

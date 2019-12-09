@@ -1,5 +1,5 @@
-import { CollapseQueueProcessor } from "@meteor-it/queue";
 import Logger from "@meteor-it/logger";
+import { CollapseQueueProcessor } from "@meteor-it/queue";
 import XRest from "@meteor-it/xrest";
 
 export interface IVKApiRequest {
@@ -19,35 +19,23 @@ export default class VKApiProcessor extends CollapseQueueProcessor<IVKApiRequest
 		let token = this.token;
 		const code = `return[${tasks.map(({ method, params }) => `API.${method}(${JSON.stringify(params || {})})`).join(',')}];`;
 		this.logger.debug(code);
-		let res = await this.xrest.emit('POST', '/method/execute', {
+		let res = (await this.xrest.emit('POST', '/method/execute', {
 			data: {
 				code
 			}, query: {
 				v: '5.103',
 				access_token: token
 			}
-		});
-		let responses = res.body.response;
-		this.logger.debug(JSON.stringify(res.body));
-		if (res.body.error || !responses) {
-			if (res.body.error.error_code === 14) {
-				// Process captcha
-				console.log(res.body.error.captcha_sid, res.body.error.captcha_img);
-				this.logger.warn('Waiting 15s for captcha skip...');
-				await new Promise(res => setTimeout(() => res(), 15000));
-				// return await this.executeMulti(tasks);
-				// Add tasks to end
-				return tasks.map((task) => {
-					return this.runTask(task);
-				});
-			} else {
-				return tasks.map(_task => {
-					return new Error(res.body.error.error_msg);
-				});
+		})).jsonBody!;
+		let responses = res.response;
+		const errors = res.execute_errors;
+		let errorId = 0;
+		return tasks.map((_task, id) => {
+			if (responses[id] === false) {
+				const error = errors[errorId++];
+				return new Error(`${error.error_msg} (at ${error.method} call)`);
 			}
-		} else
-			return tasks.map((_task, id) => {
-				return responses[id];
-			});
+			return responses[id];
+		});
 	}
 }

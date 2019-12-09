@@ -4,7 +4,7 @@ import DiscordApi from "./api/discord/api";
 import VKApi from "./api/vk/api";
 import { Ayzek } from "./bot/ayzek";
 import ModernPluginSystem from "./bot/pluginSystems/ModernPluginSystem";
-import config from "./config.yaml";
+import * as config from "./config.yaml";
 import { Api } from "./model/api";
 
 Logger.addReceiver(new ConsoleReceiver());
@@ -26,7 +26,9 @@ function parseApi(apiDesc: any) {
 	}
 }
 
+console.log('Test');
 (async () => {
+	console.log('Test2');
 	const apis: Api<any>[] = config.apis.map(parseApi);
 	const ayzek = new Ayzek('ayzek', apis, '/', true);
 	const ps = new ModernPluginSystem(ayzek,
@@ -35,5 +37,6 @@ function parseApi(apiDesc: any) {
 	const pps = new ModernPluginSystem(ayzek,
 		() => (require as any).context('./privatePlugins', true, /Plugin\/index\.([jt]sx?|coffee)$/, 'lazy'),
 		(acceptor, getContext) => (module as any).hot.accept(getContext().id, acceptor))
+	// console.log('Test3');
 	await Promise.all([pps.load({ ayzek }), ps.load({ ayzek }), ayzek.doWork()]);
 })();
