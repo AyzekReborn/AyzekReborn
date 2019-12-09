@@ -27,9 +27,6 @@ import VKChatMap from "./chatMap";
 import VKUser from "./user/user";
 import VKUserMap from "./userMap";
 
-
-
-
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
 type ExtraAttachment = Location;

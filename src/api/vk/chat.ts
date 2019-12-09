@@ -1,4 +1,3 @@
-import { Image } from '../../model/attachment/attachment';
 import { Chat } from '../../model/conversation';
 import VKApi from './api';
 import VKUser from './user/user';

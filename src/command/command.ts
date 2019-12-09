@@ -1,12 +1,12 @@
-import StringRange from "./range";
-import { ParsedArgument } from "./arguments";
-import { CommandNode, ParsedCommandNode, RootCommandNode, LiteralCommandNode } from "./tree";
-import { SuggestionContext, Suggestions, SuggestionsBuilder } from "./suggestions";
-import { LiteralArgumentBuilder } from "./builder";
-import StringReader from "./reader";
-import { padList } from "../util/pad";
 import { Ayzek } from "../bot/ayzek";
+import { padList } from "../util/pad";
+import { ParsedArgument } from "./arguments";
+import { LiteralArgumentBuilder } from "./builder";
 import { CommandSyntaxError, UnknownSomethingError } from "./error";
+import StringRange from "./range";
+import StringReader from "./reader";
+import { SuggestionContext, Suggestions, SuggestionsBuilder } from "./suggestions";
+import { CommandNode, LiteralCommandNode, ParsedCommandNode, RootCommandNode } from "./tree";
 
 export enum ThingType {
 	COMMAND = 'Command',

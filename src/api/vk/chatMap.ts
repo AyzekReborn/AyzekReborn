@@ -1,6 +1,6 @@
 import PromiseMap from "../promiseMap";
-import VKChat from "./chat";
 import VKApi from "./api";
+import VKChat from "./chat";
 import GroupingVKApiRequester from "./groupingRequester";
 import VKUser from "./user/user";
 

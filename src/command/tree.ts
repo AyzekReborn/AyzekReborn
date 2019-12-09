@@ -1,5 +1,5 @@
 /// <reference path="tree.d.ts"/>
-import isEqual from 'is-equal';
+import * as isEqual from 'is-equal';
 import { ArgumentType } from "./arguments";
 import { ArgumentBuilder, LiteralArgumentBuilder, RequiredArgumentBuilder } from "./builder";
 import CommandContextBuilder, { Command, CommandContext, CurrentArguments, ParseEntryPoint, RedirectModifier } from "./command";
