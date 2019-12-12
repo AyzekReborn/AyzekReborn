@@ -1,5 +1,6 @@
 import Logger from "@meteor-it/logger";
 import ApiFeature from "../api/features";
+import { isPromise, MaybePromise } from "../api/promiseMap";
 import { ArgumentType } from "../command/arguments";
 import { TypedEvent } from "../util/event";
 import { Attachment } from "./attachment/attachment";
@@ -41,29 +42,35 @@ export abstract class Api<A extends Api<A>> {
 	/**
 	 * Get user by UID
 	 */
-	getUser(_uid: string): Promise<User<A> | null> {
-		return Promise.resolve(null);
+	getUser(_uid: string): MaybePromise<User<A> | null> {
+		return null;
 	}
 
 	/**
 	 * Get chat by CID
 	 */
-	getChat(_cid: string): Promise<Chat<A> | null> {
-		return Promise.resolve(null);
+	getChat(_cid: string): MaybePromise<Chat<A> | null> {
+		return null;
 	}
 
 	/**
 	 * Get either user or chat by UID or CID
 	 */
-	async getConversation(id: string): Promise<Conversation<A> | null> {
-		return (await Promise.all([this.getUser(id), this.getChat(id)])).filter(e => e !== null)[0] || null;
+	getConversation(id: string): MaybePromise<Conversation<A> | null> {
+		const user = this.getUser(id);
+		if (!isPromise(user)) return user;
+		if (user === null) return null;
+		const chat = this.getChat(id);
+		if (!isPromise(chat)) return chat;
+		if (chat === null) return null;
+		return Promise.all([this.getUser(id), this.getChat(id)]).then(v => v[0] ?? v[1] ?? null);
 	}
 
 	/**
 	 * Get guild by GID
 	 */
-	getGuild(_gid: string): Promise<Guild<A> | null> {
-		return Promise.resolve(null);
+	getGuild(_gid: string): MaybePromise<Guild<A> | null> {
+		return null;
 	}
 
 	/**

@@ -23,6 +23,6 @@ export default class VKBot extends VKUser {
 	get photoImage() {
 		if (this._photoImage)
 			return this._photoImage;
-		return this._photoImage = Promise.resolve(Image.fromUrl(this.apiBot.photo_200, 'photo.jpeg', 'image/jpeg'));
+		return this._photoImage = Promise.resolve(Image.fromUrl('GET', this.apiBot.photo_200, {}, 'photo.jpeg', 'image/jpeg'));
 	}
 }

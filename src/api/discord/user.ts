@@ -22,6 +22,6 @@ export default class DiscordUser extends User<DiscordApi>{
 	private _photoImage: Promise<Image> | null = null;
 
 	get photoImage() {
-		return this._photoImage || (this._photoImage = Promise.resolve(Image.fromUrl(this.apiUser.avatarURL, 'photo.png', 'image/png')));
+		return this._photoImage || (this._photoImage = Promise.resolve(Image.fromUrl('GET', this.apiUser.avatarURL, {}, 'photo.png', 'image/png')));
 	}
 }

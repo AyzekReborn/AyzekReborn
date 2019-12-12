@@ -20,6 +20,7 @@ import { Text, TextPart } from '../../model/text';
 import arrayChunks from "../../util/arrayChunks";
 import { splitByMaxPossibleParts } from "../../util/split";
 import ApiFeature from "../features";
+import { MaybePromise } from '../promiseMap';
 import VKApiProcessor from "./apiProcessor";
 import VKBotMap from "./botMap";
 import VKChat from "./chat";
@@ -39,10 +40,10 @@ export default class VKApi extends Api<VKApi> {
 	chatMap: VKChatMap;
 	@nonenumerable
 	tokens: string[];
-	// TODO: Work as user account (illegal)
+	// TODO: Work as user account (illegal :D)
 	constructor(public apiId: string, public groupId: number, tokens: string[]) {
 		super('vk');
-		this.processor = new VKApiProcessor(this.logger, tokens);
+		this.processor = new VKApiProcessor(this.logger, tokens, true);
 		this.userMap = new VKUserMap(this);
 		this.botMap = new VKBotMap(this);
 		this.chatMap = new VKChatMap(this);
@@ -50,13 +51,13 @@ export default class VKApi extends Api<VKApi> {
 	}
 	async init() {
 	}
-	getApiUser(id: number): Promise<VKUser | null> {
+	getApiUser(id: number): MaybePromise<VKUser | null> {
 		if (id < 0) {
 			return this.botMap.get(-id);
 		}
 		return this.userMap.get(id);
 	}
-	async getApiChat(id: number): Promise<VKChat | null> {
+	getApiChat(id: number): MaybePromise<VKChat | null> {
 		if (id >= 2e9) throw new Error('Already transformed id passed');
 		return this.chatMap.get(id);
 	}
@@ -66,14 +67,14 @@ export default class VKApi extends Api<VKApi> {
 	encodeChatCid(id: number): string {
 		return `VKC:${this.apiId}:${id}`;
 	}
-	getUser(uid: string) {
+	getUser(uid: string): MaybePromise<VKUser | null> {
 		const userPrefix = `VKU:${this.apiId}:`;
 		if (!uid.startsWith(userPrefix)) {
-			return Promise.resolve(null);
+			return null;
 		}
 		const id = parseInt(uid.replace(userPrefix, ''), 10);
 		if (isNaN(id))
-			return Promise.resolve(null);
+			return null;
 		return this.getApiUser(id);
 	}
 	getChat(cid: string) {
@@ -96,23 +97,23 @@ export default class VKApi extends Api<VKApi> {
 			case 'photo': {
 				const sizes = attachment.photo.sizes;
 				let maxSize = sizes[sizes.length - 1];
-				return Image.fromUrl(maxSize.url, 'photo.jpeg', 'image/jpeg');
+				return Image.fromUrl('GET', maxSize.url, {}, 'photo.jpeg', 'image/jpeg');
 			}
 			case 'audio': {
 				if (attachment.audio.url === '')
 					// TODO: Workaround empty audio?
 					return Audio.fromEmpty(attachment.audio.artist, attachment.audio.title, 'audio/mpeg');
-				return Audio.fromUrl(attachment.audio.url, attachment.audio.artist, attachment.audio.title, 'audio/mpeg');
+				return Audio.fromUrl('GET', attachment.audio.url, {}, attachment.audio.artist, attachment.audio.title, 'audio/mpeg');
 			}
 			case 'doc': {
-				return File.fromUrlWithSizeKnown(
-					attachment.doc.url, attachment.doc.size, attachment.doc.title,
+				return File.fromUrlWithSizeKnown('GET',
+					attachment.doc.url, {}, attachment.doc.size, attachment.doc.title,
 					// Because VK does same thing
 					lookupMime(attachment.doc.ext) || 'text/plain'
 				);
 			}
 			case 'audio_message': {
-				return Voice.fromUrl(attachment.audio_message.link_ogg, 'voice.ogg', 'audio/ogg');
+				return Voice.fromUrl('GET', attachment.audio_message.link_ogg, {}, 'voice.ogg', 'audio/ogg');
 			}
 			case 'video': {
 				// TODO: Extract something useful? Maybe create
@@ -386,8 +387,9 @@ export default class VKApi extends Api<VKApi> {
 					}
 				});
 			}
-			this.logger.warn('Loop end (???), waiting before restart');
+			this.logger.warn('Loop end (???), waiting 5s before restart');
 			await new Promise(res => setTimeout(res, 5000));
+			this.logger.warn('Loop restart');
 		}
 	}
 

@@ -8,13 +8,24 @@ export interface IVKApiRequest {
 };
 
 export default class VKApiProcessor extends CollapseQueueProcessor<IVKApiRequest, any>{
-	constructor(public logger: Logger, public tokens: string[]) {
-		super(600, 20, 0);
+	/**
+	 * Executes vk api requests, grouping into method.execute
+	 *
+	 * @param logger
+	 * @param tokens User/group tokens, choosen round-robing on request (TODO: Maybe there is no sense in this anymore)
+	 * @param isUserTokens Users have stricter limits
+	 */
+	constructor(public logger: Logger, public tokens: string[], public isUserTokens: boolean) {
+		// Per https://vk.com/dev/api_requests
+		super(Math.ceil(isUserTokens ? (1000 / 3) : (1000 / 20)), 25, 0);
 	}
+
 	get token() {
 		return this.tokens[0];
 	}
+
 	xrest: XRest = new XRest('https://api.vk.com/', {});
+
 	async collapser(tasks: IVKApiRequest[]): Promise<any[]> {
 		let token = this.token;
 		const code = `return[${tasks.map(({ method, params }) => `API.${method}(${JSON.stringify(params || {})})`).join(',')}];`;
