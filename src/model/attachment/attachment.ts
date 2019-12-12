@@ -1,6 +1,6 @@
 import { isFile, stat } from "@meteor-it/fs";
 import { lookupByPath } from '@meteor-it/mime';
-import { emitStreaming } from '@meteor-it/xrest';
+import { emitStreaming, IRequestOptions } from '@meteor-it/xrest';
 import { constants } from 'http2';
 import { Data, EmptyData } from "./data";
 
@@ -36,8 +36,8 @@ interface ParsedData {
 	mime: string,
 };
 
-async function parseUrlData(url: string, name: string, mime: string | null, defaultMime: string): Promise<ParsedData> {
-	let res = await emitStreaming('GET', url);
+async function parseUrlData(method: string, url: string, options: IRequestOptions, name: string, mime: string | null, defaultMime: string): Promise<ParsedData> {
+	let res = await emitStreaming(method, url, options);
 	let size = 0;
 	let contentLengthHeaderValue = res.headers[constants.HTTP2_HEADER_CONTENT_LENGTH];
 	if (typeof contentLengthHeaderValue === 'string')
@@ -50,9 +50,9 @@ async function parseUrlData(url: string, name: string, mime: string | null, defa
 			mime = defaultMime;
 		}
 	}
-	// TODO: Switch to StreamData(res)?
+
 	return {
-		data: Data.fromExternalUrl(url),
+		data: Data.fromStreamUnique(res.raw),
 		size,
 		name,
 		mime,
@@ -80,12 +80,12 @@ export class File extends BaseFile {
 	static async fromBuffer(buffer: Buffer, name: string, mime: string = 'text/plain') {
 		return new File(Data.fromBuffer(buffer), buffer.length, name, mime);
 	}
-	static async fromUrl(url: string, name: string, mime: string | null = null) {
-		let parsed = await parseUrlData(url, name, mime, 'text/plain');
+	static async fromUrl(method: string, url: string, options: IRequestOptions, name: string, mime: string | null = null) {
+		let parsed = await parseUrlData(method, url, options, name, mime, 'text/plain');
 		return new File(parsed.data, parsed.size, parsed.name, parsed.mime);
 	}
-	static fromUrlWithSizeKnown(url: string, size: number, name: string, mime: string = 'text/plain') {
-		return new File(Data.fromExternalUrl(url), size, name, mime);
+	static fromUrlWithSizeKnown(method: string, url: string, options: IRequestOptions, size: number, name: string, mime: string = 'text/plain') {
+		return new File(Data.fromExternalUrl(method, url, options), size, name, mime);
 	}
 	static async fromFilePath(path: string, name: string, mime: string | null = null) {
 		let parsed = await parseFilePathData(path, name, mime, 'text/plain');
@@ -98,8 +98,8 @@ export class Image extends BaseFile {
 	constructor(data: Data, size: number, name: string, public mime: string) {
 		super(data, size, name);
 	}
-	static async fromUrl(url: string, name: string, mime: string) {
-		let parsed = await parseUrlData(url, name, mime, mime);
+	static async fromUrl(method: string, url: string, options: IRequestOptions, name: string, mime: string) {
+		let parsed = await parseUrlData(method, url, options, name, mime, mime);
 		return new Image(parsed.data, parsed.size, parsed.name, parsed.mime);
 	}
 	static async fromFilePath(path: string, name: string, mime: string) {
@@ -124,8 +124,8 @@ export class Voice extends BaseFile {
 	constructor(data: Data, size: number, public name: string, public mime: string) {
 		super(data, size, name);
 	}
-	static async fromUrl(url: string, title: string, mime: string) {
-		let parsed = await parseUrlData(url, title, mime, mime);
+	static async fromUrl(method: string, url: string, options: IRequestOptions, title: string, mime: string) {
+		let parsed = await parseUrlData(method, url, options, title, mime, mime);
 		return new Voice(parsed.data, parsed.size, parsed.name, parsed.mime);
 	}
 }
@@ -136,8 +136,8 @@ export class Audio extends BaseFile {
 	static async fromEmpty(artist: string | null, title: string, mime: string) {
 		return new Audio(new EmptyData(), 0, artist, title, mime);
 	}
-	static async fromUrl(url: string, artist: string | null, title: string, mime: string) {
-		let parsed = await parseUrlData(url, title, mime, mime);
+	static async fromUrl(method: string, url: string, options: IRequestOptions, artist: string | null, title: string, mime: string) {
+		let parsed = await parseUrlData(method, url, options, title, mime, mime);
 		return new Audio(parsed.data, parsed.size, artist, parsed.name, parsed.mime);
 	}
 	static async fromFilePath(path: string, artist: string | null, title: string, mime: string) {

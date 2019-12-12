@@ -25,6 +25,6 @@ export default class VKRealUser extends VKUser {
 	get photoImage() {
 		if (this._photoImage)
 			return this._photoImage;
-		return this._photoImage = Promise.resolve(Image.fromUrl(this.apiUser.photo_map, 'photo.jpeg', 'image/jpeg'));
+		return this._photoImage = Promise.resolve(Image.fromUrl('GET', this.apiUser.photo_map, {}, 'photo.jpeg', 'image/jpeg'));
 	}
 }

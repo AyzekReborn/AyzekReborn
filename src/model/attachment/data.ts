@@ -1,6 +1,6 @@
 import { getReadStream, readFile, unlink, writeFile } from '@meteor-it/fs';
 import { createReadStream, readStreamToBuffer } from '@meteor-it/utils';
-import { emit } from '@meteor-it/xrest';
+import { emit, IRequestOptions } from '@meteor-it/xrest';
 import * as cloneable from 'cloneable-readable';
 import { Readable } from 'stream';
 import { readable as streamReadableNow } from 'stream-now';
@@ -32,8 +32,8 @@ export abstract class Data {
 	static fromFile(file: string) {
 		return new FileData(file);
 	}
-	static fromExternalUrl(file: string) {
-		return new ExternalUrlData(file);
+	static fromExternalUrl(method: string, url: string, options: IRequestOptions) {
+		return new ExternalUrlData(method, url, options);
 	}
 }
 
@@ -164,11 +164,11 @@ export class FileData extends Data {
 
 // TODO: Identify by public/private(Available by url only for bot)?
 export class ExternalUrlData extends Data {
-	constructor(public readonly url: string) {
+	constructor(public method: string, public url: string, public options: IRequestOptions) {
 		super();
 	}
 	async toBuffer() {
-		let got = await emit('GET', this.url, {});
+		let got = await emit(this.method, this.url, this.options);
 		return got.rawBody!;
 	}
 	toStream(): Readable {
@@ -180,12 +180,12 @@ export class ExternalUrlData extends Data {
 		return {
 			path,
 			cleanIfTemporary: () => unlink(path)
-		}
+		};
 	}
 	toExternalUrl() {
 		return Promise.resolve({
 			path: this.url,
 			cleanIfTemporary: () => Promise.resolve()
-		})
+		});
 	}
 }

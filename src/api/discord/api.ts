@@ -112,7 +112,9 @@ export default class DiscordApi extends Api<DiscordApi> {
 		return attachments.map(a => {
 			let filename = a.filename;
 			return File.fromUrlWithSizeKnown(
+				'GET',
 				a.url,
+				{},
 				a.filesize,
 				filename,
 				lookupByPath(filename) || ''
