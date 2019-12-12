@@ -67,7 +67,7 @@ export default abstract class PromiseMap<K, V> {
 		if (this.resolvedMap.has(key))
 			return this.resolvedMap.get(key)!;
 		if (!this.map.has(key)) {
-			const promise = this.getPromise(key).then(v => (v !== null && this.normalizeValue) ? this.normalizeValue(v) : null);
+			const promise = this.getPromise(key).then(v => (v !== null && this.normalizeValue) ? this.normalizeValue(v) : v);
 			this.map.set(key, promise);
 			promise.then(v => {
 				this.map.delete(key);
