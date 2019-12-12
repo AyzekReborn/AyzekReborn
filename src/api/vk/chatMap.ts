@@ -18,10 +18,11 @@ export default class VKChatMap extends PromiseMap<number, VKChat> {
 	}
 
 	protected async getPromise(key: number): Promise<VKChat> {
-		let apiChat;
+		let apiChat = null;
 		try {
 			apiChat = await this.processor.runTask(key + 2e9);
-		} catch{
+		} catch{ }
+		if (apiChat === null)
 			apiChat = {
 				peer: {
 					id: key + 2e9,
@@ -33,15 +34,14 @@ export default class VKChatMap extends PromiseMap<number, VKChat> {
 					title: `Unprivileged #${key}`,
 				}
 			};
-		}
-		let members;
+		let members = null;
 		try {
 			members = await this.api.execute('messages.getConversationMembers', {
 				peer_id: key + 2e9,
 			});
-		} catch {
+		} catch { }
+		if (members === null)
 			members = { items: [] };
-		}
 		const [memberUsers, adminUsers] = await Promise.all([
 			Promise.all(members.items.map((e: any) => this.api.getApiUser(e.member_id)) as Promise<VKUser>[]),
 			Promise.all([apiChat.chat_settings.owner_id, ...apiChat.chat_settings.admin_ids].map((e: any) => this.api.getApiUser(e)))
