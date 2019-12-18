@@ -20,7 +20,15 @@ export class NotImplementedInApiError extends Error {
 	}
 }
 
+const apiSymbol = Symbol('api');
+
+export function isApi(api: Api<any>): api is Api<any> {
+	return api?.[apiSymbol] ?? false;
+}
+
 export abstract class Api<A extends Api<A>> {
+	[apiSymbol]: true;
+
 	logger: Logger;
 
 	messageEvent = new TypedEvent<MessageEvent<A>>();

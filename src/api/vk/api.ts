@@ -1,6 +1,7 @@
 import { lookup as lookupMime } from '@meteor-it/mime';
 import { emit } from "@meteor-it/xrest";
 import * as multipart from '@meteor-it/xrest/multipart';
+import * as _ from 'lodash';
 import { nonenumerable } from 'nonenumerable';
 import { NoSuchUserError } from "../../bot/argument";
 import { ArgumentType } from "../../command/arguments";
@@ -395,29 +396,31 @@ export default class VKApi extends Api<VKApi> {
 
 	async uploadAttachment(attachment: Attachment, peerId: string): Promise<string> {
 		if (attachment instanceof Image) {
-			return await this.uploadImage(attachment, peerId);
+			return await this.genericUpload('photos.getMessagesUploadServer', 'photos.saveMessagesPhoto', attachment, peerId, 'photo', ['server', 'hash'], photo => `photo${photo[0].owner_id}_${photo[0].id}`);
+		} else if (attachment instanceof File) {
+			return await this.genericUpload('docs.getMessagesUploadServer', 'docs.save', attachment, peerId, 'file', [], doc => `doc${doc.doc.owner_id}_${doc.doc.id}`)
 		}
 		throw new Error('Not implemented');
 	}
 
-	async uploadImage(attachment: Image, peerId: string): Promise<string> {
+	async genericUpload(getServerMethod: string, saveMethod: string, attachment: Image | File, peerId: string, field: string, addictionalField: string[], toId: (uploaded: any) => string): Promise<string> {
 		// TODO: Upload server pool/cache
-		let server = await this.execute('photos.getMessagesUploadServer', { peer_id: peerId });
+		let server = await this.execute(getServerMethod, { peer_id: peerId });
 		const stream = attachment.data.toStream();
 		let res = await emit('POST', server.upload_url, {
 			multipart: true,
 			timeout: 50000,
 			data: {
-				// attachment.name MUST contain extension
-				photo: new multipart.FileStream(stream, attachment.name, attachment.size, 'binary', 'image/jpeg')
+				// attachment.name MUST contain extension (At least, for images)
+				[field]: new multipart.FileStream(stream, attachment.name, attachment.size, 'binary', attachment.mime)
 			}
 		});
-		let uploadedImage = await this.execute('photos.saveMessagesPhoto', {
-			photo: res.jsonBody!.photo,
-			server: res.jsonBody!.server,
-			hash: res.jsonBody!.hash
+		let uploaded = await this.execute(saveMethod, {
+			[field]: res.jsonBody![field],
+			..._.pick(res.jsonBody!, addictionalField)
 		});
-		return `photo${uploadedImage[0].owner_id}_${uploadedImage[0].id}`;
+		console.log(uploaded);
+		return toId(uploaded);
 	}
 
 	addExtraAttachment(message: any, attachment: ExtraAttachment) {
@@ -433,6 +436,7 @@ export default class VKApi extends Api<VKApi> {
 		const texts = splitByMaxPossibleParts(this.textToString(text), MAX_MESSAGE_LENGTH);
 		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[];
 		const attachmentsChunks = arrayChunks(attachments, MAX_ATTACHMENTS_PER_MESSAGE);
+		console.log(attachmentsChunks);
 		for (let i = 0; i < texts.length; i++) {
 			let isLast = i === texts.length - 1;
 			const apiObject: any = {
@@ -446,12 +450,12 @@ export default class VKApi extends Api<VKApi> {
 				// TODO: Buttons?
 			};
 			if (isLast && attachmentsChunks.length >= 1) {
-				apiObject.attachment = await Promise.all(attachmentsChunks.shift()!.map(name => this.uploadAttachment(name, peer_id.toString())));
+				apiObject.attachment = (await Promise.all(attachmentsChunks.shift()!.map(name => this.uploadAttachment(name, peer_id.toString())))).join(',');
 			}
 			if (isLast && attachmentsChunks.length === 0 && extraAttachments.length >= 1) {
 				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
 			}
-			this.execute('messages.send', apiObject);
+			await this.execute('messages.send', apiObject);
 		}
 		for (let i = 0; i < attachmentsChunks.length; i++) {
 			let isLast = i === attachmentsChunks.length - 1;
@@ -459,11 +463,11 @@ export default class VKApi extends Api<VKApi> {
 				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
 				peer_id,
 			};
-			apiObject.attachment = await Promise.all(attachmentsChunks[i]!.map(name => this.uploadAttachment(name, peer_id.toString())));
+			apiObject.attachment = (await Promise.all(attachmentsChunks[i]!.map(name => this.uploadAttachment(name, peer_id.toString())))).join(',');
 			if (isLast && extraAttachments.length >= 1) {
 				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
 			}
-			this.execute('messages.send', apiObject);
+			await this.execute('messages.send', apiObject);
 		}
 		let extraAttachment: ExtraAttachment | undefined;
 		while (extraAttachment = extraAttachments.shift()) {

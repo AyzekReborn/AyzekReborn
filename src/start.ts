@@ -26,9 +26,7 @@ function parseApi(apiDesc: any) {
 	}
 }
 
-console.log('Test');
 (async () => {
-	console.log('Test2');
 	const apis: Api<any>[] = config.apis.map(parseApi);
 	const ayzek = new Ayzek('ayzek', apis, '/', true);
 	const ps = new ModernPluginSystem(ayzek,
