@@ -1,5 +1,7 @@
 # Ayzek Reborn
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/CertainLach/AyzekReborn.svg)](https://greenkeeper.io/)
+
 Er ist wieder da
 
 ## Features
