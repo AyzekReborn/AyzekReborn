@@ -25,7 +25,7 @@ const shrugCommand = command('shrug')
 	});
 
 const catOBotCommand = command('cat-o-bot')
-	.thenArgument('Количество', intArgument(1, 20), b =>
+	.thenArgument('Количество', intArgument(1, 50), b =>
 		b.executes(async ctx => {
 			const catImages: CatApiResponse = (await emit('GET', 'https://api.thecatapi.com/v1/images/search', {
 				query: {
