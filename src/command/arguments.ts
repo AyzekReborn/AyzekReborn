@@ -56,8 +56,8 @@ enum FailType {
 }
 
 class RangeError<T> extends UserDisplayableError {
-	constructor(public ctx: StringReader, public failType: FailType, public type: Type, public value: T) {
-		super(`${failType} ${type}: ${value}`);
+	constructor(public ctx: StringReader, public failType: FailType, public type: Type, public value: T, public min: T, public max: T) {
+		super(`${failType} ${type}: ${value} (Should be ${min} <= x <= ${max})`);
 		this.name = 'RangeError';
 	}
 }
@@ -78,10 +78,10 @@ class NumberArgumentType extends ArgumentType<number> {
 		let value = this.int ? reader.readInt() : reader.readFloat();
 		if (value < this.minimum) {
 			reader.cursor = start;
-			throw new RangeError(reader, FailType.TOO_LOW, this.int ? Type.INT : Type.FLOAT, value);
+			throw new RangeError(reader, FailType.TOO_LOW, this.int ? Type.INT : Type.FLOAT, value, this.minimum, this.maximum);
 		} else if (value > this.maximum) {
 			reader.cursor = start;
-			throw new RangeError(reader, FailType.TOO_HIGH, this.int ? Type.INT : Type.FLOAT, value);
+			throw new RangeError(reader, FailType.TOO_HIGH, this.int ? Type.INT : Type.FLOAT, value, this.minimum, this.maximum);
 		} else {
 			return Promise.resolve(value);
 		}
@@ -261,7 +261,7 @@ export class ListArgumentType<V> extends ArgumentType<V[]> {
 			throw new Error('Not handled');
 		}
 		if (got.length < this.minimum || got.length > this.maximum) {
-			throw new RangeError(reader, got.length < this.minimum ? FailType.TOO_LOW : FailType.TOO_HIGH, Type.AMOUNT, got.length);
+			throw new RangeError(reader, got.length < this.minimum ? FailType.TOO_LOW : FailType.TOO_HIGH, Type.AMOUNT, got.length, this.minimum, this.maximum);
 		}
 		return got;
 	}
