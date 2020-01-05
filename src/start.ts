@@ -2,6 +2,7 @@ import Logger from "@meteor-it/logger";
 import ConsoleReceiver from '@meteor-it/logger/receivers/node';
 import DiscordApi from "./api/discord/api";
 import VKApi from "./api/vk/api";
+import TelegramApi from "./api/telegram/api";
 import { Ayzek } from "./bot/ayzek";
 import ModernPluginSystem from "./bot/pluginSystems/ModernPluginSystem";
 import * as config from "./config.yaml";
@@ -21,6 +22,10 @@ function parseApi(apiDesc: any) {
 		case 'DS':
 			if (!apiDesc.token) throw new Error('Missing ds token');
 			return new DiscordApi(apiDesc.descriptor, apiDesc.token);
+		case 'TG':
+			if (!apiDesc.token) throw new Error('Missing tg token');
+			if (!apiDesc.username) throw new Error('missing username');
+			return new TelegramApi(apiDesc.descriptor, apiDesc.username, apiDesc.token);
 		default:
 			throw new Error(`Unknown API type: ${apiDesc.type}`);
 	}
