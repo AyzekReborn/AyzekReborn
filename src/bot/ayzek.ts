@@ -120,18 +120,18 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 							'\n\n',
 							`Пример того, что можно поставить в этом месте:\n`,
 							suggestionList.join(', ')
-						], '\n\n',
+						],
 						suggestionListNextCommand.length === 0 ? [] : [
 							'\n\n',
 							`Пример того, что можно поставить следующей командой:\n`,
 							suggestionListNextCommand.join(', ')
-						], '\n\n',
+						],
 						suggestionThisArgument.length === 0 ? [] : [
 							'\n\n',
 							`Пример того, как можно продолжить текущий аргумент:\n`,
 							suggestionThisArgument.join(', ')
 						]
-					];
+					].filter(e => e.length !== 0);
 					if (err instanceof CommandSyntaxError) {
 
 						// TODO: Messenger specific formatting & i18n
