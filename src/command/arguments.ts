@@ -3,6 +3,7 @@ import { CommandSyntaxError, UserDisplayableError } from './error';
 import StringRange from './range';
 import StringReader, { Type } from './reader';
 import { Suggestions, SuggestionsBuilder } from './suggestions';
+import * as _ from 'lodash';
 
 export abstract class ArgumentType<T> {
 	abstract parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<T>;
@@ -201,12 +202,14 @@ export class LazyArgumentType<V> extends ArgumentType<() => Promise<V>>{
 }
 
 export type ListParsingStrategy = {
+	unique?: boolean,
+} & ({
 	type: 'repeatBeforeError',
 } | {
 	type: 'noSpacesWithSeparator',
 	// "," by default
 	separator?: string,
-}
+});
 
 export class ListArgumentType<V> extends ArgumentType<V[]> {
 	/**
@@ -241,7 +244,19 @@ export class ListArgumentType<V> extends ArgumentType<V[]> {
 			const separator = this.strategy.separator ?? ',';
 			while (reader.canReadAnything) {
 				const gotValue = new StringReader(reader.readBeforeTestFails(t => t !== separator && t !== ' '));
-				const value = await this.singleArgumentType.parse(ctx, gotValue);
+				let value;
+				try {
+					value = await this.singleArgumentType.parse(ctx, gotValue);
+				} catch (e) {
+					if (e instanceof UserDisplayableError) {
+						if (e.reader) {
+							const cursor = e.reader.cursor;
+							reader.cursor += cursor;
+							e.reader = reader;
+						}
+					}
+					throw e;
+				}
 				if (gotValue.cursor !== gotValue.string.length)
 					throw new BadSeparatorError(gotValue, separator);
 				got.push(value);
@@ -262,6 +277,9 @@ export class ListArgumentType<V> extends ArgumentType<V[]> {
 		}
 		if (got.length < this.minimum || got.length > this.maximum) {
 			throw new RangeError(reader, got.length < this.minimum ? FailType.TOO_LOW : FailType.TOO_HIGH, Type.AMOUNT, got.length, this.minimum, this.maximum);
+		}
+		if (this.strategy.unique) {
+			return _.uniq(got);
 		}
 		return got;
 	}
