@@ -9,6 +9,7 @@ import { IMessage, IMessageOptions } from "../../model/message";
 import { MessageEvent } from "../../model/events/message";
 import { Text } from "../../model/text";
 import StringReader from "../../command/reader";
+import { MaybePromise } from "../promiseMap";
 
 export class TelegramUser extends User<TelegramApi>{
 	constructor(public apiUser: any, api: TelegramApi) {
@@ -61,6 +62,42 @@ export default class TelegramApi extends Api<TelegramApi>{
 	}
 	protected supportedFeatures: Set<ApiFeature> = new Set();
 
+
+	getUser(uid: string): MaybePromise<TelegramUser | null> {
+		const userPrefix = `TGU:${this.descriptor}:`;
+		if (!uid.startsWith(userPrefix)) {
+			return null;
+		}
+		const id = parseInt(uid.replace(userPrefix, ''), 10);
+		if (isNaN(id))
+			return null;
+		if (this.users.has(id))
+			return this.users.get(id)!;
+
+		return this.fetchUserOrChat(id) as Promise<TelegramUser>;
+	}
+	async fetchUserOrChat(id: number): Promise<TelegramUser | TelegramChat | null> {
+		const got = await this.execute('getChat', { chat_id: id });
+		if (id > 0) {
+			this.updateUserMap(got.result);
+			return this.users.get(id) ?? null;
+		} else {
+			this.updateChatMap(got.result);
+			return this.chats.get(-id) ?? null;
+		}
+	}
+	getChat(cid: string): MaybePromise<TelegramChat | null> {
+		const chatPrefix = `TGC:${this.descriptor}:`;
+		if (!cid.startsWith(chatPrefix)) {
+			return Promise.resolve(null);
+		}
+		const id = parseInt(cid.replace(chatPrefix, ''), 10);
+		if (isNaN(id))
+			return Promise.resolve(null);
+		if (this.chats.has(id))
+			return this.chats.get(id)!;
+		return this.fetchUserOrChat(id) as Promise<TelegramChat>;
+	}
 	public execute(method: string, params: any): Promise<any> {
 		return this.xrest.emit('POST', method, {
 			// multipart: true,
