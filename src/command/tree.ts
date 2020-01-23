@@ -16,6 +16,7 @@ export abstract class CommandNode<S, O extends CurrentArguments> {
 	arguments: Map<string, ArgumentCommandNode<any, S, unknown, O>> = new Map();
 	constructor(
 		public command: Command<S, O> | null,
+		public commandDescription: string | null,
 		public readonly requirement: Requirement<S>,
 		public readonly redirect: CommandNode<S, O> | null,
 		public readonly modifier: RedirectModifier<S, O> | null,
@@ -133,12 +134,13 @@ export class LiteralCommandNode<S, O extends CurrentArguments> extends CommandNo
 	constructor(
 		public readonly literalNames: string[],
 		command: Command<S, O> | null,
+		commandDescription: string | null,
 		requirement: Requirement<S>,
 		redirect: CommandNode<S, O> | null,
 		modifier: RedirectModifier<S, O> | null,
 		forks: boolean,
 	) {
-		super(command, requirement, redirect, modifier, forks);
+		super(command, commandDescription, requirement, redirect, modifier, forks);
 	}
 
 	get name(): string {
@@ -157,7 +159,7 @@ export class LiteralCommandNode<S, O extends CurrentArguments> extends CommandNo
 		return this.literalNames.includes(name.toLowerCase());
 	}
 
-	async parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader, contextBuilder: CommandContextBuilder<S, O>) {
+	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader, contextBuilder: CommandContextBuilder<S, O>) {
 		let start = reader.cursor;
 		let end = this._parse(reader);
 		if (end > -1) {
@@ -172,7 +174,7 @@ export class LiteralCommandNode<S, O extends CurrentArguments> extends CommandNo
 		for (const literal of this.literalNames) {
 			if (reader.canRead(literal.length)) {
 				let end = start + literal.length;
-				if (reader.string.substring(start, end) === literal) {
+				if (reader.string.substring(start, end).toLowerCase() === literal) {
 					reader.cursor = end;
 					if (!reader.canReadAnything || reader.peek() === ' ') {
 						return end;
@@ -236,7 +238,7 @@ export class LiteralCommandNode<S, O extends CurrentArguments> extends CommandNo
 
 export class RootCommandNode<S> extends CommandNode<S, {}> {
 	constructor() {
-		super(null, () => true, null, (s: CommandContext<S, {}>) => [s.source], false);
+		super(null, null, () => true, null, (s: CommandContext<S, {}>) => [s.source], false);
 	}
 	get name() {
 		return '';
@@ -281,12 +283,13 @@ export class ArgumentCommandNode<N extends string, S, T, O extends CurrentArgume
 		public readonly type: ArgumentType<T>,
 		public readonly customSuggestions: SuggestionProvider<S> | null,
 		command: Command<S, O> | null,
+		commandDescription: string | null,
 		requirement: Requirement<S>,
 		redirect: CommandNode<S, O> | null,
 		modifier: RedirectModifier<S, O> | null,
 		forks: boolean,
 	) {
-		super(command, requirement, redirect, modifier, forks);
+		super(command, commandDescription, requirement, redirect, modifier, forks);
 	}
 
 	get usage() {

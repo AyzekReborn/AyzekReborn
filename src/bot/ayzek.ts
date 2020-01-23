@@ -1,6 +1,6 @@
 import Logger from "@meteor-it/logger";
 import ApiFeature from "../api/features";
-import { ArgumentType, LoadableArgumentType } from "../command/arguments";
+import { LoadableArgumentType } from "../command/arguments";
 import { CommandDispatcher } from "../command/command";
 import { CommandSyntaxError, UserDisplayableError } from "../command/error";
 import { Api } from "../model/api";
@@ -11,7 +11,7 @@ import { MessageEventContext } from "./context";
 import { IMessageListener, PluginInfo } from "./plugin";
 import { levenshteinDistance } from "../util/levenshtein";
 
-const FIX_MAX_DISTANCE = 3;
+const FIX_MAX_DISTANCE = 5;
 
 export class Ayzek<A extends Api<any>> extends Api<A> {
 	plugins: PluginInfo[] = [];
@@ -117,7 +117,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 							}
 							possibleFixes = possibleFixesUnsorted.sort((a, b) => a[1] - b[1]).map(f => f[0]);
 						}
-						if (parseResult.reader.string.length !== parseResult.reader.cursor) {
+						{
 							const oldCursor = parseResult.reader.cursor;
 							parseResult.reader.cursor = parseResult.reader.string.length;
 							const suggestions = await this.commandDispatcher.getCompletionSuggestions(parseResult, parseResult.reader.cursor, source);
@@ -166,10 +166,16 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 						]);
 						// err.reader.cursor = cursor;
 					} else if (err instanceof UserDisplayableError) {
-						e.conversation.send([err.message, err.reader ? ['\n', `${commandPrefix}`, err.reader] : [], suggestionText]);
+						e.conversation.send([
+							err.message,
+							err.reader ? ['\n', `${commandPrefix}`, err.reader] : [],
+							suggestionText
+						]);
 					} else {
 						this.logger.error(err.stack);
-						e.conversation.send([`Ашипка, жди разраба.`, suggestionText]);
+						e.conversation.send([
+							`Ашипка, жди разраба.`, suggestionText
+						]);
 					}
 				}
 			} else {

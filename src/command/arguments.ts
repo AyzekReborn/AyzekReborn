@@ -200,9 +200,10 @@ export type ErrorableArgumentValue<T> = {
 function readErrorable<P, V>(ctx: ParseEntryPoint<P>, wrapped: ArgumentType<V>, elseReader: ArgumentType<string>, reader: StringReader, inputNeeded: boolean): ErrorableArgumentValue<V> {
 	const cursor = reader.cursor;
 	try {
+		const clonedReader = reader.clone();
 		return {
 			value: wrapped.parse(ctx, reader),
-			input: inputNeeded ? elseReader.parse(ctx, reader) : null,
+			input: inputNeeded ? elseReader.parse(ctx, clonedReader) : null,
 		};
 	} catch (error) {
 		reader.cursor = cursor;

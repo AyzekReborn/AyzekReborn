@@ -49,7 +49,7 @@ const debugCommand = command('debug')
 				'User mention: ', ctx.source.event.user.reference, '\n',
 				'Chat mention: ', ctx.source.event.chat && ctx.source.event.chat.reference || 'no chat',
 			]);
-		}))
+		}, 'Проверка упоминаний'))
 	.thenLiteral('id', b => b
 		.executes(ctx => {
 			ctx.source.event.conversation.send([
@@ -58,7 +58,7 @@ const debugCommand = command('debug')
 				`Full name: ${ctx.source.event.user.fullName}\n`,
 				`Name: ${ctx.source.event.user.name}\n`
 			]);
-		}))
+		}, 'ID юзера и чата'))
 	.thenLiteral('msg', b => b
 		.executes(ctx => {
 			const forwarded = ctx.source.event.maybeForwarded;
@@ -70,13 +70,13 @@ const debugCommand = command('debug')
 				`UID: ${forwarded.user.uid}\n`,
 				`Full name: ${forwarded.user.fullName}\n`,
 			]);
-		}))
+		}, 'Просмотр информации о пересланом сообщении'))
 	.thenLiteral('length-limit-bypass', b => b
 		// 20200 chars, only in development mode
 		.requires(requirementIsDevelopment)
 		.executes(async ctx => {
 			await ctx.source.event.conversation.send(('a'.repeat(100) + ' ').repeat(200));
-		}));
+		}, 'Отсылает огромную строку'));
 
 const helpCommand = command('help')
 	.thenArgument('name', stringArgument('greedy_phraze'), b => b
@@ -86,7 +86,7 @@ const helpCommand = command('help')
 			const found = ayzek.plugins.find(plugin => plugin.name === name);
 			if (!found) event.conversation.send(['Неизвестное название плагина: ', name]);
 			else event.conversation.send(describePlugin(ctx.source, ayzek, found));
-		}))
+		}, 'Просмотр информации о плагине'))
 	.thenLiteral('all', b => b
 		.executes(async ctx => {
 			const { source: { event, ayzek } } = ctx;
@@ -100,7 +100,7 @@ const helpCommand = command('help')
 				else
 					console.error(e.stack);
 			}
-		}))
+		}, 'Просмотр информации о всех плагинах'))
 	.executes(async ({ source: { ayzek, event } }) => {
 		event.conversation.send([
 			`В бота установлены следующие плагины:\n\n`,
@@ -110,7 +110,7 @@ const helpCommand = command('help')
 			], '\n')), '\n\n'),
 			'\n\nДля просмотра информации о каждом плагине пиши /help <название>, либо /help all для просмотра портянки ((C) @fishlabsoman)'
 		]);
-	});
+	}, 'Показ списка плагинов');
 
 export default class implements PluginInfo {
 	name = 'MainPlugin';

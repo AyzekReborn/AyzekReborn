@@ -142,6 +142,15 @@ export class CommandDispatcher<S> {
 		let fullInput = parse.reader.string;
 		let truncatedInput = fullInput.substring(0, cursor);
 		let futures = [];
+		{
+			let future = Suggestions.empty;
+			try {
+				future = await parent.listSuggestions(context.build(truncatedInput), new SuggestionsBuilder(truncatedInput, nodeBeforeCursor.startPos - 1));
+			}
+			catch (ignored) {
+			}
+			futures.push(future);
+		}
 		for (let node of parent.children) {
 			if (!node.canUse(source))
 				continue;
@@ -265,11 +274,17 @@ export class CommandDispatcher<S> {
 		}
 
 		if (node.command != null) {
-			result.push(prefix);
+			if (node.commandDescription) {
+				result.push(`${prefix.trim()} — ${node.commandDescription}`);
+			} else {
+				result.push(prefix);
+			}
 		}
 
 		if (node.redirect != null) {
-			const redirect = node.redirect === this.root ? "..." : "-> " + node.redirect.usage;
+			const redirect = node.redirect === this.root ?
+				("..." + (node.commandDescription ? ` — ${node.commandDescription}` : '')) :
+				"-> " + node.redirect.usage;
 			result.push(prefix.length === 0 ? ARGUMENT_SEPARATOR + redirect : prefix + ARGUMENT_SEPARATOR + redirect);
 		}
 		else if (node.children.length > 0) {

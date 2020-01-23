@@ -10,6 +10,8 @@ export abstract class ArgumentBuilder<Source,
 
 	arguments = new RootCommandNode<Source>();
 	command: Command<Source, ArgumentTypeMap> | null = null;
+	commandDescription: string | null = null;
+
 	requirement: Requirement<Source> = () => true;
 	target: CommandNode<Source, ArgumentTypeMap> | null = null;
 	modifier: RedirectModifier<Source, ArgumentTypeMap> | null = null;
@@ -42,8 +44,9 @@ export abstract class ArgumentBuilder<Source,
 		return this.arguments.children;
 	}
 
-	executes(command: Command<Source, ArgumentTypeMap>) {
+	executes(command: Command<Source, ArgumentTypeMap>, commandDescription: string | null = null) {
 		this.command = command;
+		this.commandDescription = commandDescription;
 		return this;
 	}
 
@@ -52,7 +55,8 @@ export abstract class ArgumentBuilder<Source,
 		return this;
 	}
 
-	redirect(target: CommandNode<Source, ArgumentTypeMap>, modifier: SingleRedirectModifier<Source, ArgumentTypeMap>) {
+	redirect(target: CommandNode<Source, ArgumentTypeMap>, modifier: SingleRedirectModifier<Source, ArgumentTypeMap>, commandDescription: string | null = null) {
+		this.commandDescription = commandDescription;
 		return this.forward(target, modifier === null ? null : s => [modifier(s)], false);
 	}
 
@@ -89,7 +93,7 @@ export class LiteralArgumentBuilder<S, O extends CurrentArguments> extends Argum
 	}
 
 	build() {
-		let result: LiteralCommandNode<S, O> = new LiteralCommandNode(this.literals, this.command, this.requirement, this.target, this.modifier, this.forks);
+		let result: LiteralCommandNode<S, O> = new LiteralCommandNode(this.literals, this.command, this.commandDescription, this.requirement, this.target, this.modifier, this.forks);
 		for (let argument of this.argumentList) {
 			result.addChild(argument as any);
 		}
@@ -110,7 +114,7 @@ export class RequiredArgumentBuilder<N extends string, S, T, O extends {}> exten
 	}
 
 	build(): ArgumentCommandNode<N, S, T, O> {
-		let result = new ArgumentCommandNode<N, S, T, O>(this.name, this.type, this.suggestionsProvider, this.command, this.requirement, this.target, this.modifier, this.forks);
+		let result = new ArgumentCommandNode<N, S, T, O>(this.name, this.type, this.suggestionsProvider, this.command, this.commandDescription, this.requirement, this.target, this.modifier, this.forks);
 		for (let argument of this.argumentList) {
 			result.addChild(argument as any);
 		}

@@ -17,12 +17,12 @@ const whatCommand = command('what')
 			const seed = getArgument('person').uid + '|' + Math.floor(date.getMinutes() / 5) + '|' + date.getHours() + '|' + date.getDay();
 			const random = new Random(seed);
 			event.conversation.send(`${random.randomArrayElement(phrazes.what.start)} ${random.randomArrayElement(phrazes.what.end)}`);
-		}));
+		}, 'Определяет что делает в данный момент данный человек'));
 
 const shrugCommand = command('shrug')
 	.executes(({ source: { event } }) => {
 		event.conversation.send(`¯\\_(ツ)_/¯`)
-	});
+	}, `¯\\_(ツ)_/¯`);
 
 const catOBotCommand = command('cat-o-bot')
 	.thenArgument('Количество', intArgument(1, 50), b =>
@@ -36,7 +36,7 @@ const catOBotCommand = command('cat-o-bot')
 				return await ctx.source.event.conversation.send('Коты не получены (');
 			const attachments = await Promise.all(catImages.map(e => e.url.endsWith('.gif') ? File.fromUrl('GET', e.url, {}, 'image.gif', 'image/gif') : Image.fromUrl('GET', e.url, {}, 'photo.jpeg', 'image/jpeg')));
 			await ctx.source.event.conversation.send('Лови котов', attachments);
-		}));
+		}, 'Порт котобота жарвиса на айзека'));
 
 export default class implements PluginInfo {
 	name = 'FloodPlugin';
