@@ -424,8 +424,10 @@ export class CommandContext<S, O extends CurrentArguments> {
 					.then(value => argument.result = value));
 			}
 		}
-		if (loadingPromises.length === 0)
+		if (loadingPromises.length === 0) {
+			this.loaded = true;
 			return null;
+		}
 		return Promise.all(loadingPromises).then(() => this.loaded = true);
 	}
 
