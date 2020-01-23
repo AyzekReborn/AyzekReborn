@@ -434,9 +434,9 @@ export default class VKApi extends Api<VKApi> {
 		const peer_id = +conv.targetId;
 		if (options.forwarded || options.replyTo) throw new Error(`Message responses are not supported by vk bots`);
 		const texts = splitByMaxPossibleParts(this.textToString(text), MAX_MESSAGE_LENGTH);
-		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[];
-		const attachmentsChunks = arrayChunks(attachments, MAX_ATTACHMENTS_PER_MESSAGE);
-		console.log(attachmentsChunks);
+		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[]
+		const attachmentUploadPromises = arrayChunks(attachments, MAX_ATTACHMENTS_PER_MESSAGE)
+			.map(chunk => chunk.map(name => this.uploadAttachment(name, peer_id.toString())));
 		for (let i = 0; i < texts.length; i++) {
 			let isLast = i === texts.length - 1;
 			const apiObject: any = {
@@ -449,21 +449,21 @@ export default class VKApi extends Api<VKApi> {
 				disable_mentions: 1,
 				// TODO: Buttons?
 			};
-			if (isLast && attachmentsChunks.length >= 1) {
-				apiObject.attachment = (await Promise.all(attachmentsChunks.shift()!.map(name => this.uploadAttachment(name, peer_id.toString())))).join(',');
+			if (isLast && attachmentUploadPromises.length >= 1) {
+				apiObject.attachment = (await Promise.all(attachmentUploadPromises.shift()!)).join(',');
 			}
-			if (isLast && attachmentsChunks.length === 0 && extraAttachments.length >= 1) {
+			if (isLast && attachmentUploadPromises.length === 0 && extraAttachments.length >= 1) {
 				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
 			}
 			await this.execute('messages.send', apiObject);
 		}
-		for (let i = 0; i < attachmentsChunks.length; i++) {
-			let isLast = i === attachmentsChunks.length - 1;
+		for (let i = 0; i < attachmentUploadPromises.length; i++) {
+			let isLast = i === attachmentUploadPromises.length - 1;
 			const apiObject: any = {
 				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
 				peer_id,
 			};
-			apiObject.attachment = (await Promise.all(attachmentsChunks[i]!.map(name => this.uploadAttachment(name, peer_id.toString())))).join(',');
+			apiObject.attachment = (await Promise.all(attachmentUploadPromises[i]!)).join(',');
 			if (isLast && extraAttachments.length >= 1) {
 				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
 			}
