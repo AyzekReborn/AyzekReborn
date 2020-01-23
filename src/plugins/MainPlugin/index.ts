@@ -4,6 +4,7 @@ import { command, PluginCategory, PluginInfo } from "../../bot/plugin";
 import { stringArgument } from "../../command/arguments";
 import { Text, textJoin } from "../../model/text";
 import { padList } from "../../util/pad";
+import { Requirement } from "../../command/requirement";
 
 function padAllListItemExceptFirst(list: string[]) {
 	return [
@@ -39,6 +40,8 @@ function describePlugin(ctx: MessageEventContext<any>, ayzek: Ayzek<any>, plugin
 	]
 }
 
+const requirementIsDevelopment: Requirement<any> = () => process.env.NODE_ENV === 'development';
+
 const debugCommand = command('debug')
 	.thenLiteral('mentions', b => b
 		.executes(ctx => {
@@ -67,6 +70,12 @@ const debugCommand = command('debug')
 				`UID: ${forwarded.user.uid}\n`,
 				`Full name: ${forwarded.user.fullName}\n`,
 			]);
+		}))
+	.thenLiteral('length-limit-bypass', b => b
+		// 20200 chars, only in development mode
+		.requires(requirementIsDevelopment)
+		.executes(async ctx => {
+			await ctx.source.event.conversation.send(('a'.repeat(100) + ' ').repeat(200));
 		}));
 
 const helpCommand = command('help')

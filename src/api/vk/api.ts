@@ -28,6 +28,7 @@ import VKChat from "./chat";
 import VKChatMap from "./chatMap";
 import VKUser from "./user/user";
 import VKUserMap from "./userMap";
+import { VKUserArgumentType } from './arguments';
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
@@ -508,9 +509,7 @@ export default class VKApi extends Api<VKApi> {
 		await this.loop();
 	}
 
-	get apiLocalUserArgumentType(): ArgumentType<VKUser> {
-		return vkUserArgumentTypeInstance;
-	}
+	apiLocalUserArgumentType = new VKUserArgumentType(this);
 
 	supportedFeatures = new Set([
 		ApiFeature.IncomingMessageWithMultipleAttachments,
@@ -520,51 +519,3 @@ export default class VKApi extends Api<VKApi> {
 		ApiFeature.EditMessage,
 	]);
 }
-
-class ExpectedVKUserError extends ExpectedSomethingError {
-	constructor(public reader: StringReader) {
-		super(reader, 'vk user mention');
-	}
-}
-
-class VKUserArgumentType extends ArgumentType<VKUser>{
-	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<VKUser> {
-		if (reader.peek() !== '[') throw new ExpectedVKUserError(reader);
-		const api = ctx.sourceProvider as unknown as VKApi;
-		const cursor = reader.cursor;
-		reader.skip();
-		const remaining = reader.remaining;
-		let isBot;
-		if (remaining.startsWith('id')) {
-			isBot = false;
-			reader.skipMulti(2);
-		} else if (remaining.startsWith('club')) {
-			isBot = true;
-			reader.skipMulti(4);
-		} else {
-			reader.cursor = cursor;
-			throw new ExpectedVKUserError(reader);
-		}
-		let id;
-		try {
-			id = reader.readInt();
-		} catch{
-			reader.cursor = cursor;
-			throw new ExpectedVKUserError(reader);
-		}
-		if (reader.readChar() !== '|') {
-			reader.cursor = cursor;
-			throw new ExpectedVKUserError(reader);
-		}
-		const charsToSkip = reader.remaining.indexOf(']') + 1;
-		if (charsToSkip === 0) {
-			reader.cursor = cursor;
-			throw new ExpectedVKUserError(reader);
-		}
-		reader.cursor += charsToSkip;
-		const user = await api.getApiUser(isBot ? -id : id);
-		if (!user) throw new NoSuchUserError((isBot ? -id : id).toString(), reader);
-		return user;
-	}
-}
-const vkUserArgumentTypeInstance = new VKUserArgumentType();

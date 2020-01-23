@@ -1,6 +1,6 @@
 import { Ayzek } from "../bot/ayzek";
 import { padList } from "../util/pad";
-import { ParsedArgument } from "./arguments";
+import { ParsedArgument, LoadableArgumentType } from "./arguments";
 import { LiteralArgumentBuilder } from "./builder";
 import { CommandSyntaxError, UnknownSomethingError } from "./error";
 import StringRange from "./range";
@@ -75,6 +75,7 @@ export class CommandDispatcher<S> {
 		let contexts: CommandContext<S, any>[] | null = [original];
 		let next: CommandContext<S, any>[] | null = null;
 		while (contexts != null) {
+			await Promise.all(contexts.map(ctx => ctx.loadArguments()));
 			let size = contexts.length;
 			for (let i = 0; i < size; i++) {
 				let context = contexts[i];
@@ -153,10 +154,10 @@ export class CommandDispatcher<S> {
 			futures.push(future);
 		}
 
-		return Promise.resolve(Suggestions.merge(fullInput, futures));
+		return Suggestions.merge(fullInput, futures);
 	}
 
-	parse<P>(ctx: ParseEntryPoint<P>, command: string | StringReader, source: S): Promise<ParseResults<S>> {
+	parse<P>(ctx: ParseEntryPoint<P>, command: string | StringReader, source: S): ParseResults<S> {
 		if (typeof command === "string")
 			command = new StringReader(command)
 
@@ -164,7 +165,7 @@ export class CommandDispatcher<S> {
 		return this.parseNodes(ctx, this.root, command, context);
 	}
 
-	private async parseNodes<P>(ctx: ParseEntryPoint<P>, node: CommandNode<S, any>, originalReader: StringReader, contextSoFar: CommandContextBuilder<S, any>): Promise<ParseResults<S>> {
+	private parseNodes<P>(ctx: ParseEntryPoint<P>, node: CommandNode<S, any>, originalReader: StringReader, contextSoFar: CommandContextBuilder<S, any>): ParseResults<S> {
 		let source: S = contextSoFar.source;
 		let errors: Map<CommandNode<S, any>, Error> | null = null;
 		let potentials: ParseResults<S>[] | null = null;
@@ -176,7 +177,7 @@ export class CommandDispatcher<S> {
 			let context: CommandContextBuilder<S, any> = contextSoFar.copy();
 			let reader: StringReader = originalReader.clone();
 			try {
-				await child.parse(ctx, reader, context);
+				child.parse(ctx, reader, context);
 
 				if (reader.canReadAnything)
 					if (reader.peek() != ARGUMENT_SEPARATOR)
@@ -196,7 +197,7 @@ export class CommandDispatcher<S> {
 				reader.skip();
 				if (!(child.redirect == null)) {
 					let childContext: CommandContextBuilder<S, any> = new CommandContextBuilder(this, source, child.redirect, reader.cursor);
-					let parse: ParseResults<S> = await this.parseNodes(ctx, child.redirect, reader, childContext);
+					let parse: ParseResults<S> = this.parseNodes(ctx, child.redirect, reader, childContext);
 					context.withChild(parse.context);
 					return {
 						context,
@@ -205,7 +206,7 @@ export class CommandDispatcher<S> {
 					};
 				}
 				else {
-					let parse: ParseResults<S> = await this.parseNodes(ctx, child, reader, context);
+					let parse: ParseResults<S> = this.parseNodes(ctx, child, reader, context);
 					if (potentials == null) {
 						potentials = [];
 					}
@@ -407,6 +408,27 @@ export class CommandContext<S, O extends CurrentArguments> {
 	) {
 		this.getArgument = this.getArgument.bind(this);
 	}
+
+	loaded: boolean = false;
+
+	/**
+	 * Loads data for LoadableArgumentType
+	 */
+	loadArguments(): Promise<any> | null {
+		if (this.loaded) return null;
+		const loadingPromises: Promise<any>[] = [];
+		for (const key of this.parsedArguments.keys()) {
+			const argument = this.parsedArguments.get(key)!;
+			if (argument.argumentType instanceof LoadableArgumentType) {
+				loadingPromises.push(argument.argumentType.load(argument.result)
+					.then(value => argument.result = value));
+			}
+		}
+		if (loadingPromises.length === 0)
+			return null;
+		return Promise.all(loadingPromises).then(() => this.loaded = true);
+	}
+
 	copyFor(source: S): CommandContext<S, O> {
 		if (this.source === source) return this;
 		let copy = new CommandContext<S, O>(
@@ -433,6 +455,8 @@ export class CommandContext<S, O extends CurrentArguments> {
 	}
 
 	getArguments(): O {
+		if (!this.loaded)
+			throw new Error('Arguments is not loaded yet');
 		const result: any = {};
 		for (let key in this.parsedArguments.keys())
 			result[key] = this.parsedArguments.get(key);
@@ -440,6 +464,8 @@ export class CommandContext<S, O extends CurrentArguments> {
 	}
 
 	getArgumentIfExists<N extends keyof O>(name: N): O[N] | null {
+		if (!this.loaded)
+			throw new Error('Arguments is not loaded yet');
 		let argument = this.parsedArguments.get(name as any);
 		if (!argument) return null;
 		let { result } = argument;
@@ -447,6 +473,8 @@ export class CommandContext<S, O extends CurrentArguments> {
 	}
 
 	getArgument<N extends keyof O>(name: N): O[N] {
+		if (!this.loaded)
+			throw new Error('Arguments is not loaded yet');
 		let argument = this.parsedArguments.get(name as any);
 		if (!argument) throw new Error(`No such argument "${name}" exists on this command`);
 		let { result } = argument;
@@ -457,6 +485,7 @@ export class CommandContext<S, O extends CurrentArguments> {
 		return this.nodes.length !== 0;
 	}
 }
+
 export default class CommandContextBuilder<S, O extends CurrentArguments> {
 	args: Map<string, ParsedArgument<S, any>> = new Map();
 	nodes: Array<ParsedCommandNode<S>> = [];

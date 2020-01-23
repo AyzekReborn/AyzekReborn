@@ -4,16 +4,18 @@ import { emitStreaming, IRequestOptions } from '@meteor-it/xrest';
 import { constants } from 'http2';
 import { Data, EmptyData } from "./data";
 
+export type AttachmentType = 'messenger_specific' | 'location' | 'file';
+
 export class Attachment {
-	type: string;
-	constructor(type: string) {
+	type: AttachmentType;
+	constructor(type: AttachmentType) {
 		this.type = type;
 	}
 }
 
 export class MessengerSpecificUnknownAttachment extends Attachment {
-	constructor(type: string, public apiData: any) {
-		super(type)
+	constructor(public apiType: string, public apiData: any) {
+		super('messenger_specific')
 	}
 }
 

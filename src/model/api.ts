@@ -1,7 +1,7 @@
 import Logger from "@meteor-it/logger";
 import ApiFeature from "../api/features";
 import { isPromise, MaybePromise } from "../api/promiseMap";
-import { ArgumentType } from "../command/arguments";
+import { LoadableArgumentType } from "../command/arguments";
 import { TypedEvent } from "../util/event";
 import { Attachment } from "./attachment/attachment";
 import { Chat, Conversation, Guild, User } from "./conversation";
@@ -114,5 +114,5 @@ export abstract class Api<A extends Api<A>> {
 	 * field holds propper implementation, which then consumed
 	 * by userArgument
 	 */
-	abstract get apiLocalUserArgumentType(): ArgumentType<User<A>>;
+	abstract get apiLocalUserArgumentType(): LoadableArgumentType<any, User<A>>;
 }

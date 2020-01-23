@@ -1,6 +1,6 @@
 import Logger from "@meteor-it/logger";
 import ApiFeature from "../api/features";
-import { ArgumentType } from "../command/arguments";
+import { ArgumentType, LoadableArgumentType } from "../command/arguments";
 import { CommandDispatcher } from "../command/command";
 import { CommandSyntaxError, UserDisplayableError } from "../command/error";
 import { Api } from "../model/api";
@@ -9,6 +9,9 @@ import { Disposable } from "../util/event";
 import { AttachmentRepository, AttachmentStorage, ownerlessEmptyAttachmentStorage } from "./attachment/attachment";
 import { MessageEventContext } from "./context";
 import { IMessageListener, PluginInfo } from "./plugin";
+import { levenshteinDistance } from "../util/levenshtein";
+
+const FIX_MAX_DISTANCE = 3;
 
 export class Ayzek<A extends Api<any>> extends Api<A> {
 	plugins: PluginInfo[] = [];
@@ -80,11 +83,12 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 				let parseResult;
 				const source = new MessageEventContext(this, e);
 				try {
-					parseResult = await this.commandDispatcher.parse({ ayzek: this, sourceProvider: e.api }, command, source);
+					parseResult = this.commandDispatcher.parse({ ayzek: this, sourceProvider: e.api }, command, source);
 					await this.commandDispatcher.executeResults(parseResult);
 				} catch (err) {
 					const suggestionListNextCommand = [];
 					const suggestionList = [];
+					let possibleFixes: string[] = [];
 					const suggestionThisArgument = [];
 					if (parseResult) {
 						if (parseResult.reader.string.length === parseResult.reader.cursor) {
@@ -100,10 +104,18 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 							parseResult.reader.cursor = oldCursor;
 						}
 						{
+							const currentArgument = parseResult.reader.string.slice(parseResult.reader.cursor)
 							const suggestions = await this.commandDispatcher.getCompletionSuggestions(parseResult, parseResult.reader.cursor, source);
+							const possibleFixesUnsorted: [string, number][] = [];
 							for (let suggestion of suggestions.suggestions) {
-								suggestionList.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
+								const text = `${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim();
+								suggestionList.push(text)
+								const distance = levenshteinDistance(suggestion.text, currentArgument, FIX_MAX_DISTANCE);
+								if (distance <= FIX_MAX_DISTANCE) {
+									possibleFixesUnsorted.push([text, distance]);
+								}
 							}
+							possibleFixes = possibleFixesUnsorted.sort((a, b) => a[1] - b[1]).map(f => f[0]);
 						}
 						if (parseResult.reader.string.length !== parseResult.reader.cursor) {
 							const oldCursor = parseResult.reader.cursor;
@@ -115,8 +127,14 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 							parseResult.reader.cursor = oldCursor;
 						}
 					}
+
 					const suggestionText = [
-						suggestionList.length === 0 ? [] : [
+						possibleFixes.length === 0 ? [] : [
+							'\n\n',
+							`Возможно ты имел в виду:\n`,
+							possibleFixes.join(', ')
+						],
+						(possibleFixes.length !== 0 || suggestionList.length === 0) ? [] : [
 							'\n\n',
 							`Пример того, что можно поставить в этом месте:\n`,
 							suggestionList.join(', ')
@@ -221,7 +239,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 		throw new Error('Not implemented for ayzek');
 	}
 
-	get apiLocalUserArgumentType(): ArgumentType<User<A>> {
+	get apiLocalUserArgumentType(): LoadableArgumentType<void, User<A>> {
 		throw new Error("Method not implemented.");
 	}
 }
