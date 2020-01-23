@@ -4,9 +4,13 @@ import StringRange from './range';
 import StringReader, { Type } from './reader';
 import { Suggestions, SuggestionsBuilder } from './suggestions';
 import * as _ from 'lodash';
+import { MaybePromise } from '../api/promiseMap';
+
+
 
 export abstract class ArgumentType<T> {
-	abstract parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<T>;
+	abstract parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): MaybePromise<T>;
+
 	async listSuggestions<S>(_ctx: CommandContext<S, any>, _builder: SuggestionsBuilder): Promise<Suggestions> {
 		return Suggestions.empty;
 	}
@@ -29,8 +33,8 @@ export abstract class ArgumentType<T> {
 }
 
 export class BoolArgumentType extends ArgumentType<boolean> {
-	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): Promise<boolean> {
-		return Promise.resolve(reader.readBoolean());
+	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): boolean {
+		return reader.readBoolean();
 	}
 	async listSuggestions<S>(_ctx: CommandContext<S, any>, builder: SuggestionsBuilder) {
 		let buffer = builder.remaining.toLowerCase();
@@ -74,7 +78,7 @@ class NumberArgumentType extends ArgumentType<number> {
 	constructor(public readonly int: boolean, public readonly minimum = -Infinity, public readonly maximum = Infinity) {
 		super();
 	}
-	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): Promise<number> {
+	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): number {
 		let start = reader.cursor;
 		let value = this.int ? reader.readInt() : reader.readFloat();
 		if (value < this.minimum) {
@@ -84,7 +88,7 @@ class NumberArgumentType extends ArgumentType<number> {
 			reader.cursor = start;
 			throw new RangeError(reader, FailType.TOO_HIGH, this.int ? Type.INT : Type.FLOAT, value, this.minimum, this.maximum);
 		} else {
-			return Promise.resolve(value);
+			return value;
 		}
 	}
 	get examples(): string[] {
@@ -129,16 +133,16 @@ export class StringArgumentType extends ArgumentType<string> {
 	constructor(public readonly type: StringType) {
 		super();
 	}
-	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): Promise<string> {
+	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): string {
 		switch (this.type) {
 			case 'greedy_phraze':
 				let text = reader.remaining;
 				reader.cursor = reader.totalLength;
-				return Promise.resolve(text);
+				return text;
 			case 'single_word':
-				return Promise.resolve(reader.readUnquotedString());
+				return reader.readUnquotedString();
 			case 'quotable_phraze':
-				return Promise.resolve(reader.readString());
+				return reader.readString();
 		}
 	}
 	get examples(): string[] {
@@ -191,11 +195,11 @@ export class ErrorableArgumentType<V> extends ArgumentType<ErrorableArgumentValu
 	}
 }
 
-export class LazyArgumentType<V> extends ArgumentType<() => Promise<V>>{
+export class LazyArgumentType<V> extends ArgumentType<() => MaybePromise<V>>{
 	constructor(public wrapperReader: ArgumentType<string>, public wrapped: ArgumentType<V>) {
 		super();
 	}
-	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<() => Promise<V>> {
+	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<() => MaybePromise<V>> {
 		let readed = await this.wrapperReader.parse(ctx, reader);
 		return () => this.wrapped.parse(ctx, new StringReader(readed));
 	}
