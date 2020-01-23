@@ -12,6 +12,11 @@ export abstract class ArgumentBuilder<S, T extends ArgumentBuilder<S, T, O>, O e
 	modifier: RedirectModifier<S, O> | null = null;
 	forks: boolean = false;
 
+	then(builder: LiteralArgumentBuilder<S, O>): this {
+		this.arguments.addChild(builder.build() as any);
+		return this;
+	}
+
 	thenLiteral(names: string | string[], builderFiller: (builder: LiteralArgumentBuilder<S, O>) => void): this {
 		const builder = new LiteralArgumentBuilder<S, O>(typeof names === 'string' ? [names] : names);
 		builderFiller(builder);

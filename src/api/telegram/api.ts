@@ -47,6 +47,11 @@ export class TelegramChat extends Chat<TelegramApi>{
 	}
 }
 
+function isChatType(type: string) {
+	if (!type) return;
+	return ['group', 'supergroup'].includes(type);
+}
+
 export default class TelegramApi extends Api<TelegramApi>{
 	xrest: XRest;
 	constructor(public descriptor: string, public username: string, public token: string) {
@@ -61,7 +66,6 @@ export default class TelegramApi extends Api<TelegramApi>{
 		});
 	}
 	protected supportedFeatures: Set<ApiFeature> = new Set();
-
 
 	getUser(uid: string): MaybePromise<TelegramUser | null> {
 		const userPrefix = `TGU:${this.descriptor}:`;
@@ -91,7 +95,7 @@ export default class TelegramApi extends Api<TelegramApi>{
 		if (!cid.startsWith(chatPrefix)) {
 			return Promise.resolve(null);
 		}
-		const id = parseInt(cid.replace(chatPrefix, ''), 10);
+		let id = -parseInt(cid.replace(chatPrefix, ''), 10);
 		if (isNaN(id))
 			return Promise.resolve(null);
 		if (this.chats.has(id))
@@ -104,9 +108,12 @@ export default class TelegramApi extends Api<TelegramApi>{
 			data: params,
 		}).then(v => v.jsonBody);
 	}
+
 	lastUpdateId: number = 0;
+
 	users: Map<number, TelegramUser> = new Map();
 	chats: Map<number, TelegramChat> = new Map();
+
 	updateUserMap(user: any) {
 		if (!this.users.get(user.id)) {
 			this.users.set(user.id, new TelegramUser(user, this));
@@ -114,6 +121,7 @@ export default class TelegramApi extends Api<TelegramApi>{
 			// TODO: Update
 		}
 	}
+
 	updateChatMap(chat: any) {
 		if (!this.chats.get(-chat.id)) {
 			this.chats.set(-chat.id, new TelegramChat(chat, this));
@@ -122,15 +130,11 @@ export default class TelegramApi extends Api<TelegramApi>{
 		}
 	}
 
-	isChatType(type?: string) {
-		if (!type) return;
-		return ['group', 'supergroup'].includes(type);
-	}
-
 	async parseForwarded(message: any): Promise<IMessage<TelegramApi>[]> {
 		if (!message.forward_from) return [];
-		this.updateUserMap(message.forward_from);
-		if (this.isChatType(message.forward_from_chat.type))
+		if (message.forward_from)
+			this.updateUserMap(message.forward_from);
+		if (isChatType(message.forward_from_chat.type))
 			this.updateChatMap(message.forward_from_chat);
 		const user = this.users.get(message.forward_from.id)!;
 		const chat = this.chats.get(-message.forward_from_chat.id) ?? null;
@@ -144,12 +148,13 @@ export default class TelegramApi extends Api<TelegramApi>{
 			replyTo: message.reply_to_message ? (await this.parseMessage(message.reply_to_message)) : null,
 			forwarded: [],
 			messageId: message.forward_from_message_id,
-		}]
+		}];
 	}
 
 	async parseMessage(message: any): Promise<MessageEvent<TelegramApi>> {
-		this.updateUserMap(message.from);
-		if (this.isChatType(message.chat.type))
+		if (message.from)
+			this.updateUserMap(message.from);
+		if (isChatType(message.chat.type))
 			this.updateChatMap(message.chat);
 		const user = this.users.get(message.from.id)!;
 		const chat = this.chats.get(-message.chat.id) ?? null;
@@ -217,7 +222,7 @@ export default class TelegramApi extends Api<TelegramApi>{
 		if (text instanceof StringReader) return text.toString();
 		switch (text.type) {
 			case 'boldPart':
-				return `*${this.transformText(text.data)}*`;
+				return this.transformText(text.data);
 			case 'chatRefPart':
 				return `<Чат ${text.data.title}>`;
 			case 'preservingWhitespace':
@@ -225,7 +230,7 @@ export default class TelegramApi extends Api<TelegramApi>{
 			case 'code':
 				return `\`${this.transformText(text.data)}\``;
 			case 'hashTagPart':
-				return `${this.transformText(text.data).split(' ').map(e => `#${e}`)}`;
+				return this.transformText(text.data).split(' ').map(e => e.length !== 0 ? `#${e}` : e).join(' ');
 			case 'mentionPart':
 				return `[${text.text ?? text.data.name}](tg://user?id=${text.data.targetId})`;
 			case 'underlinedPart':
