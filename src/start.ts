@@ -36,10 +36,18 @@ function parseApi(apiDesc: any) {
 	const ayzek = new Ayzek('ayzek', apis, '/', true);
 	const ps = new ModernPluginSystem(ayzek,
 		() => (require as any).context('./plugins', true, /Plugin\/index\.([jt]sx?|coffee)$/, 'lazy'),
-		(acceptor, getContext) => (module as any).hot.accept(getContext().id, acceptor));
+		(acceptor, getContext) => {
+			if ((module as any).hot) {
+				(module as any).hot.accept(getContext().id, acceptor)
+			}
+		}
+	);
 	const pps = new ModernPluginSystem(ayzek,
 		() => (require as any).context('./privatePlugins', true, /Plugin\/index\.([jt]sx?|coffee)$/, 'lazy'),
-		(acceptor, getContext) => (module as any).hot.accept(getContext().id, acceptor))
-	// console.log('Test3');
+		(acceptor, getContext) => {
+			if ((module as any).hot) {
+				(module as any).hot.accept(getContext().id, acceptor);
+			}
+		})
 	await Promise.all([pps.load({ ayzek }), ps.load({ ayzek }), ayzek.doWork()]);
 })();

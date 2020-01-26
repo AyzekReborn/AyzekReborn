@@ -192,10 +192,10 @@ export class LiteralCommandNode<S, O extends CurrentArguments> extends CommandNo
 		for (const literal of this.literalNames) {
 			if (literal.toLowerCase().startsWith(remaining)) {
 				const other = this.literalNames.filter(e => e !== literal);
-				return builder.suggest(literal, other.length === 0 ? null : `${other.join(', ')}`).build();
+				builder.suggest(literal, other.length === 0 ? null : `${other.join(', ')}`);
 			}
 		}
-		return Suggestions.empty;
+		return builder.build();
 	}
 
 	isValidInput<P>(_ctx: ParseEntryPoint<P>, input: string): boolean {

@@ -8,8 +8,12 @@ import * as _ from 'lodash';
 export abstract class ArgumentType<T> {
 	abstract parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): T;
 
-	async listSuggestions<S>(_ctx: CommandContext<S, any>, _builder: SuggestionsBuilder): Promise<Suggestions> {
-		return Suggestions.empty;
+	async listSuggestions<S>(_ctx: CommandContext<S, any>, builder: SuggestionsBuilder): Promise<Suggestions> {
+		const remaining = builder.remaining;
+		for (const literal of this.examples)
+			if (literal.startsWith(remaining))
+				builder.suggest(literal, null);
+		return builder.build();
 	}
 
 	get examples(): string[] {
@@ -142,7 +146,7 @@ export function intArgument(min?: number, max?: number) {
 export type StringType = 'single_word' | 'quotable_phraze' | 'greedy_phraze';
 
 export class StringArgumentType extends ArgumentType<string> {
-	constructor(public readonly type: StringType) {
+	constructor(public readonly type: StringType, public readonly customExamples: string[] | null) {
 		super();
 	}
 	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): string {
@@ -158,6 +162,8 @@ export class StringArgumentType extends ArgumentType<string> {
 		}
 	}
 	get examples(): string[] {
+		if (this.customExamples)
+			return this.customExamples;
 		switch (this.type) {
 			case 'greedy_phraze':
 				return ['word', 'words with spaces', '"and symbols"'];
@@ -169,14 +175,14 @@ export class StringArgumentType extends ArgumentType<string> {
 	}
 }
 
-export function stringArgument(type: StringType) {
-	return new StringArgumentType(type);
+export function stringArgument(type: StringType, examples: string[] | null = null) {
+	return new StringArgumentType(type, examples);
 }
 
 export type ParsedArgument<_S, T> = {
 	range: StringRange,
 	result: T,
-	argumentType: ArgumentType<T>,
+	argumentType?: ArgumentType<T>,
 }
 
 export type ErrorableArgumentValue<T> = {

@@ -43,6 +43,11 @@ export class CommandDispatcher<S> {
 
 	constructor() { }
 
+	get(ctx: ParseEntryPoint<any>, command: string, source: S) {
+		const nodes = this.parse(ctx, command, source).context.nodes;
+		return nodes[nodes.length - 1].node;
+	}
+
 	register(command: LiteralArgumentBuilder<S, any>): CommandNode<S, any> {
 		let build = command.build();
 		this.root.addChild(build);
@@ -136,21 +141,15 @@ export class CommandDispatcher<S> {
 
 	public async getCompletionSuggestions(parse: ParseResults<S>, cursor = parse.reader.totalLength, source: S): Promise<Suggestions> {
 		let context: CommandContextBuilder<S, any> = parse.context;
+
 		let nodeBeforeCursor: SuggestionContext<S> = context.findSuggestionContext(cursor);
 		let parent: CommandNode<S, any> = nodeBeforeCursor.parent;
 		let start = Math.min(nodeBeforeCursor.startPos, cursor);
+
 		let fullInput = parse.reader.string;
 		let truncatedInput = fullInput.substring(0, cursor);
 		let futures = [];
-		{
-			let future = Suggestions.empty;
-			try {
-				future = await parent.listSuggestions(context.build(truncatedInput), new SuggestionsBuilder(truncatedInput, nodeBeforeCursor.startPos - 1));
-			}
-			catch (ignored) {
-			}
-			futures.push(future);
-		}
+
 		for (let node of parent.children) {
 			if (!node.canUse(source))
 				continue;
@@ -158,8 +157,7 @@ export class CommandDispatcher<S> {
 			try {
 				future = await node.listSuggestions(context.build(truncatedInput), new SuggestionsBuilder(truncatedInput, start));
 			}
-			catch (ignored) {
-			}
+			catch (ignored) { }
 			futures.push(future);
 		}
 

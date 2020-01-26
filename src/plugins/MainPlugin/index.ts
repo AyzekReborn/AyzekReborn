@@ -5,6 +5,9 @@ import { stringArgument } from "../../command/arguments";
 import { Text, textJoin } from "../../model/text";
 import { padList } from "../../util/pad";
 import { Requirement } from "../../command/requirement";
+import { CommandContext } from "../../command/command";
+import { Api } from "../../model/api";
+import VKApi, { IVKMessageOptions } from "../../api/vk/api";
 
 function padAllListItemExceptFirst(list: string[]) {
 	return [
@@ -42,6 +45,12 @@ function describePlugin(ctx: MessageEventContext<any>, ayzek: Ayzek<any>, plugin
 
 const requirementIsDevelopment: Requirement<any> = () => process.env.NODE_ENV === 'development';
 
+function requireApi<T extends Api<any>>(api: new (...args: any[]) => T): Requirement<any> {
+	return source => {
+		return source.event.api instanceof api
+	};
+}
+
 const debugCommand = command('debug')
 	.thenLiteral('mentions', b => b
 		.executes(ctx => {
@@ -71,6 +80,24 @@ const debugCommand = command('debug')
 				`Full name: ${forwarded.user.fullName}\n`,
 			]);
 		}, 'Просмотр информации о пересланом сообщении'))
+	.thenLiteral('keyboard', b => b
+		.requires(requireApi(VKApi))
+		.executes(async ctx => {
+			await ctx.source.event.conversation.send('Keyboard, wow', [], {
+				vkKeyboard: {
+					inline: true,
+					buttons:
+						[[{
+							action: {
+								type: 'text',
+								label: 'test',
+								payload: '{"text":"asd"}'
+							},
+							color: 'positive'
+						}]],
+				}
+			} as IVKMessageOptions)
+		}, 'Тест клавиатуры бота'))
 	.thenLiteral('length-limit-bypass', b => b
 		// 20200 chars, only in development mode
 		.requires(requirementIsDevelopment)

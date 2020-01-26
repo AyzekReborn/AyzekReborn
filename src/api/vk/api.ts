@@ -3,10 +3,6 @@ import { emit } from "@meteor-it/xrest";
 import * as multipart from '@meteor-it/xrest/multipart';
 import * as _ from 'lodash';
 import { nonenumerable } from 'nonenumerable';
-import { NoSuchUserError } from "../../bot/argument";
-import { ArgumentType } from "../../command/arguments";
-import { ParseEntryPoint } from "../../command/command";
-import { ExpectedSomethingError } from "../../command/error";
 import StringReader from "../../command/reader";
 import { Api } from "../../model/api";
 import { Attachment, Audio, File, Image, Location, MessengerSpecificUnknownAttachment, Video, Voice } from "../../model/attachment/attachment";
@@ -29,11 +25,16 @@ import VKChatMap from "./chatMap";
 import VKUser from "./user/user";
 import VKUserMap from "./userMap";
 import { VKUserArgumentType } from './arguments';
+import { IVKKeyboard } from './keyboard';
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
 type ExtraAttachment = Location;
 const EXTRA_ATTACHMENT_PREDICATE = (a: Attachment) => a instanceof Location;
+
+export type IVKMessageOptions = IMessageOptions & {
+	vkKeyboard?: IVKKeyboard,
+};
 
 export default class VKApi extends Api<VKApi> {
 	processor: VKApiProcessor;
@@ -196,6 +197,7 @@ export default class VKApi extends Api<VKApi> {
 		};
 	}
 	async processNewMessageUpdate(update: any) {
+		console.log(update);
 		if (update.action) {
 			switch (update.action.type) {
 				case 'chat_title_update': {
@@ -431,7 +433,7 @@ export default class VKApi extends Api<VKApi> {
 		}
 	}
 	// TODO: Add support for message editing (Also look at comment for message_reply)
-	async send(conv: Conversation<VKApi>, text: Text<VKApi>, attachments: Attachment[] = [], options: IMessageOptions = {}) {
+	async send(conv: Conversation<VKApi>, text: Text<VKApi>, attachments: Attachment[] = [], options: IMessageOptions & IVKMessageOptions = {}) {
 		const peer_id = +conv.targetId;
 		if (options.forwarded || options.replyTo) throw new Error(`Message responses are not supported by vk bots`);
 		const texts = splitByMaxPossibleParts(this.textToString(text), MAX_MESSAGE_LENGTH);
@@ -456,6 +458,9 @@ export default class VKApi extends Api<VKApi> {
 			if (isLast && attachmentUploadPromises.length === 0 && extraAttachments.length >= 1) {
 				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
 			}
+			if (isLast && options.vkKeyboard) {
+				apiObject.keyboard = JSON.stringify(options.vkKeyboard);
+			}
 			await this.execute('messages.send', apiObject);
 		}
 		for (let i = 0; i < attachmentUploadPromises.length; i++) {
@@ -468,15 +473,22 @@ export default class VKApi extends Api<VKApi> {
 			if (isLast && extraAttachments.length >= 1) {
 				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
 			}
+			if (isLast && options.vkKeyboard) {
+				apiObject.keyboard = JSON.stringify(options.vkKeyboard);
+			}
 			await this.execute('messages.send', apiObject);
 		}
 		let extraAttachment: ExtraAttachment | undefined;
 		while (extraAttachment = extraAttachments.shift()) {
+			const isLast = extraAttachments.length === 0;
 			const apiObject: any = {
 				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
 				peer_id,
 			};
 			this.addExtraAttachment(apiObject, extraAttachment as ExtraAttachment);
+			if (isLast && options.vkKeyboard) {
+				apiObject.keyboard = JSON.stringify(options.vkKeyboard);
+			}
 			this.execute('messages.send', apiObject);
 		}
 	}

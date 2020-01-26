@@ -55,12 +55,12 @@ export abstract class ArgumentBuilder<Source,
 		return this;
 	}
 
-	redirect(target: CommandNode<Source, ArgumentTypeMap>, modifier: SingleRedirectModifier<Source, ArgumentTypeMap>, commandDescription: string | null = null) {
+	redirect(target: CommandNode<Source, ArgumentTypeMap>, modifier: SingleRedirectModifier<Source, ArgumentTypeMap> | null = null, commandDescription: string | null = null) {
 		this.commandDescription = commandDescription;
 		return this.forward(target, modifier === null ? null : s => [modifier(s)], false);
 	}
 
-	fork(target: CommandNode<Source, ArgumentTypeMap>, modifier: RedirectModifier<Source, ArgumentTypeMap>) {
+	fork(target: CommandNode<Source, ArgumentTypeMap>, modifier: RedirectModifier<Source, ArgumentTypeMap> | null = null) {
 		return this.forward(target, modifier, true);
 	}
 

@@ -120,6 +120,12 @@ describe('Reader', () => {
 		reader.skip();
 		expect(reader.readString()).toBe('Hello, world!');
 	});
+	it('should correctly place cursor after string', () => {
+		let reader = new StringReader('Hello world');
+		expect(reader.cursor).toBe(0);
+		expect(reader.readString()).toBe('Hello');
+		expect(reader.cursor).toBe('Hello'.length);
+	});
 	it('should read boolean', () => {
 		let reader = new StringReader('true false hello');
 		expect(reader.readBoolean()).toBe(true);
