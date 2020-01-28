@@ -8,31 +8,32 @@ import StringRange from "./range";
 import StringReader from "./reader";
 import { Requirement } from "./requirement";
 import { SuggestionProvider, Suggestions, SuggestionsBuilder } from "./suggestions";
+import { MaybePromise } from '../api/promiseMap';
 
-export type AmbiguityConsumer<S> = (parent: CommandNode<S, any>, child: CommandNode<S, any>, sibling: CommandNode<S, any>, inputs: Set<string>) => void;
-export abstract class CommandNode<S, O extends CurrentArguments> {
-	childrenMap: Map<string, CommandNode<S, O>> = new Map();
-	literals: Map<string, LiteralCommandNode<S, O>> = new Map();
-	arguments: Map<string, ArgumentCommandNode<any, S, unknown, O>> = new Map();
+export type AmbiguityConsumer<Source> = (parent: CommandNode<Source, any>, child: CommandNode<Source, any>, sibling: CommandNode<Source, any>, inputs: Set<string>) => void;
+export abstract class CommandNode<Source, ArgumentTypeMap extends CurrentArguments> {
+	childrenMap: Map<string, CommandNode<Source, ArgumentTypeMap>> = new Map();
+	literals: Map<string, LiteralCommandNode<Source, ArgumentTypeMap>> = new Map();
+	arguments: Map<string, ArgumentCommandNode<any, Source, unknown, unknown, ArgumentTypeMap>> = new Map();
 	constructor(
-		public command: Command<S, O> | null,
+		public command: Command<Source, ArgumentTypeMap> | null,
 		public commandDescription: string | null,
-		public readonly requirement: Requirement<S>,
-		public readonly redirect: CommandNode<S, O> | null,
-		public readonly modifier: RedirectModifier<S, O> | null,
+		public readonly requirement: Requirement<Source>,
+		public readonly redirect: CommandNode<Source, ArgumentTypeMap> | null,
+		public readonly modifier: RedirectModifier<Source, ArgumentTypeMap> | null,
 		public readonly forks: boolean,
 	) { }
 	get children() { return Array.from(this.childrenMap.values()); }
 	getChild(name: string) {
 		return this.childrenMap.get(name);
 	}
-	canUse(source: S): boolean {
+	canUse(source: Source): boolean {
 		if (!this.requirement(source)) return false;
 		if (this.command) return true;
 		if (this.redirect && this.redirect.canUse(source)) return true;
 		return this.children.some(child => child.canUse(source));
 	}
-	removeChild(node: CommandNode<S, O>) {
+	removeChild(node: CommandNode<Source, ArgumentTypeMap>) {
 		this.childrenMap.delete(node.name);
 		if (node instanceof LiteralCommandNode) {
 			this.literals.delete(node.name);
@@ -40,7 +41,7 @@ export abstract class CommandNode<S, O extends CurrentArguments> {
 			this.arguments.delete(node.name);
 		}
 	}
-	addChild(node: CommandNode<S, O>) {
+	addChild(node: CommandNode<Source, ArgumentTypeMap>) {
 		if (node instanceof RootCommandNode) throw new Error('Cannot add RootCommandNode as child');
 		let child = this.getChild(node.name);
 		if (child) {
@@ -60,7 +61,7 @@ export abstract class CommandNode<S, O extends CurrentArguments> {
 		}
 		this.childrenMap = new Map(Array.from(this.childrenMap.entries()).sort((a, b) => a[1].compareTo(b[1])))
 	}
-	findAmbiguities<P>(ctx: ParseEntryPoint<P>, consumer: AmbiguityConsumer<S>) {
+	findAmbiguities<P>(ctx: ParseEntryPoint<P>, consumer: AmbiguityConsumer<Source>) {
 		let matches = new Set<string>();
 		for (let child of this.children) {
 			for (let sibling of this.children) {
@@ -79,8 +80,8 @@ export abstract class CommandNode<S, O extends CurrentArguments> {
 			child.findAmbiguities(ctx, consumer);
 		}
 	}
-	abstract isValidInput<P>(ctx: ParseEntryPoint<P>, input: string): boolean;
-	equals(other: CommandNode<S, O>): boolean {
+	abstract isValidInput<P>(ctx: ParseEntryPoint<P>, input: string): MaybePromise<boolean>;
+	equals(other: CommandNode<Source, ArgumentTypeMap>): boolean {
 		if (this === other) return true;
 		if (!isEqual(this.childrenMap, other.childrenMap)) return false;
 		if (this.command !== other.command) return false;
@@ -88,13 +89,13 @@ export abstract class CommandNode<S, O extends CurrentArguments> {
 	}
 	abstract get name(): string;
 	abstract get usage(): string;
-	abstract parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader, contextBuilder: CommandContextBuilder<S, O>): void;
-	abstract async listSuggestions(context: CommandContext<S, O>, builder: SuggestionsBuilder): Promise<Suggestions>;
+	abstract parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader, contextBuilder: CommandContextBuilder<Source, ArgumentTypeMap>): MaybePromise<void>;
+	abstract async listSuggestions<P>(entry: ParseEntryPoint<P>, context: CommandContext<Source, ArgumentTypeMap>, builder: SuggestionsBuilder): Promise<Suggestions>;
 
-	abstract createBuilder(): ArgumentBuilder<S, any, any>;
+	abstract createBuilder(): ArgumentBuilder<Source, any, any>;
 	abstract get sortedKey(): string;
 
-	getRelevant(input: StringReader): Array<CommandNode<S, O>> {
+	getRelevant(input: StringReader): Array<CommandNode<Source, ArgumentTypeMap>> {
 		if (this.literals.size > 0) {
 			let cursor = input.cursor;
 			while (input.canReadAnything && input.peek() !== ' ')
@@ -112,7 +113,7 @@ export abstract class CommandNode<S, O extends CurrentArguments> {
 		}
 	}
 
-	compareTo(other: CommandNode<S, O>): number {
+	compareTo(other: CommandNode<Source, ArgumentTypeMap>): number {
 		if (this instanceof LiteralCommandNode === other instanceof LiteralCommandNode) {
 			return this.sortedKey.localeCompare(other.sortedKey);
 		} else {
@@ -187,7 +188,7 @@ export class LiteralCommandNode<S, O extends CurrentArguments> extends CommandNo
 		return -1;
 	}
 
-	async listSuggestions(_context: CommandContext<S, O>, builder: SuggestionsBuilder): Promise<Suggestions> {
+	async listSuggestions<P>(_entry: ParseEntryPoint<P>, _context: CommandContext<S, O>, builder: SuggestionsBuilder): Promise<Suggestions> {
 		const remaining = builder.remaining.toLowerCase();
 		for (const literal of this.literalNames) {
 			if (literal.toLowerCase().startsWith(remaining)) {
@@ -277,10 +278,10 @@ export class RootCommandNode<S> extends CommandNode<S, {}> {
 	}
 }
 
-export class ArgumentCommandNode<N extends string, S, T, O extends CurrentArguments> extends CommandNode<S, O> {
+export class ArgumentCommandNode<N extends string, S, P, T, O extends CurrentArguments> extends CommandNode<S, O> {
 	constructor(
 		public readonly name: N,
-		public readonly type: ArgumentType<T>,
+		public readonly type: ArgumentType<P, T>,
 		public readonly customSuggestions: SuggestionProvider<S> | null,
 		command: Command<S, O> | null,
 		commandDescription: string | null,
@@ -296,11 +297,15 @@ export class ArgumentCommandNode<N extends string, S, T, O extends CurrentArgume
 		return `<${this.name}>`;
 	}
 
-	parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader, contextBuilder: CommandContextBuilder<S, O>) {
+	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader, contextBuilder: CommandContextBuilder<S, O>) {
 		let start = reader.cursor;
+
+		const parsedValue = this.type.parse(ctx, reader);
+		let loaded: T = await this.type.load(parsedValue);
+
 		let parsed = {
 			range: StringRange.between(start, reader.cursor),
-			result: this.type.parse(ctx, reader),
+			result: loaded,
 			argumentType: this.type,
 		};
 
@@ -308,18 +313,18 @@ export class ArgumentCommandNode<N extends string, S, T, O extends CurrentArgume
 		contextBuilder.withNode(this, parsed.range);
 	}
 
-	async listSuggestions(ctx: CommandContext<S, O>, builder: SuggestionsBuilder): Promise<Suggestions> {
+	async listSuggestions<P>(entry: ParseEntryPoint<P>, ctx: CommandContext<S, O>, builder: SuggestionsBuilder): Promise<Suggestions> {
 		let got: Suggestions;
 		if (this.customSuggestions) {
 			got = await this.customSuggestions(ctx, builder);
 		} else {
-			got = await this.type.listSuggestions(ctx, builder);
+			got = await this.type.listSuggestions(entry, ctx, builder);
 		}
 		return got;
 	}
 
-	createBuilder(): RequiredArgumentBuilder<N, S, T, O> {
-		let builder: RequiredArgumentBuilder<N, S, T, O> = new RequiredArgumentBuilder(this.name, this.type);
+	createBuilder(): RequiredArgumentBuilder<N, S, P, T, O> {
+		let builder: RequiredArgumentBuilder<N, S, P, T, O> = new RequiredArgumentBuilder(this.name, this.type);
 		builder.requires(this.requirement);
 		builder.forward(this.redirect, this.modifier, this.forks);
 		if (this.customSuggestions)
@@ -330,10 +335,10 @@ export class ArgumentCommandNode<N extends string, S, T, O extends CurrentArgume
 		return builder;
 	}
 
-	isValidInput<P>(ctx: ParseEntryPoint<P>, input: string) {
+	async isValidInput<P>(ctx: ParseEntryPoint<P>, input: string) {
 		try {
 			let reader = new StringReader(input);
-			this.type.parse(ctx, reader);
+			await (this.type as any).parse(ctx, reader);
 			return !reader.canReadAnything || reader.peek() == ' ';
 		} catch {
 			return false;

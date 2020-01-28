@@ -308,7 +308,8 @@ export default class VKApi extends Api<VKApi> {
 		this.messageEvent.emit(new MessageEvent(
 			this, parsed.user,
 			parsed.chat,
-			parsed.conversation, parsed.attachments, parsed.text, parsed.forwarded, parsed.messageId, parsed.replyTo
+			parsed.conversation, parsed.attachments, parsed.text, parsed.forwarded, parsed.messageId, parsed.replyTo,
+			update.payload,
 		));
 	}
 	async processMessageTypingStateUpdate(update: any) {

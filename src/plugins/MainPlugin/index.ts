@@ -1,13 +1,14 @@
 import { Ayzek } from "../../bot/ayzek";
-import { MessageEventContext } from "../../bot/context";
-import { command, PluginCategory, PluginInfo } from "../../bot/plugin";
-import { stringArgument } from "../../command/arguments";
+import { command, PluginCategory, PluginInfo, AyzekCommandContext, requireHidden, AyzekCommandRequirement } from "../../bot/plugin";
+import { stringArgument, SimpleArgumentType } from "../../command/arguments";
 import { Text, textJoin } from "../../model/text";
 import { padList } from "../../util/pad";
 import { Requirement } from "../../command/requirement";
-import { CommandContext } from "../../command/command";
-import { Api } from "../../model/api";
 import VKApi, { IVKMessageOptions } from "../../api/vk/api";
+import { UserDisplayableError } from "../../command/error";
+import { ParseEntryPoint, CommandContext } from "../../command/command";
+import StringReader from "../../command/reader";
+import { SuggestionsBuilder, Suggestions } from "../../command/suggestions";
 
 function padAllListItemExceptFirst(list: string[]) {
 	return [
@@ -16,7 +17,7 @@ function padAllListItemExceptFirst(list: string[]) {
 	];
 }
 
-function describePlugin(ctx: MessageEventContext<any>, ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
+function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
 	return [
 		`🔌 ${plugin.name}${plugin.category ? ` в категории ${plugin.category}` : ''}\n`,
 		`🕵‍ Разработчик: ${plugin.author}\n`,
@@ -26,12 +27,12 @@ function describePlugin(ctx: MessageEventContext<any>, ayzek: Ayzek<any>, plugin
 			textJoin([
 				textJoin(plugin.commands.map(command => {
 					const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal)!;
-					if (!commandNode.canUse(ctx)) return null;
+					if (!commandNode.canUse(ctx.source)) return null;
 					return [
 						`⚡ /${command.literal} `,
 						{
 							type: 'preservingWhitespace',
-							data: textJoin(padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode, ctx, true)), '\n')
+							data: textJoin(padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode, ctx.source, true)), '\n')
 						}
 					];
 				}).filter(e => e !== null).map(e => e!) as any, '\n'),
@@ -43,9 +44,9 @@ function describePlugin(ctx: MessageEventContext<any>, ayzek: Ayzek<any>, plugin
 	]
 }
 
-const requirementIsDevelopment: Requirement<any> = () => process.env.NODE_ENV === 'development';
+const requirementIsDevelopment: AyzekCommandRequirement = () => process.env.NODE_ENV === 'development';
 
-function requireApi<T extends Api<any>>(api: new (...args: any[]) => T): Requirement<any> {
+function requireApi<T>(api: new (...args: any[]) => T): Requirement<any> {
 	return source => {
 		return source.event.api instanceof api
 	};
@@ -54,71 +55,115 @@ function requireApi<T extends Api<any>>(api: new (...args: any[]) => T): Require
 const debugCommand = command('debug')
 	.thenLiteral('mentions', b => b
 		.executes(ctx => {
-			ctx.source.event.conversation.send([
-				'User mention: ', ctx.source.event.user.reference, '\n',
-				'Chat mention: ', ctx.source.event.chat && ctx.source.event.chat.reference || 'no chat',
+			ctx.source.send([
+				'User mention: ', ctx.source.user.reference, '\n',
+				'Chat mention: ', ctx.source.chat?.reference ?? 'no chat',
 			]);
-		}, 'Проверка упоминаний'))
+		}, 'Проверка упоминаний')
+	)
 	.thenLiteral('id', b => b
 		.executes(ctx => {
-			ctx.source.event.conversation.send([
-				`UID: ${ctx.source.event.user.uid}\n`,
-				`CID: `, ctx.source.event.chat && ctx.source.event.chat.cid || 'no chat', '\n',
-				`Full name: ${ctx.source.event.user.fullName}\n`,
-				`Name: ${ctx.source.event.user.name}\n`
+			ctx.source.send([
+				`UID: ${ctx.source.user.uid}\n`,
+				`CID: `, ctx.source.chat?.cid ?? 'no chat', '\n',
+				`Full name: ${ctx.source.user.fullName}\n`,
+				`Name: ${ctx.source.user.name}\n`
 			]);
-		}, 'ID юзера и чата'))
+		}, 'ID юзера и чата')
+	)
 	.thenLiteral('msg', b => b
 		.executes(ctx => {
 			const forwarded = ctx.source.event.maybeForwarded;
 			if (!forwarded) {
-				ctx.source.event.conversation.send(['No forwarded']);
+				ctx.source.send(['No forwarded']);
 				return;
 			}
-			ctx.source.event.conversation.send([
+			ctx.source.send([
 				`UID: ${forwarded.user.uid}\n`,
 				`Full name: ${forwarded.user.fullName}\n`,
 			]);
-		}, 'Просмотр информации о пересланом сообщении'))
+		}, 'Просмотр информации о пересланом сообщении')
+	)
 	.thenLiteral('keyboard', b => b
 		.requires(requireApi(VKApi))
 		.executes(async ctx => {
-			await ctx.source.event.conversation.send('Keyboard, wow', [], {
+			await ctx.source.send([
+				'Keyboard, wow\n',
+				ctx.source.isPayloadIssued ? 'Command is payload issued' : 'Command is issued by user',
+			], [], {
 				vkKeyboard: {
 					inline: true,
-					buttons:
-						[[{
+					buttons: [
+						[{
 							action: {
 								type: 'text',
-								label: 'test',
-								payload: '{"text":"asd"}'
+								label: '🤔 Payload',
+								payload: ctx.source.ayzek.craftCommandPayload('debug keyboard'),
 							},
 							color: 'positive'
-						}]],
+						}, {
+							action: {
+								type: 'text',
+								label: '😊 Internal payload',
+								payload: ctx.source.ayzek.craftCommandPayload('debug internal-command'),
+							},
+							color: 'positive'
+						},]
+					],
 				}
 			} as IVKMessageOptions)
-		}, 'Тест клавиатуры бота'))
+		}, 'Тест клавиатуры бота')
+	)
+	.thenLiteral('internal-command', b => b
+		.requires(requireHidden())
+		.executes(async ctx => {
+			await ctx.source.send('This command is internal!!!');
+		}, "You shouldn't see this text")
+	)
 	.thenLiteral('length-limit-bypass', b => b
 		// 20200 chars, only in development mode
 		.requires(requirementIsDevelopment)
 		.executes(async ctx => {
-			await ctx.source.event.conversation.send(('a'.repeat(100) + ' ').repeat(200));
-		}, 'Отсылает огромную строку'));
+			await ctx.source.send(('a'.repeat(100) + ' ').repeat(200));
+		}, 'Отсылает огромную строку')
+	);
+
+class PluginNameArgument extends SimpleArgumentType<string>{
+	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): string {
+		return reader.readString();
+	}
+
+	async listSuggestions<P>(_entry: ParseEntryPoint<P>, ctx: AyzekCommandContext, builder: SuggestionsBuilder): Promise<Suggestions> {
+		const start = builder.remaining;
+		for (const plugin of ctx.source.ayzek.plugins.filter(i => i.name.startsWith(start))) {
+			builder.suggest(plugin.name, plugin.description);
+		}
+		return builder.build();
+	}
+
+	getExamples<P>(ctx: ParseEntryPoint<P>) {
+		return ctx.ayzek.plugins.map(plugin => plugin.name);
+	}
+}
+function pluginNameArgument() {
+	return new PluginNameArgument();
+}
 
 const helpCommand = command('help')
-	.thenArgument('name', stringArgument('greedy_phraze'), b => b
+	.thenArgument('name', pluginNameArgument(), b => b
 		.executes(async ctx => {
 			const { source: { event, ayzek }, getArgument } = ctx;
 			const name = getArgument('name');
 			const found = ayzek.plugins.find(plugin => plugin.name === name);
-			if (!found) event.conversation.send(['Неизвестное название плагина: ', name]);
-			else event.conversation.send(describePlugin(ctx.source, ayzek, found));
-		}, 'Просмотр информации о плагине'))
+			if (!found) throw new UserDisplayableError(`Неизвестное название плагина: ${name}`);
+			else event.conversation.send(describePlugin(ctx, ayzek, found));
+		}, 'Просмотр информации о плагине')
+	)
 	.thenLiteral('all', b => b
 		.executes(async ctx => {
 			const { source: { event, ayzek } } = ctx;
 			try {
-				await event.user.send(textJoin(ayzek.plugins.map(p => describePlugin(ctx.source, ayzek, p)), { type: 'preservingWhitespace', data: '\n \n \n' }));
+				await event.user.send(textJoin(ayzek.plugins.map(p => describePlugin(ctx, ayzek, p)), { type: 'preservingWhitespace', data: '\n \n \n' }));
 				if (event.conversation.isChat)
 					await event.conversation.send('Помощь отправлена тебе в ЛС');
 			} catch (e) {
@@ -127,7 +172,8 @@ const helpCommand = command('help')
 				else
 					console.error(e.stack);
 			}
-		}, 'Просмотр информации о всех плагинах'))
+		}, 'Просмотр информации о всех плагинах')
+	)
 	.executes(async ({ source: { ayzek, event } }) => {
 		event.conversation.send([
 			`В бота установлены следующие плагины:\n\n`,

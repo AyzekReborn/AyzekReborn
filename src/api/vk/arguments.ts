@@ -1,4 +1,4 @@
-import { LoadableArgumentType } from "../../command/arguments";
+import { ArgumentType } from "../../command/arguments";
 import VKUser from "./user/user";
 import { ParseEntryPoint } from "../../command/command";
 import StringReader from "../../command/reader";
@@ -19,9 +19,13 @@ export class ExpectedVKUserError extends ExpectedSomethingError {
 	}
 }
 
-export class VKUserArgumentType extends LoadableArgumentType<ParsedVKUser, VKUser>{
+export class VKUserArgumentType extends ArgumentType<ParsedVKUser, VKUser>{
 	constructor(public api: VKApi) {
 		super();
+	}
+
+	get examples() {
+		return ['[id78591039|Разраб]', '[club188280200|@ayzekng]']
 	}
 
 	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): ParsedVKUser {

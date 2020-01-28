@@ -1,4 +1,4 @@
-import { ArgumentType, LoadableArgumentType } from "./arguments";
+import { ArgumentType } from "./arguments";
 import { Command, CurrentArguments, RedirectModifier, SingleRedirectModifier } from "./command";
 import { Requirement } from "./requirement";
 import { SuggestionProvider } from "./suggestions";
@@ -29,12 +29,15 @@ export abstract class ArgumentBuilder<Source,
 		return this;
 	}
 
-	thenArgument<Name extends string, ThisArgumentType>(
+	thenArgument<Name extends string, ThisArgumentParsedType, ThisArgumentType>(
 		name: Name,
-		type: LoadableArgumentType<any, ThisArgumentType> | ArgumentType<ThisArgumentType>,
-		builderFiller: (builder: RequiredArgumentBuilder<Name, Source, ThisArgumentType, ArgumentTypeMap & { [key in Name]: ThisArgumentType }>) => void
+		type: ArgumentType<ThisArgumentParsedType, ThisArgumentType>,
+		builderFiller: (builder: RequiredArgumentBuilder<Name, Source, ThisArgumentParsedType, ThisArgumentType, ArgumentTypeMap & { [key in Name]: ThisArgumentType }>) => void
 	): this {
-		const builder = new RequiredArgumentBuilder<Name, Source, ThisArgumentType, ArgumentTypeMap & { [key in Name]: ThisArgumentType }>(name, type);
+		const builder = new RequiredArgumentBuilder<
+			Name, Source, ThisArgumentParsedType, ThisArgumentType,
+			ArgumentTypeMap & { [key in Name]: ThisArgumentType }
+		>(name, type);
 		builderFiller(builder);
 		this.arguments.addChild(builder.build() as any);
 		return this;
@@ -79,7 +82,7 @@ export abstract class ArgumentBuilder<Source,
 	abstract build(): CommandNode<Source, ArgumentTypeMap>;
 }
 
-export class LiteralArgumentBuilder<S, O extends CurrentArguments> extends ArgumentBuilder<S, LiteralArgumentBuilder<S, O>, O> {
+export class LiteralArgumentBuilder<Source, ArgumentTypeMap extends CurrentArguments> extends ArgumentBuilder<Source, LiteralArgumentBuilder<Source, ArgumentTypeMap>, ArgumentTypeMap> {
 	constructor(public readonly literals: string[]) {
 		super();
 	}
@@ -93,7 +96,7 @@ export class LiteralArgumentBuilder<S, O extends CurrentArguments> extends Argum
 	}
 
 	build() {
-		let result: LiteralCommandNode<S, O> = new LiteralCommandNode(this.literals, this.command, this.commandDescription, this.requirement, this.target, this.modifier, this.forks);
+		let result: LiteralCommandNode<Source, ArgumentTypeMap> = new LiteralCommandNode(this.literals, this.command, this.commandDescription, this.requirement, this.target, this.modifier, this.forks);
 		for (let argument of this.argumentList) {
 			result.addChild(argument as any);
 		}
@@ -101,20 +104,20 @@ export class LiteralArgumentBuilder<S, O extends CurrentArguments> extends Argum
 	}
 }
 
-export class RequiredArgumentBuilder<N extends string, S, T, O extends {}> extends ArgumentBuilder<S, RequiredArgumentBuilder<N, S, T, O>, O> {
-	suggestionsProvider: SuggestionProvider<S> | null = null;
+export class RequiredArgumentBuilder<Name extends string, Source, ParsedThisArgument, ThisArgument, ArgumentTypeMap extends CurrentArguments> extends ArgumentBuilder<Source, RequiredArgumentBuilder<Name, Source, ParsedThisArgument, ThisArgument, CurrentArguments>, ArgumentTypeMap> {
+	suggestionsProvider: SuggestionProvider<Source> | null = null;
 
-	constructor(public readonly name: N, public readonly type: ArgumentType<T>) {
+	constructor(public readonly name: Name, public readonly type: ArgumentType<ParsedThisArgument, ThisArgument>) {
 		super();
 	}
 
-	suggests(suggestionsProvider: SuggestionProvider<S>) {
+	suggests(suggestionsProvider: SuggestionProvider<Source>) {
 		this.suggestionsProvider = suggestionsProvider;
 		return this;
 	}
 
-	build(): ArgumentCommandNode<N, S, T, O> {
-		let result = new ArgumentCommandNode<N, S, T, O>(this.name, this.type, this.suggestionsProvider, this.command, this.commandDescription, this.requirement, this.target, this.modifier, this.forks);
+	build(): ArgumentCommandNode<Name, Source, ParsedThisArgument, ThisArgument, ArgumentTypeMap> {
+		let result = new ArgumentCommandNode<Name, Source, ParsedThisArgument, ThisArgument, ArgumentTypeMap>(this.name, this.type, this.suggestionsProvider, this.command, this.commandDescription, this.requirement, this.target, this.modifier, this.forks);
 		for (let argument of this.argumentList) {
 			result.addChild(argument as any);
 		}

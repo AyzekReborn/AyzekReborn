@@ -1,13 +1,26 @@
 import { CommandContext } from "./command";
 import StringRange from "./range";
 import { CommandNode } from './tree';
+import { MaybePromise } from "../api/promiseMap";
 
 export class SuggestionContext<S> {
 	constructor(public readonly parent: CommandNode<S, any>, public readonly startPos: number) { }
 }
 
+export type SuggestionMetadata = {
+	prefix?: string,
+	suffix?: string,
+	order?: number,
+	suggestionType?: 'literal' | 'argument',
+	commandNode?: CommandNode<any, any>,
+}
+
 export class Suggestion {
-	constructor(public readonly range: StringRange, public readonly text: string, public readonly tooltip: string | null) { }
+	public prefix?: string;
+	public suffix?: string;
+	public order: number = 0;
+
+	constructor(public readonly range: StringRange, public metadata: SuggestionMetadata, public readonly text: string, public readonly tooltip: string | null) { }
 
 	apply(input: string) {
 		if (this.range.start === 0 && this.range.end === input.length)
@@ -30,7 +43,7 @@ export class Suggestion {
 		result += this.text;
 		if (range.end > this.range.end)
 			result += command.substring(this.range.end, range.end);
-		return new Suggestion(range, result, this.tooltip);
+		return new Suggestion(range, this.metadata, result, this.tooltip);
 	}
 }
 
@@ -85,7 +98,7 @@ const EMPTY_SUGGESTIONS = new Suggestions(StringRange.at(0), []);
 export class SuggestionsBuilder {
 	readonly remaining: string;
 	readonly result: Suggestion[] = [];
-	constructor(public readonly input: string, public readonly start: number) {
+	constructor(public readonly input: string, public readonly start: number, public metadata: SuggestionMetadata) {
 		this.remaining = input.substring(start);
 	}
 
@@ -93,11 +106,11 @@ export class SuggestionsBuilder {
 		return Suggestions.create(this.input, this.result);
 	}
 
-	suggest(text: string, tooltip: string | null): this {
+	suggest(text: string, tooltip: string | null = null): this {
 		if (text === this.remaining) {
 			return this;
 		}
-		this.result.push(new Suggestion(StringRange.between(this.start, this.input.length), text, tooltip));
+		this.result.push(new Suggestion(StringRange.between(this.start, this.input.length), this.metadata, text, tooltip));
 		return this;
 	}
 
@@ -107,12 +120,12 @@ export class SuggestionsBuilder {
 	}
 
 	createOffset(start: number) {
-		return new SuggestionsBuilder(this.input, start);
+		return new SuggestionsBuilder(this.input, start, this.metadata);
 	}
 
 	restart() {
-		return new SuggestionsBuilder(this.input, this.start);
+		return new SuggestionsBuilder(this.input, this.start, this.metadata);
 	}
 }
 
-export type SuggestionProvider<S> = (ctx: CommandContext<S, any>, builder: SuggestionsBuilder) => Promise<Suggestions>;
+export type SuggestionProvider<S> = (ctx: CommandContext<S, any>, builder: SuggestionsBuilder) => MaybePromise<Suggestions>;

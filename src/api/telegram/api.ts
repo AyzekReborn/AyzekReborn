@@ -1,6 +1,6 @@
 import { Api } from "../../model/api";
 import ApiFeature from "../features";
-import { LoadableArgumentType } from "../../command/arguments";
+import { ArgumentType } from "../../command/arguments";
 import XRest from "@meteor-it/xrest";
 import * as https from 'https';
 import { User, Gender, Chat, Conversation } from "../../model/conversation";
@@ -202,7 +202,7 @@ export default class TelegramApi extends Api<TelegramApi>{
 			}
 		}
 	}
-	get apiLocalUserArgumentType(): LoadableArgumentType<void, User<TelegramApi>> {
+	get apiLocalUserArgumentType(): ArgumentType<void, User<TelegramApi>> {
 		throw new Error("Method not implemented.");
 	}
 

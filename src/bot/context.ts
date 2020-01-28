@@ -1,6 +1,6 @@
 import { Api } from "../model/api";
 import { Attachment } from "../model/attachment/attachment";
-import { IConversation } from "../model/conversation";
+import { IConversation, Chat, Conversation, User } from "../model/conversation";
 import { MessageEvent } from "../model/events/message";
 import { IMessage, IMessageOptions } from "../model/message";
 import { Text } from '../model/text';
@@ -36,10 +36,30 @@ export class MessageEventContext<A extends Api<A>> extends MessageContext<Messag
 	get api(): A {
 		return this.event.api;
 	}
+	get user(): User<A> {
+		return this.event.user;
+	}
+	get chat(): Chat<A> | null {
+		return this.event.chat;
+	}
+	get conversation(): Conversation<A> {
+		return this.event.conversation;
+	}
+
 	send(text: Text<A>, attachments?: Attachment[], options?: IMessageOptions): Promise<void> {
 		return this.event.conversation.send(text, attachments, options);
 	}
 	waitForNext(shouldAccept: (message: IMessage<A>) => boolean, timeout: number | null): Promise<IMessage<A>> {
 		return this.event.conversation.waitForNext(shouldAccept, timeout);
+	}
+}
+
+export class CommandEventContext<A extends Api<A>> extends MessageEventContext<A> {
+	constructor(ayzek: Ayzek<A>, event: MessageEvent<A>, public command: string, public commandPrefix: string | null) {
+		super(ayzek, event);
+	}
+
+	get isPayloadIssued() {
+		return this.commandPrefix === null;
 	}
 }

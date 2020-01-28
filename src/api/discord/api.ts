@@ -2,7 +2,7 @@ import { lookupByPath } from '@meteor-it/mime';
 import { Client, Guild, GuildMember, MessageAttachment, TextChannel, User, Attachment as DiscordApiAttachment } from "discord.js";
 import { nonenumerable } from 'nonenumerable';
 import { NoSuchUserError } from "../../bot/argument";
-import { ArgumentType, LoadableArgumentType } from "../../command/arguments";
+import { ArgumentType } from "../../command/arguments";
 import { ParseEntryPoint } from "../../command/command";
 import { ExpectedSomethingError } from "../../command/error";
 import StringReader from "../../command/reader";

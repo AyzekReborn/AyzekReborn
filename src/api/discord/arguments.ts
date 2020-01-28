@@ -1,5 +1,5 @@
 import StringReader from "../../command/reader";
-import { LoadableArgumentType } from "../../command/arguments";
+import { ArgumentType } from "../../command/arguments";
 import DiscordUser from "./user";
 import DiscordApi from "./api";
 import { ParseEntryPoint } from "../../command/command";
@@ -17,9 +17,13 @@ export class ExpectedDSUserError extends ExpectedSomethingError {
 	}
 }
 
-export class DSUserArgumentType extends LoadableArgumentType<ParsedDSUser, DiscordUser>{
+export class DSUserArgumentType extends ArgumentType<ParsedDSUser, DiscordUser>{
 	constructor(public api: DiscordApi) {
 		super();
+	}
+
+	get examples() {
+		return ['<@640920547907207199>', '<@178483185468833793>']
 	}
 
 	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): ParsedDSUser {

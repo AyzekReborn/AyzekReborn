@@ -2,13 +2,14 @@ import { CommandDispatcher, ParseEntryPoint } from "./command";
 import { command } from "../bot/plugin";
 import StringReader from "./reader";
 import StringRange from "./range";
-import { ParsedArgument, LoadableArgumentType, stringArgument } from "./arguments";
+import { ParsedArgument, stringArgument, ArgumentType } from "./arguments";
 
-describe('Command context', () => {
+describe('Command context', async () => {
 	const executable: any = {};
 	const subject = new CommandDispatcher<any>();
 	const ctx = null as any;
 	const source = null as any;
+	const entry = null as any;
 
 	subject.register(
 		command("a")
@@ -89,10 +90,10 @@ describe('Command context', () => {
 
 	subject.register(
 		command("k")
-			.redirect(subject.get(ctx, "h", source))
+			.redirect(await subject.get(ctx, "h", source))
 	);
 
-	class UserArgumentType extends LoadableArgumentType<string, string> {
+	class UserArgumentType extends ArgumentType<string, string> {
 		async load(parsed: string): Promise<string> {
 			if (parsed.includes('fail')) {
 				throw new Error('Planned failure');
@@ -119,37 +120,37 @@ describe('Command context', () => {
 	)
 
 	it('should complete', async () => {
-		const parsed = subject.parse(ctx, 'i ', source);
+		const parsed = await subject.parse(ctx, 'i ', source);
 		expect(parsed.reader.toStringWithRange(parsed.context.range)).toBe('>i< ');
-		const completions = await subject.getCompletionSuggestions(parsed, 2, source);
+		const completions = await subject.getCompletionSuggestions(entry, parsed, 2, source);
 		expect(completions.suggestions.map(s => s.text)).toEqual(['1', '2']);
 	});
 
 	it('should suggest replacements', async () => {
-		const parsed = subject.parse(ctx, 'i ', source);
+		const parsed = await subject.parse(ctx, 'i ', source);
 		expect(parsed.reader.toStringWithRange(parsed.context.range)).toBe('>i< ');
-		const completions = await subject.getCompletionSuggestions(parsed, 0, source);
+		const completions = await subject.getCompletionSuggestions(entry, parsed, 0, source);
 		expect(completions.suggestions.map(s => s.text)).toEqual(['a', 'b', 'c', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'user-test']);
 	});
 
 	it('should suggest completions', async () => {
-		const parsed = subject.parse(ctx, 'a 1 i ', source);
+		const parsed = await subject.parse(ctx, 'a 1 i ', source);
 		expect(parsed.reader.toStringWithRange(parsed.context.range)).toBe('>a 1 i< ');
-		const completions = await subject.getCompletionSuggestions(parsed, 5, source);
+		const completions = await subject.getCompletionSuggestions(entry, parsed, 5, source);
 		expect(completions.suggestions.map(s => s.text)).toEqual(['ii']);
 	});
 
 	it('should suggest completions', async () => {
-		const parsed = subject.parse(ctx, 'a 1 i ', source);
+		const parsed = await subject.parse(ctx, 'a 1 i ', source);
 		expect(parsed.reader.toStringWithRange(parsed.context.range)).toBe('>a 1 i< ');
-		const completions = await subject.getCompletionSuggestions(parsed, 4, source);
+		const completions = await subject.getCompletionSuggestions(entry, parsed, 4, source);
 		expect(completions.suggestions.map(s => s.text)).toEqual(['i', 'ii']);
 	});
 
 	it('should suggest completions', async () => {
-		const parsed = subject.parse(ctx, 'a 1 i ', source);
+		const parsed = await subject.parse(ctx, 'a 1 i ', source);
 		expect(parsed.reader.toStringWithRange(parsed.context.range)).toBe('>a 1 i< ');
-		const completions = await subject.getCompletionSuggestions(parsed, 4, source);
+		const completions = await subject.getCompletionSuggestions(entry, parsed, 4, source);
 		expect(completions.suggestions.map(s => s.text)).toEqual(['i', 'ii']);
 	});
 
@@ -160,16 +161,16 @@ describe('Command context', () => {
 	});
 
 	it('should complete on parse fail', async () => {
-		const parsed = subject.parse(ctx, 'user-test use rule1 ', source);
+		const parsed = await subject.parse(ctx, 'user-test use rule1 ', source);
 		expect(parsed.reader.toStringWithRange(parsed.context.range)).toBe('>user-test< use rule1 ');
-		const completions = await subject.getCompletionSuggestions(parsed, 'user-test use'.length, source);
+		const completions = await subject.getCompletionSuggestions(entry, parsed, 'user-test use'.length, source);
 		expect(completions.suggestions.map(s => s.text)).toEqual(['user1', 'user2', 'user3', 'user4']);
 	});
 
 	it('should complete next argument on successful parse', async () => {
-		const parsed = subject.parse(ctx, 'user-test user rule', source);
-		expect(parsed.reader.toStringWithRange(parsed.context.range)).toBe('>user-test user <rule');
-		const completions = await subject.getCompletionSuggestions(parsed, 'user-test user rule'.length, source);
-		expect(completions.suggestions.map(s => s.text)).toEqual([]);
+		const parsed = await subject.parse(ctx, 'user-test user rule', source);
+		expect(parsed.reader.toStringWithRange(parsed.context.range)).toBe('>user-test user rule<');
+		const completions = await subject.getCompletionSuggestions(entry, parsed, 'user-test user rule'.length, source);
+		expect(completions.suggestions.map(s => s.text)).toEqual(['rule1', 'rule2', 'rule3']);
 	});
 });

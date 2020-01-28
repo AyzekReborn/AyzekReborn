@@ -34,8 +34,4 @@ enum ApiFeature {
 	TabCompleteEvent,
 }
 
-export function apiFeatureRequirement<A extends Api<A>>(feature: ApiFeature): Requirement<MessageEventContext<A>> {
-	return ctx => ctx.api.isFeatureSupported(feature);
-}
-
 export default ApiFeature;

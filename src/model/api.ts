@@ -1,7 +1,6 @@
 import Logger from "@meteor-it/logger";
 import ApiFeature from "../api/features";
 import { isPromise, MaybePromise } from "../api/promiseMap";
-import { LoadableArgumentType } from "../command/arguments";
 import { TypedEvent } from "../util/event";
 import { Attachment } from "./attachment/attachment";
 import { Chat, Conversation, Guild, User } from "./conversation";
@@ -12,23 +11,26 @@ import { ChatTitleChangeEvent, GuildTitleChangeEvent } from "./events/titleChang
 import { TypingEvent } from "./events/typing";
 import { IMessageOptions } from "./message";
 import { Text } from './text';
+import { AyzekCommandRequirement } from "../bot/plugin";
+import { ArgumentType } from "../command/arguments";
 
+/**
+ * Error thrown if feature isn't supported by api
+ */
 export class NotImplementedInApiError extends Error {
-	constructor(method: string) {
-		super(`Not implemented in api: ${method}`);
+	constructor(method: string, feature?: ApiFeature) {
+		super(`Not implemented in api: ${method}${feature ? ` (From feature: ${feature})` : ''}`);
 		this.name = 'NotImplementedInApiError';
 	}
 }
 
-const apiSymbol = Symbol('api');
-
-export function isApi(api: Api<any>): api is Api<any> {
-	return api?.[apiSymbol] ?? false;
-}
-
+/**
+ * Api implements bridges from messenger ifaces to ayzek events
+ */
 export abstract class Api<A extends Api<A>> {
-	[apiSymbol]: true;
-
+	/**
+	 * Api should prefer to use this logger instead of implementing its own
+	 */
 	logger: Logger;
 
 	messageEvent = new TypedEvent<MessageEvent<A>>();
@@ -114,5 +116,13 @@ export abstract class Api<A extends Api<A>> {
 	 * field holds propper implementation, which then consumed
 	 * by userArgument
 	 */
-	abstract get apiLocalUserArgumentType(): LoadableArgumentType<any, User<A>>;
+	abstract get apiLocalUserArgumentType(): ArgumentType<any, User<A>>;
+}
+
+/**
+ * Require feature is supported by sender api
+ * @param feature needed feature
+ */
+export function requireApiHasFeature(feature: ApiFeature): AyzekCommandRequirement {
+	return source => source.api.isFeatureSupported(feature);
 }
