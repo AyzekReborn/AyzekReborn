@@ -6,12 +6,17 @@ import StringReader, { Type } from "../reader";
 import { UserDisplayableError } from "../error";
 import { RangeError, BadSeparatorError, FailType } from './error';
 
-export type ListParsingStrategy<P> = {
+export type ListParsingStrategy<P, V> = {
 	/**
-	 * If defined, removes duplicate values
+	 * If defined, removes duplicate values after parse
 	 * based on stringified version of value
 	 */
-	uniqueToString?: (value: P) => string,
+	uniqueParsedToString?: (value: P) => string,
+	/**
+	 * If defined, removes duplicate values after load
+	 * based on stringified version of value
+	 */
+	uniqueLoadedToString?: (value: V) => string,
 } & {
 	type: 'withSeparator',
 	// "," by default
@@ -19,7 +24,7 @@ export type ListParsingStrategy<P> = {
 };
 
 export class ListArgumentType<P, V> extends ArgumentType<P[], V[]> {
-	constructor(public strategy: ListParsingStrategy<P>, public singleArgumentType: ArgumentType<P, V>, public minimum: number = 1, public maximum: number = Infinity) {
+	constructor(public strategy: ListParsingStrategy<P, V>, public singleArgumentType: ArgumentType<P, V>, public minimum: number = 1, public maximum: number = Infinity) {
 		super();
 		if (minimum < 1) throw new Error('minimum should be >= 1');
 		if (maximum < minimum) throw new Error('maximum should be >= minimum');
@@ -74,10 +79,10 @@ export class ListArgumentType<P, V> extends ArgumentType<P[], V[]> {
 		if (got.length < this.minimum || got.length > this.maximum) {
 			throw new RangeError(reader, got.length < this.minimum ? FailType.TOO_LOW : FailType.TOO_HIGH, Type.AMOUNT, got.length, this.minimum, this.maximum);
 		}
-		if (this.strategy.uniqueToString) {
+		if (this.strategy.uniqueParsedToString) {
 			const stringSet = new Set();
 			got = got.filter(p => {
-				const stringified = this.strategy.uniqueToString!(p);
+				const stringified = this.strategy.uniqueParsedToString!(p);
 				if (stringSet.has(stringified)) return false;
 				stringSet.add(stringified);
 				return true;
@@ -86,7 +91,18 @@ export class ListArgumentType<P, V> extends ArgumentType<P[], V[]> {
 		return got;
 	}
 
-	load(parsed: P[]): Promise<V[]> {
-		return Promise.all(parsed.map(p => this.singleArgumentType.load(p)));
+	async load(parsed: P[]): Promise<V[]> {
+		let loaded = await Promise.all(parsed.map(p => this.singleArgumentType.load(p)));
+		if (this.strategy.uniqueLoadedToString) {
+			const stringSet = new Set();
+			loaded = loaded.filter(p => {
+				const stringified = this.strategy.uniqueLoadedToString!(p);
+				console.log(stringified, p);
+				if (stringSet.has(stringified)) return false;
+				stringSet.add(stringified);
+				return true;
+			});
+		}
+		return loaded;
 	}
 }

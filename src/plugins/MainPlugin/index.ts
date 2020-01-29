@@ -17,17 +17,22 @@ function padAllListItemExceptFirst(list: string[]) {
 	];
 }
 
-function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek<any>, plugin: PluginInfo): Text<any> {
+async function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek<any>, plugin: PluginInfo): Promise<Text<any>> {
+	const availableCommands = plugin.commands.filter(command => {
+		const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal)!;
+		return commandNode.canUse(ctx.source);
+	});
+	const additionalInfo = plugin.getHelpAddictionalInfo ? ([plugin.getHelpAddictionalInfo(ctx), '\n']) : [];
 	return [
 		`🔌 ${plugin.name}${plugin.category ? ` в категории ${plugin.category}` : ''}\n`,
 		`🕵‍ Разработчик: ${plugin.author}\n`,
-		`💬 ${plugin.description}`,
-		...((plugin.commands.length > 0 || plugin.listeners.length > 0) ? [
-			`\n\nСписок фич:\n`,
+		`💬 ${plugin.description}\n`,
+		additionalInfo,
+		...((availableCommands.length > 0 || plugin.listeners.length > 0) ? [
+			`\nСписок фич:\n`,
 			textJoin([
-				textJoin(plugin.commands.map(command => {
+				textJoin(availableCommands.map(command => {
 					const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal)!;
-					if (!commandNode.canUse(ctx.source)) return null;
 					return [
 						`⚡ /${command.literal} `,
 						{
@@ -35,7 +40,7 @@ function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek<any>, plugin: Plu
 							data: textJoin(padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode, ctx.source, true)), '\n')
 						}
 					];
-				}).filter(e => e !== null).map(e => e!) as any, '\n'),
+				}).map(e => e!) as any, '\n'),
 				textJoin(plugin.listeners.map(listener => [
 					`👁‍🗨 ${listener.name}${listener.description ? ` — ${listener.description}` : ''}`
 				]), '\n')
@@ -156,14 +161,14 @@ const helpCommand = command('help')
 			const name = getArgument('name');
 			const found = ayzek.plugins.find(plugin => plugin.name === name);
 			if (!found) throw new UserDisplayableError(`Неизвестное название плагина: ${name}`);
-			else event.conversation.send(describePlugin(ctx, ayzek, found));
+			else event.conversation.send(await describePlugin(ctx, ayzek, found));
 		}, 'Просмотр информации о плагине')
 	)
 	.thenLiteral('all', b => b
 		.executes(async ctx => {
 			const { source: { event, ayzek } } = ctx;
 			try {
-				await event.user.send(textJoin(ayzek.plugins.map(p => describePlugin(ctx, ayzek, p)), { type: 'preservingWhitespace', data: '\n \n \n' }));
+				await event.user.send(textJoin(await Promise.all(ayzek.plugins.map(p => describePlugin(ctx, ayzek, p))), { type: 'preservingWhitespace', data: '\n \n \n' }));
 				if (event.conversation.isChat)
 					await event.conversation.send('Помощь отправлена тебе в ЛС');
 			} catch (e) {

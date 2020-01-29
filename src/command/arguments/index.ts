@@ -32,7 +32,7 @@ export function lazyArgument<P, T>(type: ArgumentType<P, T>, stringReader: Strin
 	return new LazyArgumentType(stringReader, type);
 }
 
-export function listArgument<P, T>(type: ArgumentType<P, T>, strategy: ListParsingStrategy<P>, minimum: number = 1, maximum: number = Infinity): ListArgumentType<P, T> {
+export function listArgument<P, T>(type: ArgumentType<P, T>, strategy: ListParsingStrategy<P, T>, minimum: number = 1, maximum: number = Infinity): ListArgumentType<P, T> {
 	return new ListArgumentType(strategy, type, minimum, maximum);
 }
 
