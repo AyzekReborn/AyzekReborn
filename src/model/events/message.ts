@@ -22,7 +22,12 @@ export class MessageEvent<A extends Api<A>> implements IMessage<A> {
 		 * Messenger specific message id
 		 */
 		public messageId: string,
-		public replyTo: IMessage<A> | null
+		public replyTo: IMessage<A> | null,
+
+		/**
+		 * WIP: Keyboards/another shit
+		 */
+		public payload?: string,
 	) { }
 
 	/**

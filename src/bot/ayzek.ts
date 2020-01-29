@@ -1,16 +1,26 @@
 import Logger from "@meteor-it/logger";
 import ApiFeature from "../api/features";
-import { ArgumentType } from "../command/arguments";
 import { CommandDispatcher } from "../command/command";
 import { CommandSyntaxError, UserDisplayableError } from "../command/error";
 import { Api } from "../model/api";
 import { Chat, Conversation, Guild, User } from "../model/conversation";
 import { Disposable } from "../util/event";
 import { AttachmentRepository, AttachmentStorage, ownerlessEmptyAttachmentStorage } from "./attachment/attachment";
-import { MessageEventContext } from "./context";
+import { MessageEventContext, CommandEventContext } from "./context";
 import { IMessageListener, PluginInfo } from "./plugin";
+import { levenshteinDistance } from "../util/levenshtein";
+import { parsePayload, craftCommandPayload } from "../model/payload";
+import { MessageEvent } from "../model/events/message";
+import { ArgumentType } from "../command/arguments";
+import { exclude } from "../util/array";
+import { parse } from "querystring";
+
+const FIX_MAX_DISTANCE = 5;
 
 export class Ayzek<A extends Api<any>> extends Api<A> {
+	/**
+	 * Loaded plugins
+	 */
 	plugins: PluginInfo[] = [];
 
 	userAttachmentRepository: AttachmentRepository<User<any>> = new AttachmentRepository();
@@ -23,7 +33,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 		this.attachmentStorage = await this.ayzekAttachmentRepository.getStorageFor(this);
 	}
 
-	commandDispatcher = new CommandDispatcher<MessageEventContext<A>>();
+	commandDispatcher = new CommandDispatcher<CommandEventContext<A>>();
 	listeners: IMessageListener[] = [];
 
 	async attachToUser(user: User<any>) {
@@ -33,6 +43,10 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 	async attachToChat(chat: Chat<any>) {
 		chat.attachmentStorage = await this.chatAttachmentRepository.getStorageFor(chat);
 		await Promise.all([...chat.users, ...chat.admins].map(user => this.attachToUser(user)));
+	}
+
+	craftCommandPayload(command: string): string {
+		return craftCommandPayload(command, 'dummy');
 	}
 
 	constructor(logger: string | Logger, apis: A[], commandPrefix: string, logEvents: boolean) {
@@ -68,99 +82,151 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 					e.api.logger.log(`${e.user.fullName} leaved ${e.chat.title}`);
 			});
 		}
-		this.messageEvent.on(async e => {
-			await this.attachToUser(e.user);
-			if (e.chat)
-				await this.attachToChat(e.chat);
+		this.messageEvent.on(async event => {
+			await Promise.all([
+				this.attachToUser(event.user),
+				event.chat && this.attachToChat(event.chat),
+			]);
 
-			if (e.text.startsWith(commandPrefix)) {
-				const command = e.text.replace(commandPrefix, '');
-				if (command.length === 0)
+			const payload = parsePayload(event.payload);
+
+			// Messages with payload are never handled by normal handlers
+			if (payload) {
+				switch (payload.type) {
+					case 'command':
+						await this.handleCommand(event, payload.data, null);
+						break;
+				}
+			} else if (event.text.startsWith(commandPrefix)) {
+				const command = event.text.slice(commandPrefix.length);
+				// Ignores following:
+				// /
+				// //anything
+				// / anything
+				if (command.length === 0 || command.startsWith(commandPrefix) || command.trimLeft() !== command) {
+					await this.handleMessage(event);
 					return;
-				let parseResult;
-				const source = new MessageEventContext(this, e);
-				try {
-					parseResult = await this.commandDispatcher.parse({ ayzek: this, sourceProvider: e.api }, command, source);
-					await this.commandDispatcher.executeResults(parseResult);
-				} catch (err) {
-					const suggestionListNextCommand = [];
-					const suggestionList = [];
-					const suggestionThisArgument = [];
-					if (parseResult) {
-						if (parseResult.reader.string.length === parseResult.reader.cursor) {
-							const oldString = parseResult.reader.string;
-							const oldCursor = parseResult.reader.cursor;
-							parseResult.reader.string += ' ';
-							parseResult.reader.cursor++;
-							const suggestions = await this.commandDispatcher.getCompletionSuggestions(parseResult, parseResult.reader.cursor, source);
-							for (let suggestion of suggestions.suggestions) {
-								suggestionListNextCommand.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
-							}
-							parseResult.reader.string = oldString;
-							parseResult.reader.cursor = oldCursor;
-						}
-						{
-							const suggestions = await this.commandDispatcher.getCompletionSuggestions(parseResult, parseResult.reader.cursor, source);
-							for (let suggestion of suggestions.suggestions) {
-								suggestionList.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
-							}
-						}
-						if (parseResult.reader.string.length !== parseResult.reader.cursor) {
-							const oldCursor = parseResult.reader.cursor;
-							parseResult.reader.cursor = parseResult.reader.string.length;
-							const suggestions = await this.commandDispatcher.getCompletionSuggestions(parseResult, parseResult.reader.cursor, source);
-							for (let suggestion of suggestions.suggestions) {
-								suggestionThisArgument.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
-							}
-							parseResult.reader.cursor = oldCursor;
-						}
-					}
-					const suggestionText = [
-						suggestionList.length === 0 ? [] : [
-							'\n\n',
-							`Пример того, что можно поставить в этом месте:\n`,
-							suggestionList.join(', ')
-						],
-						suggestionListNextCommand.length === 0 ? [] : [
-							'\n\n',
-							`Пример того, что можно поставить следующей командой:\n`,
-							suggestionListNextCommand.join(', ')
-						],
-						suggestionThisArgument.length === 0 ? [] : [
-							'\n\n',
-							`Пример того, как можно продолжить текущий аргумент:\n`,
-							suggestionThisArgument.join(', ')
-						]
-					].filter(e => e.length !== 0);
-					if (err instanceof CommandSyntaxError) {
-
-						// TODO: Messenger specific formatting & i18n
-						/*
-						const cursor = err.reader.cursor;
-						const part = err.reader.readString();
-						err.reader.cursor = cursor;
-						*/
-						e.conversation.send([
-							err.message, /*` instead of ${part}`, */
-							'\n',
-							`${commandPrefix}`, err.reader,
-							suggestionText
-						]);
-						// err.reader.cursor = cursor;
-					} else if (err instanceof UserDisplayableError) {
-						e.conversation.send([err.message, err.reader ? ['\n', `${commandPrefix}`, err.reader] : [], suggestionText]);
-					} else {
-						this.logger.error(err.stack);
-						e.conversation.send([`Ашипка, жди разраба.`, suggestionText]);
-					}
 				}
+				await this.handleCommand(event, command, commandPrefix);
 			} else {
-				const source = new MessageEventContext(this, e);
-				for (let listener of this.listeners) {
-					listener.handler(source);
-				}
+				await this.handleMessage(event);
 			}
 		});
+	}
+
+	/**
+	 * @param event caused message event
+	 * @param command actual command (i.e `help all`)
+	 * @param commandPrefix prefix of command to display in fix messages,
+	 * 	null in case of payload caused commands
+	 */
+	private async handleCommand(event: MessageEvent<any>, command: string, commandPrefix: string | null) {
+		let parseResult;
+		const source = new CommandEventContext(this, event, command, commandPrefix);
+		const entry = { ayzek: this, sourceProvider: event.api };
+		try {
+			parseResult = await this.commandDispatcher.parse(entry, command, source);
+			await this.commandDispatcher.executeResults(parseResult);
+		} catch (err) {
+			let suggestionListNextCommand = [];
+			let suggestionList = [];
+			let possibleFixes: string[] = [];
+			let suggestionThisArgument = [];
+			if (parseResult) {
+				if (parseResult.reader.string.length === parseResult.reader.cursor) {
+					const oldString = parseResult.reader.string;
+					const oldCursor = parseResult.reader.cursor;
+					parseResult.reader.string += ' ';
+					parseResult.reader.cursor++;
+					const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, parseResult.reader.cursor, source);
+					for (let suggestion of suggestions.suggestions) {
+						suggestionListNextCommand.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
+					}
+					parseResult.reader.string = oldString;
+					parseResult.reader.cursor = oldCursor;
+				}
+				{
+					const parsedSuccessfully = parseResult.exceptions.size === 0;
+					let neededCursor = parsedSuccessfully ? (() => {
+						return parseResult.context.nodes[parseResult.context.nodes.length - 1]?.range.start ?? 0;
+					})() : parseResult.reader.cursor;
+					const currentArgument = parseResult.reader.string.slice(neededCursor)
+					const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, neededCursor, source);
+					const possibleFixesUnsorted: [string, number][] = [];
+					for (let suggestion of suggestions.suggestions) {
+						const text = `${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim();
+						suggestionList.push(text)
+						const distance = levenshteinDistance(suggestion.text, currentArgument, FIX_MAX_DISTANCE);
+						if (distance <= FIX_MAX_DISTANCE) {
+							possibleFixesUnsorted.push([text, distance]);
+						}
+					}
+					possibleFixes = possibleFixesUnsorted.sort((a, b) => a[1] - b[1]).map(f => f[0]);
+				}
+				{
+					const oldCursor = parseResult.reader.cursor;
+					parseResult.reader.cursor = parseResult.reader.string.length;
+					const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, parseResult.reader.cursor, source);
+					for (let suggestion of suggestions.suggestions) {
+						suggestionThisArgument.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
+					}
+					parseResult.reader.cursor = oldCursor;
+				}
+			}
+
+			possibleFixes = exclude(possibleFixes, suggestionThisArgument);
+			suggestionList = exclude(suggestionList, possibleFixes, suggestionThisArgument);
+
+			const suggestionText = [
+				suggestionListNextCommand.length === 0 ? [] : [
+					'\n\n',
+					`Пример того, что можно поставить следующей командой:\n`,
+					suggestionListNextCommand.join(', ')
+				],
+				suggestionThisArgument.length === 0 ? [] : [
+					'\n\n',
+					`Пример того, как можно продолжить текущий аргумент:\n`,
+					suggestionThisArgument.join(', ')
+				],
+				possibleFixes.length === 0 ? [] : [
+					'\n\n',
+					`Возможно ты имел в виду:\n`,
+					possibleFixes.join(', ')
+				],
+				suggestionList.length === 0 ? [] : [
+					'\n\n',
+					`Пример того, что ещё можно поставить в этом месте:\n`,
+					suggestionList.join(', ')
+				]
+			].filter(e => e.length !== 0);
+			if (err instanceof CommandSyntaxError || err instanceof UserDisplayableError) {
+				if (commandPrefix === null) {
+					await event.conversation.send([
+						err.message,
+						'\nПо видимому, эта ошибка вызвана кривой кнопкой.',
+						'\nВозможно, вы использовали кнопку на сообщении, которое отсылалось слишком давно'
+					]);
+				} else {
+					await event.conversation.send([
+						err.message,
+						err.reader ? ['\n', `${commandPrefix}`, err.reader] : [],
+						suggestionText
+					]);
+				}
+			} else {
+				this.logger.error(err.stack);
+				event.conversation.send([
+					`Произошла ошибка, репорт передан разработчику.\nПока попробуй воспользоваться предложениями`, suggestionText
+				]);
+			}
+		}
+	}
+
+	private async handleMessage(event: MessageEvent<any>) {
+		const source = new MessageEventContext(this, event);
+		for (let listener of this.listeners) {
+			listener.handler(source);
+		}
 	}
 
 	public apis: Api<A>[] = [];
@@ -221,7 +287,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 		throw new Error('Not implemented for ayzek');
 	}
 
-	get apiLocalUserArgumentType(): ArgumentType<User<A>> {
+	get apiLocalUserArgumentType(): ArgumentType<void, User<A>> {
 		throw new Error("Method not implemented.");
 	}
 }

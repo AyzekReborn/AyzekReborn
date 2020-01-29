@@ -1,5 +1,5 @@
 import { lookupByPath } from '@meteor-it/mime';
-import { Client, Guild, GuildMember, MessageAttachment, TextChannel, User } from "discord.js";
+import { Client, Guild, GuildMember, MessageAttachment, TextChannel, User, Attachment as DiscordApiAttachment } from "discord.js";
 import { nonenumerable } from 'nonenumerable';
 import { NoSuchUserError } from "../../bot/argument";
 import { ArgumentType } from "../../command/arguments";
@@ -7,7 +7,7 @@ import { ParseEntryPoint } from "../../command/command";
 import { ExpectedSomethingError } from "../../command/error";
 import StringReader from "../../command/reader";
 import { Api } from "../../model/api";
-import { Attachment, File } from "../../model/attachment/attachment";
+import { Attachment, File, BaseFile } from "../../model/attachment/attachment";
 import { Conversation } from "../../model/conversation";
 import { JoinGuildEvent, JoinReason } from "../../model/events/join";
 import { LeaveGuildEvent, LeaveReason } from "../../model/events/leave";
@@ -19,6 +19,11 @@ import ApiFeature from "../features";
 import DiscordChat from "./chat";
 import DiscordGuild from "./guild";
 import DiscordUser from "./user";
+import { splitByMaxPossibleParts } from '../../util/split';
+import * as assert from 'assert';
+import { DSUserArgumentType } from './arguments';
+
+const MAX_MESSAGE_LENGTH = 2000;
 
 export default class DiscordApi extends Api<DiscordApi> {
 
@@ -173,11 +178,27 @@ export default class DiscordApi extends Api<DiscordApi> {
 		})
 	}
 
-	async send(conv: Conversation<DiscordApi>, text: Text<DiscordApi>, attachments: Attachment[] = [], options: IMessageOptions = {}) {
-		const textString = this.textToString(text);
+	async send(conv: Conversation<DiscordApi>, text: Text<DiscordApi>, attachments: Attachment[] = [], _options: IMessageOptions = {}) {
+		const textParts = splitByMaxPossibleParts(this.textToString(text), MAX_MESSAGE_LENGTH);
 		const chat = this.api.channels.get(conv.targetId) as TextChannel;
 		if (!chat) throw new Error(`Bad channel: ${conv.targetId}`);
-		chat.send(textString);
+		const uploadPromises: [Promise<Buffer>, string][] = attachments.map(a => {
+			if (a.type === 'location' || a.type === 'messenger_specific')
+				throw new Error('Unsupported attachment type for discord: ' + a.type);
+			const file = a as BaseFile;
+			return [file.data.toBuffer(), file.name];
+		});
+		const partsToSentBeforeAttachments = (textParts.length - (attachments.length === 0 ? 0 : 1));
+		for (let i = 0; i < partsToSentBeforeAttachments; i++) {
+			await chat.send(textParts.shift());
+		}
+		if (attachments.length !== 0) {
+			for (let i = 0; i < uploadPromises.length; i++) {
+				const file = uploadPromises[i];
+				await chat.send(i === 0 ? textParts.shift() : undefined, new DiscordApiAttachment(await file[0], file[1]));
+			}
+		}
+		assert.equal(textParts.length, 0, 'Text parts left unsent');
 	}
 
 	textToString(part: TextPart<DiscordApi>): string {
@@ -215,9 +236,7 @@ export default class DiscordApi extends Api<DiscordApi> {
 		await this.init();
 	}
 
-	get apiLocalUserArgumentType(): ArgumentType<DiscordUser> {
-		return dsUserArgumentTypeInstance;
-	}
+	apiLocalUserArgumentType = new DSUserArgumentType(this);
 
 	supportedFeatures = new Set([
 		ApiFeature.IncomingMessageWithMultipleAttachments,
@@ -226,40 +245,3 @@ export default class DiscordApi extends Api<DiscordApi> {
 		ApiFeature.MessageReactions
 	]);
 }
-
-
-class ExpectedDSUserError extends ExpectedSomethingError {
-	constructor(reader: StringReader) {
-		super(reader, `discord user mention`);
-	}
-}
-
-class DSUserArgumentType extends ArgumentType<DiscordUser>{
-	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<DiscordUser> {
-		if (reader.peek() !== '<') throw new ExpectedDSUserError(reader);
-		const api = ctx.sourceProvider as unknown as DiscordApi;
-		const cursor = reader.cursor;
-		reader.skip();
-		if (reader.peek() !== '@') {
-			reader.cursor = cursor;
-			throw new ExpectedDSUserError(reader);
-		}
-		reader.skip();
-		const id = reader.readBeforeTestFails(char => /[0-9]/.test(char));
-		if (reader.peek() !== '>') {
-			reader.cursor = cursor;
-			throw new ExpectedDSUserError(reader);
-		}
-		reader.skip();
-
-		const user = await api.getApiUser(id);
-		if (!user) {
-			reader.cursor = cursor;
-			throw new NoSuchUserError(id.toString(), reader);
-		}
-
-		return user;
-	}
-}
-
-const dsUserArgumentTypeInstance = new DSUserArgumentType();

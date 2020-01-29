@@ -3,10 +3,6 @@ import { emit } from "@meteor-it/xrest";
 import * as multipart from '@meteor-it/xrest/multipart';
 import * as _ from 'lodash';
 import { nonenumerable } from 'nonenumerable';
-import { NoSuchUserError } from "../../bot/argument";
-import { ArgumentType } from "../../command/arguments";
-import { ParseEntryPoint } from "../../command/command";
-import { ExpectedSomethingError } from "../../command/error";
 import StringReader from "../../command/reader";
 import { Api } from "../../model/api";
 import { Attachment, Audio, File, Image, Location, MessengerSpecificUnknownAttachment, Video, Voice } from "../../model/attachment/attachment";
@@ -28,11 +24,17 @@ import VKChat from "./chat";
 import VKChatMap from "./chatMap";
 import VKUser from "./user/user";
 import VKUserMap from "./userMap";
+import { VKUserArgumentType } from './arguments';
+import { IVKKeyboard } from './keyboard';
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
 type ExtraAttachment = Location;
 const EXTRA_ATTACHMENT_PREDICATE = (a: Attachment) => a instanceof Location;
+
+export type IVKMessageOptions = IMessageOptions & {
+	vkKeyboard?: IVKKeyboard,
+};
 
 export default class VKApi extends Api<VKApi> {
 	processor: VKApiProcessor;
@@ -195,6 +197,7 @@ export default class VKApi extends Api<VKApi> {
 		};
 	}
 	async processNewMessageUpdate(update: any) {
+		console.log(update);
 		if (update.action) {
 			switch (update.action.type) {
 				case 'chat_title_update': {
@@ -305,7 +308,8 @@ export default class VKApi extends Api<VKApi> {
 		this.messageEvent.emit(new MessageEvent(
 			this, parsed.user,
 			parsed.chat,
-			parsed.conversation, parsed.attachments, parsed.text, parsed.forwarded, parsed.messageId, parsed.replyTo
+			parsed.conversation, parsed.attachments, parsed.text, parsed.forwarded, parsed.messageId, parsed.replyTo,
+			update.payload,
 		));
 	}
 	async processMessageTypingStateUpdate(update: any) {
@@ -430,13 +434,13 @@ export default class VKApi extends Api<VKApi> {
 		}
 	}
 	// TODO: Add support for message editing (Also look at comment for message_reply)
-	async send(conv: Conversation<VKApi>, text: Text<VKApi>, attachments: Attachment[] = [], options: IMessageOptions = {}) {
+	async send(conv: Conversation<VKApi>, text: Text<VKApi>, attachments: Attachment[] = [], options: IMessageOptions & IVKMessageOptions = {}) {
 		const peer_id = +conv.targetId;
 		if (options.forwarded || options.replyTo) throw new Error(`Message responses are not supported by vk bots`);
 		const texts = splitByMaxPossibleParts(this.textToString(text), MAX_MESSAGE_LENGTH);
-		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[];
-		const attachmentsChunks = arrayChunks(attachments, MAX_ATTACHMENTS_PER_MESSAGE);
-		console.log(attachmentsChunks);
+		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[]
+		const attachmentUploadPromises = arrayChunks(attachments, MAX_ATTACHMENTS_PER_MESSAGE)
+			.map(chunk => chunk.map(name => this.uploadAttachment(name, peer_id.toString())));
 		for (let i = 0; i < texts.length; i++) {
 			let isLast = i === texts.length - 1;
 			const apiObject: any = {
@@ -449,33 +453,43 @@ export default class VKApi extends Api<VKApi> {
 				disable_mentions: 1,
 				// TODO: Buttons?
 			};
-			if (isLast && attachmentsChunks.length >= 1) {
-				apiObject.attachment = (await Promise.all(attachmentsChunks.shift()!.map(name => this.uploadAttachment(name, peer_id.toString())))).join(',');
+			if (isLast && attachmentUploadPromises.length >= 1) {
+				apiObject.attachment = (await Promise.all(attachmentUploadPromises.shift()!)).join(',');
 			}
-			if (isLast && attachmentsChunks.length === 0 && extraAttachments.length >= 1) {
+			if (isLast && attachmentUploadPromises.length === 0 && extraAttachments.length >= 1) {
 				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
+			}
+			if (isLast && options.vkKeyboard) {
+				apiObject.keyboard = JSON.stringify(options.vkKeyboard);
 			}
 			await this.execute('messages.send', apiObject);
 		}
-		for (let i = 0; i < attachmentsChunks.length; i++) {
-			let isLast = i === attachmentsChunks.length - 1;
+		for (let i = 0; i < attachmentUploadPromises.length; i++) {
+			let isLast = i === attachmentUploadPromises.length - 1;
 			const apiObject: any = {
 				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
 				peer_id,
 			};
-			apiObject.attachment = (await Promise.all(attachmentsChunks[i]!.map(name => this.uploadAttachment(name, peer_id.toString())))).join(',');
+			apiObject.attachment = (await Promise.all(attachmentUploadPromises[i]!)).join(',');
 			if (isLast && extraAttachments.length >= 1) {
 				this.addExtraAttachment(apiObject, extraAttachments.shift()! as ExtraAttachment);
+			}
+			if (isLast && options.vkKeyboard) {
+				apiObject.keyboard = JSON.stringify(options.vkKeyboard);
 			}
 			await this.execute('messages.send', apiObject);
 		}
 		let extraAttachment: ExtraAttachment | undefined;
 		while (extraAttachment = extraAttachments.shift()) {
+			const isLast = extraAttachments.length === 0;
 			const apiObject: any = {
 				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
 				peer_id,
 			};
 			this.addExtraAttachment(apiObject, extraAttachment as ExtraAttachment);
+			if (isLast && options.vkKeyboard) {
+				apiObject.keyboard = JSON.stringify(options.vkKeyboard);
+			}
 			this.execute('messages.send', apiObject);
 		}
 	}
@@ -508,9 +522,7 @@ export default class VKApi extends Api<VKApi> {
 		await this.loop();
 	}
 
-	get apiLocalUserArgumentType(): ArgumentType<VKUser> {
-		return vkUserArgumentTypeInstance;
-	}
+	apiLocalUserArgumentType = new VKUserArgumentType(this);
 
 	supportedFeatures = new Set([
 		ApiFeature.IncomingMessageWithMultipleAttachments,
@@ -520,51 +532,3 @@ export default class VKApi extends Api<VKApi> {
 		ApiFeature.EditMessage,
 	]);
 }
-
-class ExpectedVKUserError extends ExpectedSomethingError {
-	constructor(public reader: StringReader) {
-		super(reader, 'vk user mention');
-	}
-}
-
-class VKUserArgumentType extends ArgumentType<VKUser>{
-	async parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): Promise<VKUser> {
-		if (reader.peek() !== '[') throw new ExpectedVKUserError(reader);
-		const api = ctx.sourceProvider as unknown as VKApi;
-		const cursor = reader.cursor;
-		reader.skip();
-		const remaining = reader.remaining;
-		let isBot;
-		if (remaining.startsWith('id')) {
-			isBot = false;
-			reader.skipMulti(2);
-		} else if (remaining.startsWith('club')) {
-			isBot = true;
-			reader.skipMulti(4);
-		} else {
-			reader.cursor = cursor;
-			throw new ExpectedVKUserError(reader);
-		}
-		let id;
-		try {
-			id = reader.readInt();
-		} catch{
-			reader.cursor = cursor;
-			throw new ExpectedVKUserError(reader);
-		}
-		if (reader.readChar() !== '|') {
-			reader.cursor = cursor;
-			throw new ExpectedVKUserError(reader);
-		}
-		const charsToSkip = reader.remaining.indexOf(']') + 1;
-		if (charsToSkip === 0) {
-			reader.cursor = cursor;
-			throw new ExpectedVKUserError(reader);
-		}
-		reader.cursor += charsToSkip;
-		const user = await api.getApiUser(isBot ? -id : id);
-		if (!user) throw new NoSuchUserError((isBot ? -id : id).toString(), reader);
-		return user;
-	}
-}
-const vkUserArgumentTypeInstance = new VKUserArgumentType();

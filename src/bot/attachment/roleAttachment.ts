@@ -1,7 +1,6 @@
-import { Requirement } from "../../command/requirement";
 import { User } from "../../model/conversation";
-import { MessageEventContext } from "../context";
 import { Attachment, AttachmentConstructor, AttachmentCreator, AttachmentStorage } from "./attachment";
+import { AyzekCommandRequirement } from "../plugin";
 
 export abstract class RoleAttachment extends Attachment {
 	public constructor(public roles: string[]) {
@@ -31,17 +30,17 @@ export abstract class PermissionAttachmentCreator<A extends PermissionAttachment
 	abstract async getAttachmentFor(owner: User<any>, storage: AttachmentStorage<User<any>>): Promise<A>;
 }
 
-export function requirePermission<P extends PermissionAttachment>(constructor: AttachmentConstructor<P>, permission: string): Requirement<MessageEventContext<any>> {
-	return ctx => {
-		const attachment = ctx.event.user.attachmentStorage!.getIfAvailable(constructor);
+export function requirePermission<P extends PermissionAttachment>(constructor: AttachmentConstructor<P>, permission: string): AyzekCommandRequirement {
+	return source => {
+		const attachment = source.event.user.attachmentStorage!.getIfAvailable(constructor);
 		if (!attachment) return false;
 		return attachment.hasPermission(permission);
 	}
 }
 
-export function requireRole<P extends RoleAttachment>(constructor: AttachmentConstructor<P>, role: string): Requirement<MessageEventContext<any>> {
-	return ctx => {
-		const attachment = ctx.event.user.attachmentStorage!.getIfAvailable(constructor);
+export function requireRole<P extends RoleAttachment>(constructor: AttachmentConstructor<P>, role: string): AyzekCommandRequirement {
+	return source => {
+		const attachment = source.event.user.attachmentStorage!.getIfAvailable(constructor);
 		if (!attachment) return false;
 		return attachment.hasRole(role);
 	}

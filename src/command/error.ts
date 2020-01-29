@@ -1,6 +1,11 @@
 import StringReader from "./reader";
 
 export class UserDisplayableError extends Error {
+	/**
+	 * If false - error should be left as is
+	 */
+	shouldRewindReader = true;
+
 	constructor(description: string, public reader?: StringReader) {
 		super(description);
 		this.name = 'UserDisplayableError';

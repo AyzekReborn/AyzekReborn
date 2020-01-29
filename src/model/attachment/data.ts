@@ -95,7 +95,7 @@ export class CloneableStreamData<T extends Readable> extends Data {
 	private cachedBuffer: Promise<Buffer> | null = null;
 	toBuffer() {
 		if (this.cachedBuffer) return this.cachedBuffer;
-		return this.cachedBuffer = readStreamToBuffer(this.toStream());
+		return this.cachedBuffer = readStreamToBuffer(this.toStream(), Infinity);
 	}
 	async toFile() {
 		let path = temp.path({ prefix: 'ayzek-' });
@@ -126,7 +126,7 @@ export class UniqueStreamData extends Data {
 	private cachedBuffer: Promise<Buffer> | null = null;
 	toBuffer() {
 		if (this.cachedBuffer) return this.cachedBuffer;
-		return this.cachedBuffer = readStreamToBuffer(this.toStream());
+		return this.cachedBuffer = readStreamToBuffer(this.toStream(), Infinity);
 	}
 	async toFile() {
 		let path = temp.path({ prefix: 'ayzek-' });

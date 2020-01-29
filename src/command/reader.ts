@@ -1,4 +1,5 @@
 import { CommandSyntaxError, ExpectedSomethingError } from "./error";
+import StringRange from "./range";
 
 export enum Type {
 	INT = 'integer',
@@ -44,6 +45,11 @@ export default class StringReader {
 		let reader = new StringReader(this.string);
 		reader.cursor = this.cursor;
 		return reader;
+	}
+	cloneWithCursor(cursor: number) {
+		const cloned = this.clone();
+		cloned.cursor = cursor;
+		return cloned;
 	}
 	private _cursor: number = 0;
 	get cursor() {
@@ -206,5 +212,8 @@ export default class StringReader {
 	}
 	toStringWithCursor(cursor: string) {
 		return `${this.string.substring(0, this.cursor)}${cursor}${this.string.substring(this.cursor)}`
+	}
+	toStringWithRange(range: StringRange) {
+		return `${this.string.substring(0, range.start)}>${this.string.substring(range.start, range.end)}<${this.string.substring(range.end)}`;
 	}
 }

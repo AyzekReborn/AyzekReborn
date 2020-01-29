@@ -41,7 +41,7 @@ export default class VKApiProcessor extends CollapseQueueProcessor<IVKApiRequest
 
 		if (tasks.length === 1) {
 			const task = tasks[0];
-			this.logger.debug(task.method);
+			this.logger.debug(`{yellow}${task.method}{/yellow}`, JSON.stringify(task.params || {}));
 			const res = (await this.xrest.emit('POST', `/method/${task.method}`, {
 				data: task.params || {},
 				query: {
@@ -54,8 +54,11 @@ export default class VKApiProcessor extends CollapseQueueProcessor<IVKApiRequest
 				return [new Error(`${res.error.error_msg} (at ${task.method} call)`)];
 			return [res.response];
 		} else {
-			const code = `return[${tasks.map(({ method, params }) => `API.${method}(${JSON.stringify(params || {})})`).join(',')}];`;
-			this.logger.debug(code);
+			const code = `return[${tasks.map(({ method, params }) => {
+				const json = JSON.stringify(params || {});
+				this.logger.debug(`{yellow}${method}{/yellow}`, json)
+				return `API.${method}(${json})`
+			}).join(',')}];`;
 			let res;
 			if (code.length > 2000) {
 				res = (await this.xrest.emit('POST', '/method/execute', {
