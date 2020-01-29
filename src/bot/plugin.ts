@@ -5,6 +5,7 @@ import { Ayzek } from "./ayzek";
 import { MessageEventContext, CommandEventContext } from "./context";
 import { CommandContext, CurrentArguments } from "../command/command";
 import { Requirement } from "../command/requirement";
+import { Text } from "../model/text";
 
 /**
  * TODO: Message requirements
@@ -57,7 +58,7 @@ type PluginInfo = {
 	/**
 	 * To display addictional info in /help
 	 */
-	getHelpAddictionalInfo?(ctx: AyzekCommandContext): Promise<void>;
+	getHelpAddictionalInfo?(ctx: AyzekCommandContext): Text<any>;
 };
 export { PluginInfo };
 

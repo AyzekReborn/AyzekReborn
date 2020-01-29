@@ -7,17 +7,20 @@ import { User } from "../model/conversation";
 import { MaybePromise } from "../api/promiseMap";
 import { SuggestionsBuilder, Suggestions } from "../command/suggestions";
 import { AyzekCommandContext } from "./plugin";
+import { Ayzek } from "./ayzek";
 
 // TODO: Type safety?
-export class UserArgumentType extends ArgumentType<[Api<any>, any], User<any>> {
-	parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): [Api<any>, any] {
+export class UserArgumentType extends ArgumentType<[Api<any>, any, Ayzek<any>], User<any>> {
+	parse<P>(ctx: ParseEntryPoint<P>, reader: StringReader): [Api<any>, any, Ayzek<any>] {
 		if (!(ctx.sourceProvider as unknown as Api<any>)?.apiLocalUserArgumentType) throw new Error(`sourceProvider is not ayzek one (${ctx.sourceProvider})`);
 		const api = (ctx.sourceProvider as unknown as Api<any>);
 		const user = api.apiLocalUserArgumentType.parse(ctx, reader);
-		return [api, user];
+		return [api, user, ctx.ayzek];
 	}
-	load(parsed: [Api<any>, any]): MaybePromise<User<any>> {
-		return parsed[0].apiLocalUserArgumentType.load(parsed[1]);
+	async load(parsed: [Api<any>, any, Ayzek<any>]): Promise<User<any>> {
+		const user = await parsed[0].apiLocalUserArgumentType.load(parsed[1]);
+		await parsed[2].attachToUser(user);
+		return user;
 	}
 	getExamples<P>(ctx: ParseEntryPoint<P>) {
 		if (!(ctx.sourceProvider as unknown as Api<any>)?.apiLocalUserArgumentType) throw new Error(`sourceProvider is not ayzek one (${ctx.sourceProvider})`);
