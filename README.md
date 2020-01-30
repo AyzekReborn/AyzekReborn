@@ -10,6 +10,7 @@ Supports multiple messengers, current support list is:
 
 - [VKontakte](./docs/VK_Configuration.md)
 - [Discord](./docs/DS_Configuration.md)
+- [Telegram](./docs/TG_Configuration.md)
 
 ### Plugin system
 

@@ -83,10 +83,10 @@ export default class TelegramApi extends Api<TelegramApi>{
 	async fetchUserOrChat(id: number): Promise<TelegramUser | TelegramChat | null> {
 		const got = await this.execute('getChat', { chat_id: id });
 		if (id > 0) {
-			this.updateUserMap(got.result);
+			this.updateUserMap(got);
 			return this.users.get(id) ?? null;
 		} else {
-			this.updateChatMap(got.result);
+			this.updateChatMap(got);
 			return this.chats.get(-id) ?? null;
 		}
 	}
@@ -102,11 +102,16 @@ export default class TelegramApi extends Api<TelegramApi>{
 			return this.chats.get(id)!;
 		return this.fetchUserOrChat(id) as Promise<TelegramChat>;
 	}
-	public execute(method: string, params: any): Promise<any> {
-		return this.xrest.emit('POST', method, {
+	public async execute(method: string, params: any): Promise<any> {
+		const res = await this.xrest.emit('POST', method, {
 			// multipart: true,
 			data: params,
-		}).then(v => v.jsonBody);
+		});
+		const data = res.jsonBody;
+		if (!data.ok) {
+			throw new Error(data.description);
+		}
+		return data.result;
 	}
 
 	lastUpdateId: number = 0;
@@ -123,6 +128,10 @@ export default class TelegramApi extends Api<TelegramApi>{
 	}
 
 	updateChatMap(chat: any) {
+		if (!chat.id) {
+			this.logger.debug('No id:', chat);
+			return;
+		}
 		if (!this.chats.get(-chat.id)) {
 			this.chats.set(-chat.id, new TelegramChat(chat, this));
 		} else {
@@ -190,13 +199,17 @@ export default class TelegramApi extends Api<TelegramApi>{
 					timeout: 5,
 					allowed_updates: [],
 				});
-				if (data.result.length !== 0) {
+				if (data.length !== 0) {
 					this.lastUpdateId = data.result[data.result.length - 1].update_id + 1;
 					for (const update of data.result) {
 						await this.processUpdate(update);
 					}
 				}
 			} catch (e) {
+				if (e.message === 'Unauthorized') {
+					this.logger.error('Bad token');
+					return;
+				}
 				this.logger.error('Update processing failure');
 				this.logger.error(e);
 			}
@@ -207,13 +220,13 @@ export default class TelegramApi extends Api<TelegramApi>{
 	}
 
 	async send(conv: Conversation<TelegramApi>, text: Text<TelegramApi>, _attachments: Attachment[], _options: IMessageOptions): Promise<void> {
-		console.log(await this.execute('sendMessage', {
+		await this.execute('sendMessage', {
 			chat_id: conv.targetId,
 			text: this.transformText(text),
 			parseMode: 'MarkdownV2',
 			disable_web_page_preview: true,
 			disable_notification: true,
-		}));
+		});
 	}
 	transformText(text: Text<TelegramApi>): string {
 		if (!text) return '';

@@ -181,6 +181,7 @@ const helpCommand = command('help')
 	)
 	.executes(async ({ source: { ayzek, event } }) => {
 		event.conversation.send([
+			'Бот опенсорс! Исходники: https://github.com/CertainLach/AyzekReborn',
 			`В бота установлены следующие плагины:\n\n`,
 			textJoin(ayzek.plugins.map((plugin, i) => textJoin([
 				`${i + 1}. ${plugin.name} от ${plugin.author || 'Анонимного разработчика'}`,
