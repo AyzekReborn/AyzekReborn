@@ -44,7 +44,9 @@ const speechToTextCommand = command(['speech-to-text', 'stt'])
 				});
 				try {
 					const text = result.jsonBody?.result;
-					if (!text) {
+					if (text === '') {
+						return `${user} » ⛔ Нет слов/невнятная речь`;
+					} else if (!text) {
 						console.log(result.jsonBody);
 						return `${user} » ⛔ Распознавание не удалось, возможно у разраба истёк лимит на токене`;
 					}

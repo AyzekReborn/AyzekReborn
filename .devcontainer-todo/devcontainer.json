@@ -1,0 +1,13 @@
+{
+	"name": "Ayzek Reborn",
+	"dockerFile": "Dockerfile",
+	"appPort": [],
+	"remoteUser": "developer",
+	"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash"
+	},
+	"postCreateCommand": "yarn",
+	"extensions": [
+		"dbaeumer.vscode-eslint"
+	]
+}
