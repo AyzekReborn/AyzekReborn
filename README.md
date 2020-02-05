@@ -8,9 +8,11 @@ Er ist wieder da
 
 Supports multiple messengers, current support list is:
 
-- [VKontakte](./docs/VK_Configuration.md)
-- [Discord](./docs/DS_Configuration.md)
-- [Telegram](./docs/TG_Configuration.md)
+- [VKontakte](./docs/api/VK_Configuration.md)
+- [Discord](./docs/api/DS_Configuration.md)
+- [Telegram](./docs/api/TG_Configuration.md)
+
+[Messenger API documentation](./docs/api/README.md)
 
 ### Plugin system
 
