@@ -10,6 +10,7 @@ import type { IMessage, IMessageOptions } from "../../model/message";
 import type { Text } from "../../model/text";
 import type ApiFeature from "../features";
 import type { MaybePromise } from "../promiseMap";
+import { splitByMaxPossibleParts } from "../../util/split";
 
 export class TelegramUser extends User<TelegramApi>{
 	constructor(public apiUser: any, api: TelegramApi) {
@@ -220,13 +221,16 @@ export default class TelegramApi extends Api<TelegramApi>{
 	}
 
 	async send(conv: Conversation<TelegramApi>, text: Text<TelegramApi>, _attachments: Attachment[], _options: IMessageOptions): Promise<void> {
-		await this.execute('sendMessage', {
-			chat_id: conv.targetId,
-			text: this.transformText(text),
-			parseMode: 'MarkdownV2',
-			disable_web_page_preview: true,
-			disable_notification: true,
-		});
+		const parts = splitByMaxPossibleParts(this.transformText(text), 4096);
+		for (let part of parts) {
+			await this.execute('sendMessage', {
+				chat_id: conv.targetId,
+				text: part,
+				parseMode: 'MarkdownV2',
+				disable_web_page_preview: true,
+				disable_notification: true,
+			});
+		}
 	}
 	transformText(text: Text<TelegramApi>): string {
 		if (!text) return '';
