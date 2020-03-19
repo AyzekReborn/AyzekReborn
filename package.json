@@ -4,7 +4,11 @@
 	"main": "index.js",
 	"author": "Лач <iam@lach.pw>, xDark <me@xdark.dev>",
 	"license": "MIT",
+	"scripts": {
+		"run-debug": "node -r source-map-support/register --inspect-brk=9229 dist/development/start/index.js"
+	},
 	"dependencies": {
+		"@ayzek/command-parser": "^1.0.1",
 		"@meteor-it/fs": "^1.2.19",
 		"@meteor-it/logger": "^2.3.44",
 		"@meteor-it/mime": "^0.4.23",

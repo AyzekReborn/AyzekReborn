@@ -1,21 +1,21 @@
-import Logger from "@meteor-it/logger";
-import ApiFeature from "../api/features";
-import { CommandDispatcher } from "../command/command";
-import { CommandSyntaxError, UserDisplayableError } from "../command/error";
+import type { ArgumentType } from "@ayzek/command-parser/arguments";
+import { CommandDispatcher } from "@ayzek/command-parser/command";
+import { CommandSyntaxError, UserDisplayableError } from "@ayzek/command-parser/error";
+import type Logger from "@meteor-it/logger";
+import type ApiFeature from "../api/features";
 import { Api } from "../model/api";
-import { Chat, Conversation, Guild, User } from "../model/conversation";
-import { Disposable } from "../util/event";
-import { AttachmentRepository, AttachmentStorage, ownerlessEmptyAttachmentStorage } from "./attachment/attachment";
-import { MessageEventContext, CommandEventContext } from "./context";
-import { IMessageListener, PluginInfo } from "./plugin";
-import { levenshteinDistance } from "../util/levenshtein";
-import { parsePayload, craftCommandPayload } from "../model/payload";
-import { MessageEvent } from "../model/events/message";
-import { ArgumentType } from "../command/arguments";
+import type { Chat, Conversation, Guild, User } from "../model/conversation";
+import type { MessageEvent } from "../model/events/message";
+import { craftCommandPayload, parsePayload } from "../model/payload";
+import { Text, textJoin } from "../model/text";
 import { exclude } from "../util/array";
-import { parse } from "querystring";
+import type { Disposable } from "../util/event";
+import { levenshteinDistance } from "../util/levenshtein";
+import { AttachmentRepository, AttachmentStorage, ownerlessEmptyAttachmentStorage } from "./attachment/attachment";
+import { CommandEventContext, MessageEventContext } from "./context";
+import type { AyzekCommandSource, AyzekParseEntryPoint, AyzekParseResults, IMessageListener, PluginInfo } from "./plugin";
 
-const FIX_MAX_DISTANCE = 5;
+const FIX_MAX_DISTANCE = 3;
 
 export class Ayzek<A extends Api<any>> extends Api<A> {
 	/**
@@ -33,7 +33,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 		this.attachmentStorage = await this.ayzekAttachmentRepository.getStorageFor(this);
 	}
 
-	commandDispatcher = new CommandDispatcher<CommandEventContext<A>>();
+	commandDispatcher = new CommandDispatcher<AyzekCommandSource, Text<any>>();
 	listeners: IMessageListener[] = [];
 
 	async attachToUser(user: User<any>) {
@@ -114,6 +114,93 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 		});
 	}
 
+	private async getSuggestionText(entry: AyzekParseEntryPoint, parseResult: AyzekParseResults, source: AyzekCommandSource): Promise<Text<any>> {
+		let suggestionListNextCommand = [];
+		let suggestionList = [];
+		let possibleFixes: string[] = [];
+		let suggestionThisArgument = [];
+		if (parseResult.reader.string.length === parseResult.reader.cursor) {
+			const oldString = parseResult.reader.string;
+			const oldCursor = parseResult.reader.cursor;
+			parseResult.reader.string += ' ';
+			parseResult.reader.cursor++;
+			const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult as any, parseResult.reader.cursor, source as any);
+			for (let suggestion of suggestions.suggestions) {
+				suggestionListNextCommand.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
+			}
+			parseResult.reader.string = oldString;
+			parseResult.reader.cursor = oldCursor;
+		}
+		{
+			const parsedSuccessfully = parseResult.exceptions.size === 0;
+			let neededCursor = parsedSuccessfully ? (() => {
+				return parseResult.context.nodes[parseResult.context.nodes.length - 1]?.range.start ?? 0;
+			})() : parseResult.reader.cursor;
+			const currentArgument = parseResult.reader.string.slice(neededCursor)
+			const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, neededCursor, source);
+			const possibleFixesUnsorted: [string, number][] = [];
+			for (let suggestion of suggestions.suggestions) {
+				const text = `${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim();
+				suggestionList.push(text)
+				const distance = levenshteinDistance(suggestion.text, currentArgument, FIX_MAX_DISTANCE);
+				if (distance <= FIX_MAX_DISTANCE) {
+					possibleFixesUnsorted.push([text, distance]);
+				}
+			}
+			possibleFixes = possibleFixesUnsorted.sort((a, b) => a[1] - b[1]).map(f => f[0]);
+		}
+		{
+			const oldCursor = parseResult.reader.cursor;
+			parseResult.reader.cursor = parseResult.reader.string.length;
+			const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, parseResult.reader.cursor, source);
+			for (let suggestion of suggestions.suggestions) {
+				suggestionThisArgument.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
+			}
+			parseResult.reader.cursor = oldCursor;
+		}
+
+		possibleFixes = exclude(possibleFixes, suggestionThisArgument);
+		suggestionList = exclude(suggestionList, possibleFixes, suggestionThisArgument);
+
+		const suggestionText = [
+			suggestionListNextCommand.length === 0 ? [] : [
+				'\n\n',
+				`Пример того, что можно поставить следующей командой:\n`,
+				suggestionListNextCommand.join(', ')
+			],
+			suggestionThisArgument.length === 0 ? [] : [
+				'\n\n',
+				`Пример того, как можно продолжить текущий аргумент:\n`,
+				suggestionThisArgument.join(', ')
+			],
+			possibleFixes.length === 0 ? [] : [
+				'\n\n',
+				`Возможно ты имел в виду:\n`,
+				possibleFixes.join(', ')
+			],
+			suggestionList.length === 0 ? [] : [
+				'\n\n',
+				`Пример того, что ещё можно поставить в этом месте:\n`,
+				suggestionList.join(', ')
+			]
+		].filter(e => e.length !== 0);
+
+		return suggestionText;
+	}
+
+	sendErrorFeedback(error: Error) {
+		this.logger.error(error.stack);
+	}
+
+	private formatError(error: Error, commandPrefix: string | null): Text<any> {
+		if (error instanceof UserDisplayableError) {
+			return [error.message, (error.reader && commandPrefix !== null) ? [' ', commandPrefix, error.reader.toStringWithCursor('|')] : null];
+		} else {
+			this.sendErrorFeedback(error);
+			return 'Фатальная ошибка, отчёт отправлен разработчику';
+		}
+	}
+
 	/**
 	 * @param event caused message event
 	 * @param command actual command (i.e `help all`)
@@ -121,102 +208,53 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 	 * 	null in case of payload caused commands
 	 */
 	private async handleCommand(event: MessageEvent<any>, command: string, commandPrefix: string | null) {
-		let parseResult;
+		let parseResult: AyzekParseResults | undefined;
 		const source = new CommandEventContext(this, event, command, commandPrefix);
-		const entry = { ayzek: this, sourceProvider: event.api };
+		const entry = { source };
 		try {
 			parseResult = await this.commandDispatcher.parse(entry, command, source);
-			await this.commandDispatcher.executeResults(parseResult);
-		} catch (err) {
-			let suggestionListNextCommand = [];
-			let suggestionList = [];
-			let possibleFixes: string[] = [];
-			let suggestionThisArgument = [];
-			if (parseResult) {
-				if (parseResult.reader.string.length === parseResult.reader.cursor) {
-					const oldString = parseResult.reader.string;
-					const oldCursor = parseResult.reader.cursor;
-					parseResult.reader.string += ' ';
-					parseResult.reader.cursor++;
-					const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, parseResult.reader.cursor, source);
-					for (let suggestion of suggestions.suggestions) {
-						suggestionListNextCommand.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
-					}
-					parseResult.reader.string = oldString;
-					parseResult.reader.cursor = oldCursor;
-				}
-				{
-					const parsedSuccessfully = parseResult.exceptions.size === 0;
-					let neededCursor = parsedSuccessfully ? (() => {
-						return parseResult.context.nodes[parseResult.context.nodes.length - 1]?.range.start ?? 0;
-					})() : parseResult.reader.cursor;
-					const currentArgument = parseResult.reader.string.slice(neededCursor)
-					const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, neededCursor, source);
-					const possibleFixesUnsorted: [string, number][] = [];
-					for (let suggestion of suggestions.suggestions) {
-						const text = `${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim();
-						suggestionList.push(text)
-						const distance = levenshteinDistance(suggestion.text, currentArgument, FIX_MAX_DISTANCE);
-						if (distance <= FIX_MAX_DISTANCE) {
-							possibleFixesUnsorted.push([text, distance]);
-						}
-					}
-					possibleFixes = possibleFixesUnsorted.sort((a, b) => a[1] - b[1]).map(f => f[0]);
-				}
-				{
-					const oldCursor = parseResult.reader.cursor;
-					parseResult.reader.cursor = parseResult.reader.string.length;
-					const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, parseResult.reader.cursor, source);
-					for (let suggestion of suggestions.suggestions) {
-						suggestionThisArgument.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
-					}
-					parseResult.reader.cursor = oldCursor;
+			const result = (await this.commandDispatcher.executeResults(parseResult))
+				// Filter commands with no response
+				.filter(e => e.result === 'error' || e.value);
+			if (result.length !== 0) {
+				const errored = result
+					.filter(e => e.result === 'error');
+				if (errored.length === result.length) {
+					let suggestionText = (await this.getSuggestionText(entry, parseResult, source));
+					await source.send([
+						`Все вызовы команды провалились:\n`,
+						textJoin(errored.map(e => (e as { error: Error }).error).map(e => this.formatError(e, commandPrefix)), '\n'),
+						suggestionText,
+					])
+				} else {
+					source.send(textJoin(result.map(e => {
+						if (e.result === 'error') return this.formatError(e.error, commandPrefix);
+						return e.value;
+					}) as any, '\n'))
 				}
 			}
-
-			possibleFixes = exclude(possibleFixes, suggestionThisArgument);
-			suggestionList = exclude(suggestionList, possibleFixes, suggestionThisArgument);
-
-			const suggestionText = [
-				suggestionListNextCommand.length === 0 ? [] : [
-					'\n\n',
-					`Пример того, что можно поставить следующей командой:\n`,
-					suggestionListNextCommand.join(', ')
-				],
-				suggestionThisArgument.length === 0 ? [] : [
-					'\n\n',
-					`Пример того, как можно продолжить текущий аргумент:\n`,
-					suggestionThisArgument.join(', ')
-				],
-				possibleFixes.length === 0 ? [] : [
-					'\n\n',
-					`Возможно ты имел в виду:\n`,
-					possibleFixes.join(', ')
-				],
-				suggestionList.length === 0 ? [] : [
-					'\n\n',
-					`Пример того, что ещё можно поставить в этом месте:\n`,
-					suggestionList.join(', ')
-				]
-			].filter(e => e.length !== 0);
+		} catch (err) {
+			let suggestionText = parseResult ? (await this.getSuggestionText(entry, parseResult, source)) : null;
 			if (err instanceof CommandSyntaxError || err instanceof UserDisplayableError) {
 				if (commandPrefix === null) {
-					await event.conversation.send([
+					this.sendErrorFeedback(err);
+					await source.send([
 						err.message,
 						'\nПо видимому, эта ошибка вызвана кривой кнопкой.',
-						'\nВозможно, вы использовали кнопку на сообщении, которое отсылалось слишком давно'
+						'\nВозможно, ты использовал кнопку на сообщении, которое отсылалось слишком давно'
 					]);
 				} else {
-					await event.conversation.send([
+					await source.send([
 						err.message,
 						err.reader ? ['\n', `${commandPrefix}`, err.reader] : [],
 						suggestionText
 					]);
 				}
 			} else {
-				this.logger.error(err.stack);
-				event.conversation.send([
-					`Произошла ошибка, репорт передан разработчику.\nПока попробуй воспользоваться предложениями`, suggestionText
+				this.sendErrorFeedback(err);
+				await source.send([
+					`Произошла ошибка, репорт передан разработчику.\nПока можешь попробовать воспользоваться данными предложениями:`,
+					suggestionText
 				]);
 			}
 		}

@@ -1,6 +1,6 @@
 import { Image } from '../../../model/attachment/attachment';
 import { Gender } from "../../../model/conversation";
-import VKApi from "../api";
+import type VKApi from "../api";
 import VKUser from "./user";
 
 export default class VKBot extends VKUser {

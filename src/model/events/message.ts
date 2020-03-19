@@ -1,7 +1,7 @@
-import { Api } from "../api";
-import { Attachment } from "../attachment/attachment";
-import { Chat, Conversation, User } from "../conversation";
-import { IMessage } from "../message";
+import type { Api } from "../api";
+import type { Attachment } from "../attachment/attachment";
+import type { Chat, Conversation, User } from "../conversation";
+import type { IMessage } from "../message";
 
 /**
  * Received message event

@@ -1,5 +1,5 @@
-import { Api } from "../api";
-import { Chat, Guild, User } from "../conversation";
+import type { Api } from "../api";
+import type { Chat, Guild, User } from "../conversation";
 
 export enum LeaveReason {
 	/**

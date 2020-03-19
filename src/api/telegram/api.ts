@@ -1,15 +1,15 @@
-import { Api } from "../../model/api";
-import ApiFeature from "../features";
-import { ArgumentType } from "../../command/arguments";
+import type { ArgumentType } from "@ayzek/command-parser/arguments";
+import StringReader from "@ayzek/command-parser/reader";
 import XRest from "@meteor-it/xrest";
 import * as https from 'https';
-import { User, Gender, Chat, Conversation } from "../../model/conversation";
-import { Image, Attachment } from "../../model/attachment/attachment";
-import { IMessage, IMessageOptions } from "../../model/message";
+import { Api } from "../../model/api";
+import type { Attachment, Image } from "../../model/attachment/attachment";
+import { Chat, Conversation, Gender, User } from "../../model/conversation";
 import { MessageEvent } from "../../model/events/message";
-import { Text } from "../../model/text";
-import StringReader from "../../command/reader";
-import { MaybePromise } from "../promiseMap";
+import type { IMessage, IMessageOptions } from "../../model/message";
+import type { Text } from "../../model/text";
+import type ApiFeature from "../features";
+import type { MaybePromise } from "../promiseMap";
 
 export class TelegramUser extends User<TelegramApi>{
 	constructor(public apiUser: any, api: TelegramApi) {
@@ -200,8 +200,8 @@ export default class TelegramApi extends Api<TelegramApi>{
 					allowed_updates: [],
 				});
 				if (data.length !== 0) {
-					this.lastUpdateId = data.result[data.result.length - 1].update_id + 1;
-					for (const update of data.result) {
+					this.lastUpdateId = data[data.length - 1].update_id + 1;
+					for (const update of data) {
 						await this.processUpdate(update);
 					}
 				}
@@ -230,7 +230,9 @@ export default class TelegramApi extends Api<TelegramApi>{
 	}
 	transformText(text: Text<TelegramApi>): string {
 		if (!text) return '';
-		if (typeof text === 'string') return text;
+		if (typeof text === 'number') {
+			return text + '';
+		} else if (typeof text === 'string') return text;
 		if (Array.isArray(text)) return text.map(this.transformText.bind(this)).join('');
 		if (text instanceof StringReader) return text.toString();
 		switch (text.type) {
@@ -249,5 +251,6 @@ export default class TelegramApi extends Api<TelegramApi>{
 			case 'underlinedPart':
 				return `_${this.transformText(text.data)}_`;
 		}
+		throw new Error(`Part ${JSON.stringify(text)} not handled`);
 	}
 }

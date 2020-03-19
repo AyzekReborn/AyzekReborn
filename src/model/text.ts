@@ -1,6 +1,6 @@
-import StringReader from "../command/reader";
-import { Api } from "./api";
-import { Chat, User } from "./conversation";
+import type StringReader from "@ayzek/command-parser/reader";
+import type { Api } from "./api";
+import type { Chat, User } from "./conversation";
 
 export type MentionTextPart<A extends Api<A>> = {
 	type: 'mentionPart',
@@ -36,7 +36,7 @@ export type HashTagTextPart<A extends Api<A>> = {
 	data: Text<A>,
 	hideOnNoSupport?: boolean
 }
-export type TextPart<A extends Api<A>> = undefined | null | string | MentionTextPart<A> | ChatReferenceTextPart<A> | UnderlinedTextPart<A> | StringReader | TextPartArray<A> | CodeTextPart<A> | PreservingWhitespaceTextPart<A> | BoldTextPart<A> | HashTagTextPart<A>;
+export type TextPart<A extends Api<A>> = undefined | null | string | number | MentionTextPart<A> | ChatReferenceTextPart<A> | UnderlinedTextPart<A> | StringReader | TextPartArray<A> | CodeTextPart<A> | PreservingWhitespaceTextPart<A> | BoldTextPart<A> | HashTagTextPart<A>;
 interface TextPartArray<A extends Api<A>> extends Array<TextPart<A>> { }
 export type Text<A extends Api<A>> = TextPart<A>;
 

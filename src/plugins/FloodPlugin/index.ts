@@ -1,8 +1,8 @@
+import { intArgument } from '@ayzek/command-parser/arguments';
 import Random from '@meteor-it/random';
 import { emit } from '@meteor-it/xrest';
 import { userArgument } from "../../bot/argument";
 import { command, PluginCategory, PluginInfo } from "../../bot/plugin";
-import { intArgument } from '../../command/arguments';
 import { File, Image } from '../../model/attachment/attachment';
 import * as phrazes from './phrazes.yml';
 
@@ -12,18 +12,16 @@ type CatApiResponse = {
 
 const whatCommand = command('what')
 	.thenArgument('person', userArgument(), b => b
-		.executes(({ source: { event }, getArgument }) => {
+		.executes(({ getArgument }) => {
 			const date = new Date();
 			const seed = getArgument('person').uid + '|' + Math.floor(date.getMinutes() / 5) + '|' + date.getHours() + '|' + date.getDay();
 			const random = new Random(seed);
-			event.conversation.send(`${random.randomArrayElement(phrazes.what.start)} ${random.randomArrayElement(phrazes.what.end)}`);
+			return `${random.randomArrayElement(phrazes.what.start)} ${random.randomArrayElement(phrazes.what.end)}`;
 		}, 'Определяет что делает в данный момент данный человек')
 	);
 
 const shrugCommand = command('shrug')
-	.executes(({ source: { event } }) => {
-		event.conversation.send(`¯\\_(ツ)_/¯`)
-	}, `¯\\_(ツ)_/¯`);
+	.executes(() => `¯\\_(ツ)_/¯`, `¯\\_(ツ)_/¯`);
 
 const catOBotCommand = command('cat-o-bot')
 	.thenArgument('Количество', intArgument(1, 50), b =>

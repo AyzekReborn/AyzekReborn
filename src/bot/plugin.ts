@@ -1,11 +1,12 @@
-import { LiteralArgumentBuilder } from "../command/builder";
-import { Chat, Conversation, User } from "../model/conversation";
-import { AttachmentCreator } from "./attachment/attachment";
-import { Ayzek } from "./ayzek";
-import { MessageEventContext, CommandEventContext } from "./context";
-import { CommandContext, CurrentArguments } from "../command/command";
-import { Requirement } from "../command/requirement";
-import { Text } from "../model/text";
+import type { Requirement } from "@ayzek/command-parser";
+import { LiteralArgumentBuilder } from "@ayzek/command-parser/builder";
+import type { CommandContext, CurrentArguments, ParseEntryPoint, ParseResults } from "@ayzek/command-parser/command";
+import { Api } from "../model/api";
+import type { Chat, Conversation, User } from "../model/conversation";
+import type { Text } from "../model/text";
+import type { AttachmentCreator } from "./attachment/attachment";
+import type { Ayzek } from "./ayzek";
+import type { CommandEventContext, MessageEventContext } from "./context";
 
 /**
  * TODO: Message requirements
@@ -26,7 +27,7 @@ type PluginInfo = {
 	ayzek?: Ayzek<any>,
 
 	category: PluginCategory,
-	commands: LiteralArgumentBuilder<AyzekCommandSource, any>[],
+	commands: LiteralArgumentBuilder<AyzekCommandSource, any, Text<any>>[],
 	listeners: IMessageListener[],
 	userAttachments?: AttachmentCreator<User<any>, any>[],
 	chatAttachments?: AttachmentCreator<Chat<any>, any>[],
@@ -56,9 +57,9 @@ type PluginInfo = {
 	 */
 	deinit?(): Promise<void>;
 	/**
-	 * To display addictional info in /help
+	 * To display additional info in /help
 	 */
-	getHelpAddictionalInfo?(ctx: AyzekCommandContext): Text<any>;
+	getHelpAdditionalInfo?(ctx: AyzekCommandContext): Text<any>;
 };
 export { PluginInfo };
 
@@ -68,7 +69,7 @@ export { PluginInfo };
  * @returns builder to add into PluginInfo#commands
  */
 export function command(names: string | string[]) {
-	return new LiteralArgumentBuilder<CommandEventContext<any>, {}>((typeof names === 'string' ? [names] : names));
+	return new LiteralArgumentBuilder<AyzekCommandSource, {}, Text<any>>((typeof names === 'string' ? [names] : names));
 }
 
 /**
@@ -102,9 +103,11 @@ export function regexpListener(name: string, description: string, regexp: RegExp
 	}
 }
 
-export type AyzekCommandSource = CommandEventContext<any>;
-export type AyzekCommandContext<O extends CurrentArguments = {}> = CommandContext<AyzekCommandSource, O>;
+export type AyzekParseEntryPoint = ParseEntryPoint<AyzekCommandSource>;
+export type AyzekCommandSource = CommandEventContext<Api<any>>;
+export type AyzekCommandContext<O extends CurrentArguments = {}> = CommandContext<AyzekCommandSource, O, Text<any>>;
 export type AyzekCommandRequirement = Requirement<AyzekCommandSource>;
+export type AyzekParseResults = ParseResults<AyzekCommandSource>;
 
 /**
  * Command can be only executed by payload (Prefer PluginInfo#payloadHandlers instead)

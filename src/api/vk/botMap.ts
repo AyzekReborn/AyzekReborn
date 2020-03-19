@@ -1,6 +1,6 @@
 import PromiseMap from "../promiseMap";
+import type VKApi from "./api";
 import GroupingVKApiRequester from "./groupingRequester";
-import VKApi from "./api";
 import VKBot from "./user/bot";
 
 export default class VKBotMap extends PromiseMap<number, VKBot> {

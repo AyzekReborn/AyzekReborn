@@ -1,27 +1,23 @@
+import StringReader from "@ayzek/command-parser/reader";
 import { lookupByPath } from '@meteor-it/mime';
-import { Client, Guild, GuildMember, MessageAttachment, TextChannel, User, Attachment as DiscordApiAttachment } from "discord.js";
+import * as assert from 'assert';
+import { Attachment as DiscordApiAttachment, Client, Guild, GuildMember, MessageAttachment, TextChannel, User } from "discord.js";
 import { nonenumerable } from 'nonenumerable';
-import { NoSuchUserError } from "../../bot/argument";
-import { ArgumentType } from "../../command/arguments";
-import { ParseEntryPoint } from "../../command/command";
-import { ExpectedSomethingError } from "../../command/error";
-import StringReader from "../../command/reader";
 import { Api } from "../../model/api";
-import { Attachment, File, BaseFile } from "../../model/attachment/attachment";
-import { Conversation } from "../../model/conversation";
+import { Attachment, BaseFile, File } from "../../model/attachment/attachment";
+import type { Conversation } from "../../model/conversation";
 import { JoinGuildEvent, JoinReason } from "../../model/events/join";
 import { LeaveGuildEvent, LeaveReason } from "../../model/events/leave";
 import { MessageEvent } from "../../model/events/message";
 import { TypingEvent, TypingEventType } from "../../model/events/typing";
-import { IMessageOptions } from "../../model/message";
-import { Text, TextPart } from "../../model/text";
+import type { IMessageOptions } from "../../model/message";
+import type { Text, TextPart } from "../../model/text";
+import { splitByMaxPossibleParts } from '../../util/split';
 import ApiFeature from "../features";
+import { DSUserArgumentType } from './arguments';
 import DiscordChat from "./chat";
 import DiscordGuild from "./guild";
 import DiscordUser from "./user";
-import { splitByMaxPossibleParts } from '../../util/split';
-import * as assert from 'assert';
-import { DSUserArgumentType } from './arguments';
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -203,7 +199,9 @@ export default class DiscordApi extends Api<DiscordApi> {
 
 	textToString(part: TextPart<DiscordApi>): string {
 		if (!part) return part + '';
-		if (typeof part === 'string')
+		if (typeof part === 'number') {
+			return part + '';
+		} else if (typeof part === 'string')
 			return part
 				.replace(/`/g, '\\`')
 				.replace(/_/g, '\\_');
@@ -230,6 +228,7 @@ export default class DiscordApi extends Api<DiscordApi> {
 				if (part.hideOnNoSupport) return '';
 				return this.textToString(part.data);
 		}
+		throw new Error(`Part ${JSON.stringify(part)} not handled`);
 	}
 
 	async doWork(): Promise<void> {

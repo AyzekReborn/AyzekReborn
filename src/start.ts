@@ -6,7 +6,7 @@ import TelegramApi from "./api/telegram/api";
 import { Ayzek } from "./bot/ayzek";
 import ModernPluginSystem from "./bot/pluginSystems/ModernPluginSystem";
 import * as config from "./config.yaml";
-import { Api } from "./model/api";
+import type { Api } from "./model/api";
 
 Logger.addReceiver(new ConsoleReceiver());
 

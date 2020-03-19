@@ -1,8 +1,8 @@
-import { PluginInfo, PluginCategory, command } from "../../bot/plugin";
-import { UserDisplayableError } from "../../command/error";
-import { Attachment, Voice } from "../../model/attachment/attachment";
-import { IMessage } from "../../model/message";
+import { UserDisplayableError } from "@ayzek/command-parser/error";
 import { emit } from "@meteor-it/xrest";
+import { command, PluginCategory, PluginInfo } from "../../bot/plugin";
+import { Voice } from "../../model/attachment/attachment";
+import type { IMessage } from "../../model/message";
 import { textJoin } from "../../model/text";
 import * as rawConfig from './config.yaml';
 

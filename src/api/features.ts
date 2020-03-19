@@ -1,7 +1,3 @@
-import { MessageEventContext } from "../bot/context";
-import { Api } from "../model/api";
-import { Requirement } from "../command/requirement";
-
 /**
  * Represents which feature plugins can use
  */

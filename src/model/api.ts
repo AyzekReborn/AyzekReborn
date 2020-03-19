@@ -1,18 +1,18 @@
+import type { ArgumentType } from "@ayzek/command-parser/arguments";
 import Logger from "@meteor-it/logger";
-import ApiFeature from "../api/features";
+import type ApiFeature from "../api/features";
 import { isPromise, MaybePromise } from "../api/promiseMap";
+import type { AyzekCommandRequirement } from "../bot/plugin";
 import { TypedEvent } from "../util/event";
-import { Attachment } from "./attachment/attachment";
-import { Chat, Conversation, Guild, User } from "./conversation";
-import { JoinChatEvent, JoinGuildEvent } from "./events/join";
-import { LeaveChatEvent, LeaveGuildEvent } from "./events/leave";
-import { MessageEvent } from './events/message';
-import { ChatTitleChangeEvent, GuildTitleChangeEvent } from "./events/titleChange";
-import { TypingEvent } from "./events/typing";
-import { IMessageOptions } from "./message";
-import { Text } from './text';
-import { AyzekCommandRequirement } from "../bot/plugin";
-import { ArgumentType } from "../command/arguments";
+import type { Attachment } from "./attachment/attachment";
+import type { Chat, Conversation, Guild, User } from "./conversation";
+import type { JoinChatEvent, JoinGuildEvent } from "./events/join";
+import type { LeaveChatEvent, LeaveGuildEvent } from "./events/leave";
+import type { MessageEvent } from './events/message';
+import type { ChatTitleChangeEvent, GuildTitleChangeEvent } from "./events/titleChange";
+import type { TypingEvent } from "./events/typing";
+import type { IMessageOptions } from "./message";
+import type { Text } from './text';
 
 /**
  * Error thrown if feature isn't supported by api
@@ -112,7 +112,7 @@ export abstract class Api<A extends Api<A>> {
 	public abstract async doWork(): Promise<void>;
 
 	/**
-	 * Since every api have thier own mention syntax, this
+	 * Since every api have their own mention syntax, this
 	 * field holds propper implementation, which then consumed
 	 * by userArgument
 	 */

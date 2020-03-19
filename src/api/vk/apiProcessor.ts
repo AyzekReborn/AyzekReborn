@@ -1,4 +1,4 @@
-import Logger from "@meteor-it/logger";
+import type Logger from "@meteor-it/logger";
 import { CollapseQueueProcessor } from "@meteor-it/queue";
 import XRest from "@meteor-it/xrest";
 import * as https from 'https';
@@ -15,7 +15,7 @@ export default class VKApiProcessor extends CollapseQueueProcessor<IVKApiRequest
 	 * Executes vk api requests, grouping into method.execute
 	 *
 	 * @param logger
-	 * @param tokens User/group tokens, choosen round-robing on request (TODO: Maybe there is no sense in this anymore)
+	 * @param tokens User/group tokens, chosen round-robing on request (TODO: Maybe there is no sense in this anymore)
 	 * @param isUserTokens Users have stricter limits
 	 */
 	constructor(public logger: Logger, public tokens: string[], public isUserTokens: boolean) {

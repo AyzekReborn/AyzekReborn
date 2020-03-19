@@ -1,6 +1,6 @@
-import { User } from "../../model/conversation";
+import type { User } from "../../model/conversation";
+import type { AyzekCommandRequirement } from "../plugin";
 import { Attachment, AttachmentConstructor, AttachmentCreator, AttachmentStorage } from "./attachment";
-import { AyzekCommandRequirement } from "../plugin";
 
 export abstract class RoleAttachment extends Attachment {
 	public constructor(public roles: string[]) {

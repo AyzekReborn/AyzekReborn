@@ -1,10 +1,10 @@
-import StringReader from "../../command/reader";
-import { ArgumentType } from "../../command/arguments";
-import DiscordUser from "./user";
-import DiscordApi from "./api";
-import { ParseEntryPoint } from "../../command/command";
+import { ArgumentType } from "@ayzek/command-parser/arguments";
+import { ExpectedSomethingError } from "@ayzek/command-parser/error";
+import type StringReader from "@ayzek/command-parser/reader";
 import { NoSuchUserError } from "../../bot/argument";
-import { ExpectedSomethingError } from "../../command/error";
+import type { AyzekParseEntryPoint } from "../../bot/plugin";
+import type DiscordApi from "./api";
+import type DiscordUser from "./user";
 
 export type ParsedDSUser = {
 	id: string,
@@ -26,7 +26,7 @@ export class DSUserArgumentType extends ArgumentType<ParsedDSUser, DiscordUser>{
 		return ['<@640920547907207199>', '<@178483185468833793>']
 	}
 
-	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): ParsedDSUser {
+	parse(_ctx: AyzekParseEntryPoint, reader: StringReader): ParsedDSUser {
 		if (reader.peek() !== '<') throw new ExpectedDSUserError(reader);
 		const cursor = reader.cursor;
 		reader.skip();

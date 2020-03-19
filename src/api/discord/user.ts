@@ -1,7 +1,7 @@
-import { User as DSUser } from "discord.js";
+import type { User as DSUser } from "discord.js";
 import { Image } from '../../model/attachment/attachment';
 import { Gender, User } from "../../model/conversation";
-import DiscordApi from "./api";
+import type DiscordApi from "./api";
 
 export default class DiscordUser extends User<DiscordApi>{
 	constructor(api: DiscordApi, public apiUser: DSUser) {

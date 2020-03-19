@@ -2,6 +2,13 @@
 # yarn lockfile v1
 
 
+"@ayzek/command-parser@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@ayzek/command-parser/-/command-parser-1.0.1.tgz#35e2d7cd6031fdf79fd87676e7d8ce15afb595fa"
+  integrity sha512-RO/EaG3RLRJKuWoyPlf+qhNyyJZPUN6eX+48+a4XkL9zbrum6dh4eITHZmIFJCtUS42WUkLfPHNBQhM5djFChA==
+  dependencies:
+    is-equal "^1.6.1"
+
 "@meteor-it/ajson@^0.4.20":
   version "0.4.20"
   resolved "https://registry.yarnpkg.com/@meteor-it/ajson/-/ajson-0.4.20.tgz#817bd943eb14310f281076eaabbdff0ac6dcb246"
@@ -27,10 +34,10 @@
   resolved "https://registry.yarnpkg.com/@meteor-it/mime/-/mime-0.4.23.tgz#a4e075a2da2ab5a66220eb623d36e88ed87ea5f3"
   integrity sha512-sVWT0WoyBKyw9h9QySCsduIQMtS82rkS2E8sgaAybIYZ6phs/h7lmrcfJv273ML0Cy09ExgOavrRu7K13DTY7A==
 
-"@meteor-it/plugin-loader@^1.6.8":
-  version "1.6.8"
-  resolved "https://registry.yarnpkg.com/@meteor-it/plugin-loader/-/plugin-loader-1.6.8.tgz#b09fa407df42edcb5d029a403ea2545cae215fb2"
-  integrity sha512-Pl09IzZnQGRv/HRBjIq7wp5jnnheZeB9FKvos7YxBDb4reTg9XsQE28wphybYUo+UQ79nq0mQyWSvwXuOTXnXA==
+"@meteor-it/plugin-loader@^1.6.9":
+  version "1.6.9"
+  resolved "https://registry.yarnpkg.com/@meteor-it/plugin-loader/-/plugin-loader-1.6.9.tgz#c1fbb06f911b3ea7595c69ec22cace48d6f9e3ec"
+  integrity sha512-nCjOOpon9jFquiWNKhnruNKWfZEghNHJOdHZzU8bt+c3ACSNSk2eDqJh0rESCJSIEiVy8enZ7+QP63WwmVvK+g==
   dependencies:
     "@meteor-it/fs" "^1.2.19"
     "@meteor-it/logger" "^2.3.44"
@@ -886,12 +893,12 @@ ws@^7.1.2:
   dependencies:
     async-limiter "^1.0.0"
 
-zarbis-platform-nix-amd64@^1.5.101:
-  version "1.5.101"
-  resolved "https://registry.yarnpkg.com/zarbis-platform-nix-amd64/-/zarbis-platform-nix-amd64-1.5.101.tgz#caf70cf3f8057aac0f175456ab88e12894b89109"
-  integrity sha512-8Ayt9IIIFxfCw7TnJngFbxkdpq6yAHD4RsgtcKd/LPvA6Yo6hFdbAZk7PffCYF/HoUciFsCubN51lgYqLv8sUQ==
+zarbis-platform-nix-amd64@^1.5.103:
+  version "1.6.4"
+  resolved "https://registry.yarnpkg.com/zarbis-platform-nix-amd64/-/zarbis-platform-nix-amd64-1.6.4.tgz#f7ad597574cbe509f5af22f3f8e67a9c7d394249"
+  integrity sha512-64RVmAqq1SM2crXgdDeTK5b7WIFqGGW56r5CJVwPpw0Z6pQby5LwoYvCRh6vlpZwy6+Ej5u5KDOfd9tPDfyOKw==
 
-zarbis@^1.5.101:
-  version "1.5.101"
-  resolved "https://registry.yarnpkg.com/zarbis/-/zarbis-1.5.101.tgz#224440af424e9fe98f9b937385dbe7b02fc9dc85"
-  integrity sha512-t0WO3EQcsXfkU+Nl9MtoZ8j1S7T/LGhJXj3OQxcUqphtIysR9hfraJsL4+I7trm0LDHPPLv7q6RvHRjgUK1caQ==
+zarbis@^1.5.103:
+  version "1.6.4"
+  resolved "https://registry.yarnpkg.com/zarbis/-/zarbis-1.6.4.tgz#1519024d75f8f469d5ec49463ea57c2aada90762"
+  integrity sha512-PGGF1BOaooBFCwKNEfMPql5keR7n8ITvOFCZw7rJgSZvi1c/p/lPfH+d18Pq8TLQmmI68N95/N8vy+KrgPLpKA==

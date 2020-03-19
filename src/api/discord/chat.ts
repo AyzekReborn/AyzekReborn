@@ -1,8 +1,8 @@
-import { TextChannel } from "discord.js";
+import type { TextChannel } from "discord.js";
 import { Chat } from "../../model/conversation";
-import DiscordApi from "./api";
-import DiscordGuild from "./guild";
-import DiscordUser from "./user";
+import type DiscordApi from "./api";
+import type DiscordGuild from "./guild";
+import type DiscordUser from "./user";
 
 export default class DiscordChat extends Chat<DiscordApi>{
 	constructor(api: DiscordApi, guild: DiscordGuild, public apiChat: TextChannel, admins: DiscordUser[], members: DiscordUser[]) {

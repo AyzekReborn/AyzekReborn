@@ -1,6 +1,6 @@
-import StringReader from "../../command/reader";
-import { Api } from "../api";
-import { Chat, Conversation, User } from "../conversation";
+import type StringReader from "@ayzek/command-parser/reader";
+import type { Api } from "../api";
+import type { Chat, Conversation, User } from "../conversation";
 
 export enum TypingEventType {
 	/**

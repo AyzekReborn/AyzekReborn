@@ -1,9 +1,9 @@
 import { nonenumerable } from 'nonenumerable';
 import { AttachmentStorage, ownerlessEmptyAttachmentStorage } from "../bot/attachment/attachment";
-import { Api } from "./api";
-import { Attachment, Image } from "./attachment/attachment";
-import { IMessage, IMessageOptions } from "./message";
-import { ChatReferenceTextPart, MentionTextPart, Text, TextPart } from './text';
+import type { Api } from "./api";
+import type { Attachment, Image } from "./attachment/attachment";
+import type { IMessage, IMessageOptions } from "./message";
+import type { ChatReferenceTextPart, MentionTextPart, Text, TextPart } from './text';
 
 enum ConversationType {
 	USER,

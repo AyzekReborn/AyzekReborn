@@ -1,8 +1,8 @@
 import PromiseMap from "../promiseMap";
-import VKApi from "./api";
+import type VKApi from "./api";
 import VKChat from "./chat";
 import GroupingVKApiRequester from "./groupingRequester";
-import VKUser from "./user/user";
+import type VKUser from "./user/user";
 
 export default class VKChatMap extends PromiseMap<number, VKChat> {
 	processor: GroupingVKApiRequester<number>;

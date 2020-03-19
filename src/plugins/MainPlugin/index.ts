@@ -1,14 +1,13 @@
-import { Ayzek } from "../../bot/ayzek";
-import { command, PluginCategory, PluginInfo, AyzekCommandContext, requireHidden, AyzekCommandRequirement } from "../../bot/plugin";
-import { stringArgument, SimpleArgumentType } from "../../command/arguments";
+import { SimpleArgumentType } from "@ayzek/command-parser/arguments";
+import { UserDisplayableError } from "@ayzek/command-parser/error";
+import type StringReader from "@ayzek/command-parser/reader";
+import type { Requirement } from "@ayzek/command-parser/requirement";
+import type { Suggestions, SuggestionsBuilder } from "@ayzek/command-parser/suggestions";
+import VKApi, { IVKMessageOptions } from "../../api/vk/api";
+import type { Ayzek } from "../../bot/ayzek";
+import { AyzekCommandContext, AyzekCommandRequirement, AyzekParseEntryPoint, command, PluginCategory, PluginInfo, requireHidden } from "../../bot/plugin";
 import { Text, textJoin } from "../../model/text";
 import { padList } from "../../util/pad";
-import { Requirement } from "../../command/requirement";
-import VKApi, { IVKMessageOptions } from "../../api/vk/api";
-import { UserDisplayableError } from "../../command/error";
-import { ParseEntryPoint, CommandContext } from "../../command/command";
-import StringReader from "../../command/reader";
-import { SuggestionsBuilder, Suggestions } from "../../command/suggestions";
 
 function padAllListItemExceptFirst(list: string[]) {
 	return [
@@ -22,7 +21,7 @@ async function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek<any>, plugi
 		const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal)!;
 		return commandNode.canUse(ctx.source);
 	});
-	const additionalInfo = plugin.getHelpAddictionalInfo ? ([plugin.getHelpAddictionalInfo(ctx), '\n']) : [];
+	const additionalInfo = plugin.getHelpAdditionalInfo ? ([plugin.getHelpAdditionalInfo(ctx), '\n']) : [];
 	return [
 		`🔌 ${plugin.name}${plugin.category ? ` в категории ${plugin.category}` : ''}\n`,
 		`🕵‍ Разработчик: ${plugin.author}\n`,
@@ -59,34 +58,29 @@ function requireApi<T>(api: new (...args: any[]) => T): Requirement<any> {
 
 const debugCommand = command('debug')
 	.thenLiteral('mentions', b => b
-		.executes(ctx => {
-			ctx.source.send([
-				'User mention: ', ctx.source.user.reference, '\n',
-				'Chat mention: ', ctx.source.chat?.reference ?? 'no chat',
-			]);
-		}, 'Проверка упоминаний')
+		.executes(ctx => [
+			'User mention: ', ctx.source.user.reference, '\n',
+			'Chat mention: ', ctx.source.chat?.reference ?? 'no chat',
+		], 'Проверка упоминаний')
 	)
 	.thenLiteral('id', b => b
-		.executes(ctx => {
-			ctx.source.send([
-				`UID: ${ctx.source.user.uid}\n`,
-				`CID: `, ctx.source.chat?.cid ?? 'no chat', '\n',
-				`Full name: ${ctx.source.user.fullName}\n`,
-				`Name: ${ctx.source.user.name}\n`
-			]);
-		}, 'ID юзера и чата')
+		.executes(ctx => [
+			`UID: ${ctx.source.user.uid}\n`,
+			`CID: `, ctx.source.chat?.cid ?? 'no chat', '\n',
+			`Full name: ${ctx.source.user.fullName}\n`,
+			`Name: ${ctx.source.user.name}\n`
+		], 'ID юзера и чата')
 	)
 	.thenLiteral('msg', b => b
 		.executes(ctx => {
 			const forwarded = ctx.source.event.maybeForwarded;
 			if (!forwarded) {
-				ctx.source.send(['No forwarded']);
-				return;
+				return 'No forwarded';
 			}
-			ctx.source.send([
+			return [
 				`UID: ${forwarded.user.uid}\n`,
 				`Full name: ${forwarded.user.fullName}\n`,
-			]);
+			];
 		}, 'Просмотр информации о пересланом сообщении')
 	)
 	.thenLiteral('keyboard', b => b
@@ -128,17 +122,18 @@ const debugCommand = command('debug')
 	.thenLiteral('length-limit-bypass', b => b
 		// 20200 chars, only in development mode
 		.requires(requirementIsDevelopment)
-		.executes(async ctx => {
-			await ctx.source.send(('a'.repeat(100) + ' ').repeat(200));
-		}, 'Отсылает огромную строку')
-	);
+		.executes(_ctx => ('a'.repeat(100) + ' ').repeat(200), 'Отсылает огромную строку')
+	)
+	.thenLiteral('timestamp', b => b
+		.executes(async _ctx => Date.now())
+	)
 
 class PluginNameArgument extends SimpleArgumentType<string>{
-	parse<P>(_ctx: ParseEntryPoint<P>, reader: StringReader): string {
+	parse(_ctx: AyzekParseEntryPoint, reader: StringReader): string {
 		return reader.readString();
 	}
 
-	async listSuggestions<P>(_entry: ParseEntryPoint<P>, ctx: AyzekCommandContext, builder: SuggestionsBuilder): Promise<Suggestions> {
+	async listSuggestions(_entry: AyzekParseEntryPoint, ctx: AyzekCommandContext, builder: SuggestionsBuilder): Promise<Suggestions> {
 		const start = builder.remaining;
 		for (const plugin of ctx.source.ayzek.plugins.filter(i => i.name.startsWith(start))) {
 			builder.suggest(plugin.name, plugin.description);
@@ -146,8 +141,8 @@ class PluginNameArgument extends SimpleArgumentType<string>{
 		return builder.build();
 	}
 
-	getExamples<P>(ctx: ParseEntryPoint<P>) {
-		return ctx.ayzek.plugins.map(plugin => plugin.name);
+	getExamples(ctx: AyzekParseEntryPoint) {
+		return ctx.source.ayzek.plugins.map((plugin: PluginInfo) => plugin.name);
 	}
 }
 function pluginNameArgument() {

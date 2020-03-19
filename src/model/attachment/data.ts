@@ -2,7 +2,7 @@ import { getReadStream, readFile, unlink, writeFile } from '@meteor-it/fs';
 import { createReadStream, readStreamToBuffer } from '@meteor-it/utils';
 import { emit, IRequestOptions } from '@meteor-it/xrest';
 import * as cloneable from 'cloneable-readable';
-import { Readable } from 'stream';
+import type { Readable } from 'stream';
 import { readable as streamReadableNow } from 'stream-now';
 import * as temp from 'temp';
 

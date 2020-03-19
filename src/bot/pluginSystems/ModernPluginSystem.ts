@@ -1,10 +1,10 @@
+import type { CommandNode } from '@ayzek/command-parser/tree';
 import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
-import { CommandNode } from '../../command/tree';
-import { Ayzek } from '../ayzek';
-import { PluginInfo } from '../plugin';
+import type { Ayzek } from '../ayzek';
+import type { PluginInfo } from '../plugin';
 
 export type PluginInfoAttachment = {
-	registered?: CommandNode<any, any>[];
+	registered?: CommandNode<any, any, any>[];
 	file: string;
 };
 

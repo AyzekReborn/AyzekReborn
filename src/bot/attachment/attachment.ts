@@ -1,5 +1,5 @@
-import { Requirement } from "../../command/requirement";
-import { MessageEventContext } from "../context";
+import type { Requirement } from "@ayzek/command-parser";
+import type { MessageEventContext } from "../context";
 
 class DependencyResolutionErrors extends Error {
 	constructor(public constructor: AttachmentConstructor<any>, public reasons: Error[]) {
@@ -150,5 +150,15 @@ export function requireAttachment<P extends Attachment>(constructor: AttachmentC
 	return ctx => {
 		const attachment = ctx.event.user.attachmentStorage!.getIfAvailable(constructor);
 		return !!attachment;
+	}
+}
+
+/**
+ * Fails if message sender have specified attachment
+ */
+export function requireAttachmentAbsent<P extends Attachment>(constructor: AttachmentConstructor<P>): Requirement<MessageEventContext<any>> {
+	return ctx => {
+		const attachment = ctx.event.user.attachmentStorage!.getIfAvailable(constructor);
+		return !attachment;
 	}
 }

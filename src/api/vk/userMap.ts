@@ -1,5 +1,5 @@
 import PromiseMap from "../promiseMap";
-import VKApi from "./api";
+import type VKApi from "./api";
 import GroupingVKApiRequester from "./groupingRequester";
 import VKRealUser from "./user/realUser";
 

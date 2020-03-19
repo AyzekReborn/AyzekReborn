@@ -1,31 +1,32 @@
+import StringReader from "@ayzek/command-parser/reader";
 import { lookup as lookupMime } from '@meteor-it/mime';
 import { emit } from "@meteor-it/xrest";
 import * as multipart from '@meteor-it/xrest/multipart';
 import * as _ from 'lodash';
 import { nonenumerable } from 'nonenumerable';
-import StringReader from "../../command/reader";
 import { Api } from "../../model/api";
 import { Attachment, Audio, File, Image, Location, MessengerSpecificUnknownAttachment, Video, Voice } from "../../model/attachment/attachment";
-import { Conversation } from "../../model/conversation";
+import type { Conversation } from "../../model/conversation";
 import { JoinChatEvent, JoinReason } from "../../model/events/join";
 import { LeaveChatEvent, LeaveReason } from "../../model/events/leave";
 import { MessageEvent } from '../../model/events/message';
 import { ChatTitleChangeEvent } from "../../model/events/titleChange";
 import { TypingEvent, TypingEventType } from "../../model/events/typing";
-import { IMessage, IMessageOptions } from "../../model/message";
-import { Text, TextPart } from '../../model/text';
+import type { IMessage, IMessageOptions } from "../../model/message";
+import type { Text, TextPart } from '../../model/text';
 import arrayChunks from "../../util/arrayChunks";
 import { splitByMaxPossibleParts } from "../../util/split";
 import ApiFeature from "../features";
-import { MaybePromise } from '../promiseMap';
+import type { MaybePromise } from '../promiseMap';
 import VKApiProcessor from "./apiProcessor";
-import VKBotMap from "./botMap";
-import VKChat from "./chat";
-import VKChatMap from "./chatMap";
-import VKUser from "./user/user";
-import VKUserMap from "./userMap";
 import { VKUserArgumentType } from './arguments';
-import { IVKKeyboard } from './keyboard';
+import VKBotMap from "./botMap";
+import type VKChat from "./chat";
+import VKChatMap from "./chatMap";
+import type { IVKKeyboard } from './keyboard';
+import type VKUser from "./user/user";
+import VKUserMap from "./userMap";
+import type { Writeable } from "../../util/writeable";
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
@@ -197,7 +198,6 @@ export default class VKApi extends Api<VKApi> {
 		};
 	}
 	async processNewMessageUpdate(update: any) {
-		console.log(update);
 		if (update.action) {
 			switch (update.action.type) {
 				case 'chat_title_update': {
@@ -407,7 +407,7 @@ export default class VKApi extends Api<VKApi> {
 		throw new Error('Not implemented');
 	}
 
-	async genericUpload(getServerMethod: string, saveMethod: string, attachment: Image | File, peerId: string, field: string, addictionalField: string[], toId: (uploaded: any) => string): Promise<string> {
+	async genericUpload(getServerMethod: string, saveMethod: string, attachment: Image | File, peerId: string, field: string, additionalField: string[], toId: (uploaded: any) => string): Promise<string> {
 		// TODO: Upload server pool/cache
 		let server = await this.execute(getServerMethod, { peer_id: peerId });
 		const stream = attachment.data.toStream();
@@ -421,9 +421,8 @@ export default class VKApi extends Api<VKApi> {
 		});
 		let uploaded = await this.execute(saveMethod, {
 			[field]: res.jsonBody![field],
-			..._.pick(res.jsonBody!, addictionalField)
+			..._.pick(res.jsonBody!, additionalField)
 		});
-		console.log(uploaded);
 		return toId(uploaded);
 	}
 
@@ -496,7 +495,9 @@ export default class VKApi extends Api<VKApi> {
 
 	textToString(part: TextPart<VKApi>): string {
 		if (!part) return part + '';
-		if (typeof part === 'string') return part;
+		if (typeof part === 'number') {
+			return part + '';
+		} else if (typeof part === 'string') return part;
 		if (part instanceof StringReader) {
 			return `${part.toStringWithCursor(`|`)}`
 		} else if (part instanceof Array) {
@@ -514,8 +515,9 @@ export default class VKApi extends Api<VKApi> {
 			case 'boldPart':
 				return this.textToString(part.data);
 			case 'hashTagPart':
-				return this.textToString(part.data).split(' ').map(e => e.length !== 0 ? `#${e}` : e).join(' ')
+				return this.textToString(part.data).split(' ').map(e => e.length !== 0 ? `#${e}` : e).join(' ');
 		}
+		throw new Error(`Part ${JSON.stringify(part)} not handled`);
 	}
 
 	async doWork(): Promise<void> {
