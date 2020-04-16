@@ -35,7 +35,7 @@
 		"jasmine": "^3.5.0",
 		"source-map-support": "^0.5.16",
 		"typescript": "^3.8.0-dev.20200123",
-		"zarbis": "^1.5.103",
-		"zarbis-platform-nix-amd64": "^1.5.103"
+		"zarbis": "^1.6.5",
+		"zarbis-platform-nix-amd64": "^1.6.5"
 	}
 }
