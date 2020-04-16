@@ -117,7 +117,7 @@ export default class VKApi extends Api<VKApi> {
 				);
 			}
 			case 'audio_message': {
-				return Voice.fromUrl('GET', attachment.audio_message.link_ogg, {}, 'voice.ogg', 'audio/ogg');
+				return Voice.fromUrl('GET', attachment.audio_message.link_ogg, {}, 'voice.ogg', 'audio/ogg', attachment.audio_message.duration * 1000);
 			}
 			case 'video': {
 				// TODO: Extract something useful? Maybe create
@@ -345,56 +345,60 @@ export default class VKApi extends Api<VKApi> {
 	async loop() {
 		await this.init();
 		while (true) {
-			//
-			let data = await this.execute('groups.getLongPollServer', {
-				group_id: this.groupId
-			});
-			if (!data || !data.server) {
-				this.logger.error("Can't get data!")
-				this.logger.error(data);
-				continue;
-			}
-			let { key, server, ts } = data;
-			eventLoop: while (true) {
-				let events = (await emit('GET', server, {
-					query: {
-						act: 'a_check',
-						key,
-						ts,
-						wait: 25,
-						mode: 66,
-					},
-					timeout: 0
-				})).jsonBody!;
-
-				if (events.failed) {
-					switch (events.failed) {
-						case 1:
-							ts = events.ts;
-							continue eventLoop;
-						case 2:
-						case 3:
-							break eventLoop;
-						case 4:
-						default:
-							this.logger.error(`receive error: ${events}`);
-							break eventLoop;
-					};
-				}
-				ts = events.ts;
-
-				events.updates.forEach(async (update: any) => {
-					try {
-						await this.processUpdate(update);
-					} catch (e) {
-						this.logger.error(`Update processing error: `, update);
-						this.logger.error(e.stack);
-					}
+			try {
+				let data = await this.execute('groups.getLongPollServer', {
+					group_id: this.groupId
 				});
+				if (!data || !data.server) {
+					this.logger.error("Can't get data!")
+					this.logger.error(data);
+					continue;
+				}
+				let { key, server, ts } = data;
+				eventLoop: while (true) {
+					let events = (await emit('GET', server, {
+						query: {
+							act: 'a_check',
+							key,
+							ts,
+							wait: 25,
+							mode: 66,
+						},
+						timeout: 0
+					})).jsonBody!;
+
+					if (events.failed) {
+						switch (events.failed) {
+							case 1:
+								ts = events.ts;
+								continue eventLoop;
+							case 2:
+							case 3:
+								break eventLoop;
+							case 4:
+							default:
+								this.logger.error(`receive error: ${events}`);
+								break eventLoop;
+						};
+					}
+					ts = events.ts;
+
+					events.updates.forEach(async (update: any) => {
+						try {
+							await this.processUpdate(update);
+						} catch (e) {
+							this.logger.error(`Update processing error: `, update);
+							this.logger.error(e.stack);
+						}
+					});
+				}
+				this.logger.warn('Loop end (???), waiting 5s before restart');
+				await new Promise(res => setTimeout(res, 5000));
+				this.logger.warn('Loop restart');
+			} catch (e) {
+				this.logger.error(`Hard error`);
+				this.logger.error(e.stack);
 			}
-			this.logger.warn('Loop end (???), waiting 5s before restart');
-			await new Promise(res => setTimeout(res, 5000));
-			this.logger.warn('Loop restart');
 		}
 	}
 

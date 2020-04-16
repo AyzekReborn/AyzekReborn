@@ -123,12 +123,12 @@ export class Image extends BaseFile {
 	// }
 }
 export class Voice extends BaseFile {
-	constructor(data: Data, size: number, public name: string, public mime: string) {
+	constructor(data: Data, size: number, public name: string, public mime: string, public duration?: number) {
 		super(data, size, name);
 	}
-	static async fromUrl(method: string, url: string, options: IRequestOptions, title: string, mime: string) {
+	static async fromUrl(method: string, url: string, options: IRequestOptions, title: string, mime: string, duration?: number) {
 		let parsed = await parseUrlData(method, url, options, title, mime, mime);
-		return new Voice(parsed.data, parsed.size, parsed.name, parsed.mime);
+		return new Voice(parsed.data, parsed.size, parsed.name, parsed.mime, duration);
 	}
 }
 export class Audio extends BaseFile {

@@ -1,3 +1,5 @@
+import { TypedEvent } from "@meteor-it/utils";
+
 export type MaybePromise<T> = Promise<T> | T;
 
 export function isPromise<T>(val: MaybePromise<T>): val is Promise<T> {
@@ -8,6 +10,9 @@ export function isPromise<T>(val: MaybePromise<T>): val is Promise<T> {
  * Simple, never expiring in-memory cache
  */
 export default abstract class PromiseMap<K, V> {
+	flushEvent: TypedEvent<[K, V | null]> = new TypedEvent();
+	populateEvent: TypedEvent<[K, V | null]> = new TypedEvent();
+
 	protected abstract getPromise(key: K): Promise<V | null>;
 
 	protected normalizeKey: ((key: K) => K) | null = null;
@@ -32,7 +37,14 @@ export default abstract class PromiseMap<K, V> {
 
 	delete(key: K): boolean {
 		if (this.normalizeKey) key = this.normalizeKey(key);
-		return this.map.delete(key) || this.resolvedMap.delete(key);
+		let found = this.map.delete(key);
+		let oldValue;
+		if (this.resolvedMap.has(key))
+			oldValue = this.resolvedMap.get(key);
+		if (this.resolvedMap.delete(key)) found = true;
+		if (oldValue !== undefined)
+			this.flushEvent.emit([key, oldValue]);
+		return found;
 	}
 
 	getAll: (keys: K[]) => MaybePromise<(V | null)[]> = this._getAll;
@@ -72,6 +84,7 @@ export default abstract class PromiseMap<K, V> {
 			promise.then(v => {
 				this.map.delete(key);
 				this.resolvedMap.set(key, v);
+				this.populateEvent.emit([key, v]);
 			});
 			promise.catch(_e => {
 				this.map.delete(key);
