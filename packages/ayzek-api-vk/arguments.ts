@@ -2,7 +2,7 @@ import { ArgumentType } from "@ayzek/command-parser/arguments";
 import { ExpectedSomethingError } from "@ayzek/command-parser/error";
 import type StringReader from "@ayzek/command-parser/reader";
 import { NoSuchUserError } from "@ayzek/core/argument";
-import type { AyzekParseEntryPoint } from "@ayzek/core/plugin";
+import type { AyzekParseEntryPoint } from "@ayzek/core/command";
 import type VKApi from ".";
 import type VKUser from "./user/user";
 

@@ -1,0 +1,21 @@
+{
+	"name": "@ayzek/api-vk",
+	"version": "1.0.0",
+	"main": "index.js",
+	"license": "MIT",
+	"dependencies": {
+		"@ayzek/command-parser": "1.0.2",
+		"@ayzek/core": "workspace:*",
+		"@ayzek/model": "workspace:*",
+		"@ayzek/text": "workspace:*",
+		"@meteor-it/logger": "2.3.45",
+		"@meteor-it/mime": "0.4.23",
+		"@meteor-it/queue": "2.0.49",
+		"@meteor-it/utils": "1.3.33",
+		"@meteor-it/xrest": "1.3.58",
+		"lodash": "^4.17.15"
+	},
+	"devDependencies": {
+		"@types/lodash": "^4.14.150"
+	}
+}

@@ -1,6 +1,6 @@
-import type { User } from "@ayzek/core/model/conversation";
-import type { AyzekCommandRequirement } from "@ayzek/core/plugin";
-import { Attribute, AttributeConstructor, AttributeCreator, AttributeStorage } from ".";
+import type { User } from "@ayzek/model/conversation";
+import type { AyzekCommandRequirement } from "@ayzek/core/command";
+import { Attribute, AttributeConstructor, AttributeCreator, AttributeStorage } from "@ayzek/attribute";
 
 export abstract class RoleAttribute extends Attribute {
 	public constructor(public roles: string[]) {

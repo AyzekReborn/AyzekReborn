@@ -3,6 +3,7 @@ import type { Api } from "./api";
 import type { Attachment, Image } from "./attachment";
 import type { IMessage, IMessageOptions } from "./message";
 import type { Text, TextPart } from '@ayzek/text';
+import { ayzekToOpaque } from "./text";
 
 enum ConversationType {
 	USER,
@@ -26,15 +27,15 @@ export abstract class Conversation<A extends Api<A>> implements IConversation<A>
 		this.api = api;
 	}
 
-	attachmentStorage: AttributeStorage<this> = ownerlessEmptyAttributeStorage;
+	attributeStorage: AttributeStorage<this> = ownerlessEmptyAttributeStorage;
 
-	async send(text: Text<A>, attachments: Attachment[] = [], options: IMessageOptions = {}) {
+	async send(text: Text, attachments: Attachment[] = [], options: IMessageOptions = {}) {
 		return await this.api.send(this, text, attachments, options);
 	}
 
 	// TODO: Move to message context somehow?
 	async waitForNext(shouldAccept: (message: IMessage<A>) => boolean, timeout: number | null): Promise<IMessage<A>> {
-		throw new Error('Method is not overriden by ayzek core');
+		throw new Error('Method is not overridden by ayzek core');
 	}
 
 	get isUser() {
@@ -114,10 +115,10 @@ export abstract class User<A extends Api<A>> extends Conversation<A> {
 	}
 
 	get reference(): TextPart {
-		return {
-			type: 'mentionPart',
-			data: this,
-		} as MentionTextPart<A>
+		return ayzekToOpaque({
+			ayzekPart: 'user',
+			user: this,
+		});
 	}
 }
 
@@ -148,10 +149,10 @@ export abstract class Chat<A extends Api<A>> extends Conversation<A> {
 
 	abstract get photoImage(): Promise<Image | null>;
 
-	get reference(): TextPart<A> {
-		return {
-			type: 'chatRefPart',
-			data: this,
-		} as ChatReferenceTextPart<A>
+	get reference(): TextPart {
+		return ayzekToOpaque({
+			ayzekPart: 'chat',
+			chat: this,
+		});
 	}
 }

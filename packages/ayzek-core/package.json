@@ -4,17 +4,21 @@
 	"main": "index.js",
 	"license": "MIT",
 	"dependencies": {
+		"@ayzek/attribute": "workspace:*",
 		"@ayzek/command-parser": "^1.0.2",
+		"@ayzek/model": "workspace:*",
+		"@ayzek/text": "workspace:*",
 		"@meteor-it/ajson": "^0.4.20",
+		"@meteor-it/logger": "2.3.45",
 		"@meteor-it/mime": "^0.4.23",
-		"@meteor-it/plugin-loader": "^1.6.9",
+		"@meteor-it/plugin-loader": "^1.6.10",
 		"@meteor-it/utils": "1.3.33",
-		"@meteor-it/xrest": "^1.3.57",
+		"@meteor-it/xrest": "^1.3.58",
 		"stream-now": "^1.1.1",
 		"temp": "^0.9.1"
 	},
 	"devDependencies": {
-		"@types/node": "13.13.0",
+		"@types/node": "13.13.2",
 		"@types/temp": "^0.8.34"
 	},
 	"scripts": {

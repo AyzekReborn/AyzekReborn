@@ -3,8 +3,8 @@ import { Chat, User } from "./conversation";
 
 export const OPAQUE_TYPE = Symbol('text:ayzek')
 
-export type UserTextPart = { ayzekPart: 'user', chat: Chat<any> };
-export type ChatTextPart = { ayzekPart: 'chat', user: User<any> };
+export type UserTextPart = { ayzekPart: 'user', user: User<any> };
+export type ChatTextPart = { ayzekPart: 'chat', chat: Chat<any> };
 
 export type AyzekTextPart = UserTextPart | ChatTextPart;
 

@@ -5,7 +5,7 @@ import type { Suggestions, SuggestionsBuilder } from "@ayzek/command-parser/sugg
 import type { Api } from "@ayzek/model/api";
 import type { User } from "@ayzek/model/conversation";
 import type { Ayzek } from "./ayzek";
-import type { AyzekCommandContext, AyzekParseEntryPoint } from "./plugin";
+import type { AyzekCommandContext, AyzekParseEntryPoint } from "./command";
 
 export type ParsedUserArgument = [Api<any>, any, Ayzek<any>];
 

@@ -1,16 +1,16 @@
 {
 	"private": true,
 	"workspaces": [
-		"ayzek-api-discord",
-		"ayzek-api-telegram",
-		"ayzek-api-vk",
-		"ayzek-attribute",
-		"ayzek-core",
-		"ayzek-data",
-		"ayzek-model",
-		"ayzek-plugin-flood",
-		"ayzek-plugin-main",
-		"ayzek-plugin-util",
-		"ayzek-text"
-	]
+		"packages/*"
+	],
+	"devDependencies": {
+		"@types/node": "^13.13.2",
+		"@yarnpkg/pnpify": "^2.0.0-rc.21",
+		"typescript": "^3.9.0-dev.20200422"
+	},
+	"scripts": {
+		"berrify": "yarn set version berry",
+		"sdk": "yarn pnpify --sdk",
+		"prepare": "yarn berrify && yarn && yarn sdk"
+	}
 }

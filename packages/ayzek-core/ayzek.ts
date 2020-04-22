@@ -1,19 +1,20 @@
+import { AttributeRepository, AttributeStorage, ownerlessEmptyAttributeStorage } from "@ayzek/attribute";
 import type { ArgumentType } from "@ayzek/command-parser/arguments";
 import { CommandDispatcher } from "@ayzek/command-parser/command";
 import { CommandSyntaxError, UserDisplayableError } from "@ayzek/command-parser/error";
-import type Logger from "@meteor-it/logger";
-import type ApiFeature from "@ayzek/model/features";
 import { Api } from "@ayzek/model/api";
 import type { Chat, Conversation, Guild, User } from "@ayzek/model/conversation";
 import type { MessageEvent } from "@ayzek/model/events/message";
-import { craftCommandPayload, parsePayload } from "./model/payload";
-import { Text, joinText } from "@ayzek/text";
-import { exclude } from "./util/array";
+import type ApiFeature from "@ayzek/model/features";
+import { joinText, Text } from "@ayzek/text";
+import type Logger from "@meteor-it/logger";
 import type { Disposable } from "@meteor-it/utils";
-import { levenshteinDistance } from "./util/levenshtein";
-import { AttributeRepository, AttributeStorage, ownerlessEmptyAttributeStorage } from "@ayzek/attribute";
+import type { AyzekCommandSource, AyzekParseEntryPoint, AyzekParseResults } from './command';
 import { CommandEventContext, MessageEventContext } from "./context";
-import type { AyzekCommandSource, AyzekParseEntryPoint, AyzekParseResults, IMessageListener, PluginInfo } from "./plugin";
+import { craftCommandPayload, parsePayload } from "./model/payload";
+import type { IMessageListener, PluginInfo } from "./plugin";
+import { exclude } from "./util/array";
+import { levenshteinDistance } from "./util/levenshtein";
 
 const FIX_MAX_DISTANCE = 3;
 
@@ -23,25 +24,25 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 	 */
 	plugins: PluginInfo[] = [];
 
-	userAttachmentRepository: AttributeRepository<User<any>> = new AttributeRepository();
-	chatAttachmentRepository: AttributeRepository<Chat<any>> = new AttributeRepository();
+	userAttributeRepository: AttributeRepository<User<any>> = new AttributeRepository();
+	chatAttributeRepository: AttributeRepository<Chat<any>> = new AttributeRepository();
 
-	ayzekAttachmentRepository: AttributeRepository<Ayzek<A>> = new AttributeRepository();
-	attachmentStorage: AttributeStorage<Ayzek<A>> = ownerlessEmptyAttributeStorage;
+	ayzekAttributeRepository: AttributeRepository<Ayzek<A>> = new AttributeRepository();
+	attributeStorage: AttributeStorage<Ayzek<A>> = ownerlessEmptyAttributeStorage;
 
-	async onAyzekAttachmentRepositoryChange() {
-		this.attachmentStorage = await this.ayzekAttachmentRepository.getStorageFor(this);
+	async onAyzekAttributeRepositoryChange() {
+		this.attributeStorage = await this.ayzekAttributeRepository.getStorageFor(this);
 	}
 
 	commandDispatcher = new CommandDispatcher<AyzekCommandSource, Text>();
 	listeners: IMessageListener[] = [];
 
 	async attachToUser(user: User<any>) {
-		user.attachmentStorage = await this.userAttachmentRepository.getStorageFor(user);
+		user.attributeStorage = await this.userAttributeRepository.getStorageFor(user);
 	}
 
 	async attachToChat(chat: Chat<any>) {
-		chat.attachmentStorage = await this.chatAttachmentRepository.getStorageFor(chat);
+		chat.attributeStorage = await this.chatAttributeRepository.getStorageFor(chat);
 		await Promise.all([...chat.users, ...chat.admins].map(user => this.attachToUser(user)));
 	}
 
@@ -246,7 +247,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 				} else {
 					await source.send([
 						err.message,
-						err.reader ? ['\n', `${commandPrefix}`, err.reader] : [],
+						err.reader ? ['\n', `${commandPrefix}`, err.reader.toString()] : [],
 						suggestionText
 					]);
 				}
