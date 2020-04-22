@@ -6,21 +6,27 @@ Er ist wieder da
 
 ### Write once, use everywhere
 
-Supports multiple messengers, current support list is:
+Supports multiple messengers, with ability to support more.
 
-- [VKontakte](./docs/api/VK_Configuration.md)
-- [Discord](./docs/api/DS_Configuration.md)
-- [Telegram](./docs/api/TG_Configuration.md)
+Some messenger implementations are written in this repo:
 
-[Messenger API documentation](./docs/api/README.md)
+- [VK](./ayzek-api-vk/docs/Configuration.md)
+- [Discord](./ayzek-api-discord/docs/Configuration.md)
+- [Telegram](./ayzek-api-telegram/docs/Configuration.md)
+
+[Messenger API documentation](./docs/API.md)
 
 ### Plugin system
 
-See embedded plugins in `src/plugins`
+Some plugins are located in this repo, see `ayzek-plugin-X`
+
+[Plugin API documentation](./docs/Plugin.md)
 
 ### Powerfull command system
 
 Inspired from mojang's brigadier
+
+[Split into another repo](https://github.com/AyzekReborn/Command-Parser)
 
 ### Lightweight
 
@@ -28,52 +34,4 @@ No heavy enterprise framework used
 
 ## Development
 
-### Prerequisites
-
-- Node.js v12.11.1
-- Yarn 1.19.1
-
-### Clone repo
-
-```sh
-git clone https://github.com/CertainLach/AyzekReborn && cd AyzekReborn
-```
-
-### Install dependencies
-
-```sh
-yarn
-```
-
-### Configure access tokens
-
-```sh
-cp src/config.example.yaml src/config.yaml
-vim src/config.yaml
-```
-
-### Start watcher/rebuilder (In another terminal window)
-
-```sh
-yarn zarbis development
-```
-
-### Start bot
-
-```sh
-# with source maps
-node -r source-map-support/register dist/development/start
-# or, if you are ok with broken stack traces
-node dist/development/start
-```
-
-### Private plugin development
-
-Because of [this issue](https://github.com/microsoft/vscode/issues/37947), private plugins in src/privatePlugins are not visible in source control in vscode
-To resolve this issue, write this in top level .gitmodules (Which is already placed in .gitignore)
-
-```txt
-[submodule "some"]
-path = src/privatePlugins/SomePlugin
-url = dummy
-```
+TODO

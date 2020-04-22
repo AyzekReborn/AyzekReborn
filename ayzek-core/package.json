@@ -1,0 +1,24 @@
+{
+	"name": "@ayzek/core",
+	"version": "1.0.1",
+	"main": "index.js",
+	"license": "MIT",
+	"dependencies": {
+		"@ayzek/command-parser": "^1.0.2",
+		"@meteor-it/ajson": "^0.4.20",
+		"@meteor-it/mime": "^0.4.23",
+		"@meteor-it/plugin-loader": "^1.6.9",
+		"@meteor-it/utils": "1.3.33",
+		"@meteor-it/xrest": "^1.3.57",
+		"stream-now": "^1.1.1",
+		"temp": "^0.9.1"
+	},
+	"devDependencies": {
+		"@types/node": "13.13.0",
+		"@types/temp": "^0.8.34"
+	},
+	"scripts": {
+		"build": "tsc -b .",
+		"prepublish": "yarn build"
+	}
+}

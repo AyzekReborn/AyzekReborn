@@ -9,39 +9,39 @@
   dependencies:
     is-equal "^1.6.1"
 
-"@discordjs/collection@^0.1.5":
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/@discordjs/collection/-/collection-0.1.5.tgz#1781c620b4c88d619bd0373a1548e5a6025e3d3a"
-  integrity sha512-CU1q0UXQUpFNzNB7gufgoisDHP7n+T3tkqTsp3MNUkVJ5+hS3BCvME8uCXAUFlz+6T2FbTCu75A+yQ7HMKqRKw==
-
-"@discordjs/form-data@^3.0.1":
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/@discordjs/form-data/-/form-data-3.0.1.tgz#5c9e6be992e2e57d0dfa0e39979a850225fb4697"
-  integrity sha512-ZfFsbgEXW71Rw/6EtBdrP5VxBJy4dthyC0tpQKGKmYFImlmmrykO14Za+BiIVduwjte0jXEBlhSKf0MWbFp9Eg==
+"@ayzek/core@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@ayzek/core/-/core-1.0.0.tgz#2b7eab10ed123df83972143e21839fc47a49f681"
+  integrity sha512-veTEErfDLwlKCoCEOaZI2t/HsnvGseSr03APncLVw8mQ3GnyeU1qAnn/Vf+p/UeBYtfwFnIzPVoAw8gcyWZ74A==
   dependencies:
-    asynckit "^0.4.0"
-    combined-stream "^1.0.8"
-    mime-types "^2.1.12"
+    "@ayzek/command-parser" "^1.0.2"
+    "@meteor-it/ajson" "^0.4.20"
+    "@meteor-it/mime" "^0.4.23"
+    "@meteor-it/plugin-loader" "^1.6.9"
+    "@meteor-it/utils" "^1.3.31"
+    "@meteor-it/xrest" "^1.3.57"
+    stream-now "^1.1.1"
+    temp "^0.9.1"
 
 "@meteor-it/ajson@^0.4.20":
   version "0.4.20"
   resolved "https://registry.yarnpkg.com/@meteor-it/ajson/-/ajson-0.4.20.tgz#817bd943eb14310f281076eaabbdff0ac6dcb246"
   integrity sha512-8zz6zcrzk8WrgpVnaMkzRNWo8LFnI2cAI/Kr/oz5hnOCyd3/04yOcOuHtyiF6JG1eLu1casR6+69LRMBZHp+tg==
 
-"@meteor-it/fs@^1.2.19", "@meteor-it/fs@^1.2.20":
-  version "1.2.20"
-  resolved "https://registry.yarnpkg.com/@meteor-it/fs/-/fs-1.2.20.tgz#a6d7b9a9dbcaa336b6d0aea90c2dafaa1b1f95de"
-  integrity sha512-wR2pG/1AOURxB+hjfLaLWlBG5L/OpisebC320An1FCeCRJ3waZzbvcaCPuIyAW34TvzqY8kA5GhBhA6GUib8pg==
+"@meteor-it/fs@^1.2.19":
+  version "1.2.19"
+  resolved "https://registry.yarnpkg.com/@meteor-it/fs/-/fs-1.2.19.tgz#cc3e7bd74eab2dae9f50810b11f1ba64fd2c7e62"
+  integrity sha512-50pD9k5mttM6tU/1nQ1eoyfMeBTC/4KO5n1oY31GTHBKoG2KRft1cQv9hu5PR1Ruq+myVww/LTZA3MGxqIyTFQ==
   dependencies:
-    "@meteor-it/utils" "^1.3.33"
+    "@meteor-it/utils" "^1.3.31"
 
-"@meteor-it/logger@^2.3.44", "@meteor-it/logger@^2.3.45":
-  version "2.3.45"
-  resolved "https://registry.yarnpkg.com/@meteor-it/logger/-/logger-2.3.45.tgz#3b2fe8e1777e2f210e22a04e8e92cca397ee72f1"
-  integrity sha512-njnr7tJ/Zmenp+YyIiO0dAxo9v6Zz/GUkGjVxurs0jigFfkHNxXahX7JixgWL5Apgce8K1KnVKGIAIEfVYiEig==
+"@meteor-it/logger@^2.3.44":
+  version "2.3.44"
+  resolved "https://registry.yarnpkg.com/@meteor-it/logger/-/logger-2.3.44.tgz#43ac08880db4c286ae33f2a28cbbeb787c5f64ad"
+  integrity sha512-0W2SfoOH/C9GM/FNalCvch2Kq59rMiqFLY52FnVgw8nJoBxmc5ITNlsVqi1TOSpnunRGMHg8rV2BwUq8/StC2g==
   dependencies:
     "@meteor-it/terminal" "^0.5.25"
-    "@meteor-it/utils" "^1.3.33"
+    "@meteor-it/utils" "^1.3.31"
 
 "@meteor-it/mime@^0.4.23":
   version "0.4.23"
@@ -49,85 +49,42 @@
   integrity sha512-sVWT0WoyBKyw9h9QySCsduIQMtS82rkS2E8sgaAybIYZ6phs/h7lmrcfJv273ML0Cy09ExgOavrRu7K13DTY7A==
 
 "@meteor-it/plugin-loader@^1.6.9":
-  version "1.6.10"
-  resolved "https://registry.yarnpkg.com/@meteor-it/plugin-loader/-/plugin-loader-1.6.10.tgz#3883ea2358dbed7ff8bab5668f37622492e9f1ea"
-  integrity sha512-72xdPNcnkxms6eHPVlsObRmMVbB3E5y3ErQLKfUKjmh50//9EHzd+M4dCEzLDRnw9LQ8yK3DGfGwFXg5OcDrHQ==
+  version "1.6.9"
+  resolved "https://registry.yarnpkg.com/@meteor-it/plugin-loader/-/plugin-loader-1.6.9.tgz#c1fbb06f911b3ea7595c69ec22cace48d6f9e3ec"
+  integrity sha512-nCjOOpon9jFquiWNKhnruNKWfZEghNHJOdHZzU8bt+c3ACSNSk2eDqJh0rESCJSIEiVy8enZ7+QP63WwmVvK+g==
   dependencies:
-    "@meteor-it/fs" "^1.2.20"
-    "@meteor-it/logger" "^2.3.45"
-    "@meteor-it/queue" "^2.0.49"
-    "@meteor-it/utils" "^1.3.33"
+    "@meteor-it/fs" "^1.2.19"
+    "@meteor-it/logger" "^2.3.44"
+    "@meteor-it/queue" "^2.0.48"
+    "@meteor-it/utils" "^1.3.31"
     chokidar "^3.3.0"
 
-"@meteor-it/queue@^2.0.48", "@meteor-it/queue@^2.0.49":
-  version "2.0.49"
-  resolved "https://registry.yarnpkg.com/@meteor-it/queue/-/queue-2.0.49.tgz#b27e12f10ce4383a8b9b0d824cc04a9089a114da"
-  integrity sha512-5mShM/fLY8u3KC0Jnt7Kg9uq+d4yaAXYCVsOy3ygNELyFaYol72wBVU/vWKFXmZ2ahktqojBpdlNwmlh6Ny42Q==
+"@meteor-it/queue@^2.0.48":
+  version "2.0.48"
+  resolved "https://registry.yarnpkg.com/@meteor-it/queue/-/queue-2.0.48.tgz#0f6c387b59a8ed57449a089212a4c219e2be859b"
+  integrity sha512-+5i2L4jBnzEbkAEqqEt+IpBnw1QjP9CXgnC5JMHkuQKWqfo9dJagndTGGzoeMJkVo54kwLBnLXsD1LqJE0gxtQ==
   dependencies:
-    "@meteor-it/logger" "^2.3.45"
-
-"@meteor-it/random@0.4.34":
-  version "0.4.34"
-  resolved "https://registry.yarnpkg.com/@meteor-it/random/-/random-0.4.34.tgz#1cf86c0c74a92c3ed01838fb110a7da035a0e3bf"
-  integrity sha512-DjmkHfcX2ejtraiNeNrkTo/5V8wOHNLwLKMfQs7TYrMarnuqecDe94QJ+HgtNTBcKImRK+/m4yQBd7LW21zF7A==
-  dependencies:
-    "@meteor-it/utils" "^1.3.33"
-    "@types/seedrandom" "^2.4.28"
-    seedrandom "^3.0.5"
+    "@meteor-it/logger" "^2.3.44"
 
 "@meteor-it/terminal@^0.5.25":
   version "0.5.25"
   resolved "https://registry.yarnpkg.com/@meteor-it/terminal/-/terminal-0.5.25.tgz#6361944e79997a9a6600c1a566a77a6cb7a6f866"
   integrity sha512-SDORSrTY39fEMe/hM5FWr7+gh0ikTNeGLbpJIigRS4DUID3sECNhlNtMmKMFs88vhfKUtKw7aeUGNiDZckOGEw==
 
-"@meteor-it/utils@1.3.33", "@meteor-it/utils@^1.3.33":
-  version "1.3.33"
-  resolved "https://registry.yarnpkg.com/@meteor-it/utils/-/utils-1.3.33.tgz#f7fb12737b6279cfee97f3b14337fb5da8707157"
-  integrity sha512-GzcaZbj0SUf8+2f3yb/GGQldJwCGfg4+L+nqeqx9TpE7jQm2mIPZ/VYmATZpSc8eFPTFZtisHag0jKYpWGSHPQ==
+"@meteor-it/utils@^1.3.31":
+  version "1.3.31"
+  resolved "https://registry.yarnpkg.com/@meteor-it/utils/-/utils-1.3.31.tgz#c800a097da50ed075e1ed40038fd43b125c81616"
+  integrity sha512-h7PHUfhBYMvk9p0uBjVs5j2/6zVuqVdPtKDecxPF56Sg6H1A37H0LBvxrfwT30OGGLpnW3P/HDLDVI941VL2lg==
 
-"@meteor-it/xrest@^1.3.57", "@meteor-it/xrest@^1.3.58":
-  version "1.3.58"
-  resolved "https://registry.yarnpkg.com/@meteor-it/xrest/-/xrest-1.3.58.tgz#458407361664a80e428c44725d510881dceecda8"
-  integrity sha512-OpzvDPQcSdZ8abnFShRUPzzlkAstSY0Txkmo5FuLMxKssTv/pRZYE2SfYlRpyn8pMNJqkHNbcoIc3Tosc7hbjg==
+"@meteor-it/xrest@^1.3.57":
+  version "1.3.57"
+  resolved "https://registry.yarnpkg.com/@meteor-it/xrest/-/xrest-1.3.57.tgz#693041083facd8d80628896bfb3dbd5bd56c90c8"
+  integrity sha512-hdYN0OAGFKxSSwaS9z6fWOymmAeAfi1iRtdlTEdvtwh9y8zVJ8S9/mxKIKtMc32LIBVwmeqKLt8pA9aL9/Ptfw==
   dependencies:
-    "@meteor-it/fs" "^1.2.20"
-    "@meteor-it/logger" "^2.3.45"
-    "@meteor-it/utils" "^1.3.33"
+    "@meteor-it/fs" "^1.2.19"
+    "@meteor-it/logger" "^2.3.44"
+    "@meteor-it/utils" "^1.3.31"
     iconv-lite "^0.5.0"
-
-"@types/lodash@^4.14.150":
-  version "4.14.150"
-  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.150.tgz#649fe44684c3f1fcb6164d943c5a61977e8cf0bd"
-  integrity sha512-kMNLM5JBcasgYscD9x/Gvr6lTAv2NVgsKtet/hm93qMyf/D1pt+7jeEZklKJKxMVmXjxbRVQQGfqDSfipYCO6w==
-
-"@types/node@*":
-  version "13.13.2"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-13.13.2.tgz#160d82623610db590a64e8ca81784e11117e5a54"
-  integrity sha512-LB2R1Oyhpg8gu4SON/mfforE525+Hi/M1ineICEDftqNVTyFg1aRIeGuTvXAoWHc4nbrFncWtJgMmoyRvuGh7A==
-
-"@types/node@13.13.0":
-  version "13.13.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-13.13.0.tgz#30d2d09f623fe32cde9cb582c7a6eda2788ce4a8"
-  integrity sha512-WE4IOAC6r/yBZss1oQGM5zs2D7RuKR6Q+w+X2SouPofnWn+LbCqClRyhO3ZE7Ix8nmFgo/oVuuE01cJT2XB13A==
-
-"@types/seedrandom@^2.4.28":
-  version "2.4.28"
-  resolved "https://registry.yarnpkg.com/@types/seedrandom/-/seedrandom-2.4.28.tgz#9ce8fa048c1e8c85cb71d7fe4d704e000226036f"
-  integrity sha512-SMA+fUwULwK7sd/ZJicUztiPs8F1yCPwF3O23Z9uQ32ME5Ha0NmDK9+QTsYE4O2tHXChzXomSWWeIhCnoN1LqA==
-
-"@types/temp@^0.8.34":
-  version "0.8.34"
-  resolved "https://registry.yarnpkg.com/@types/temp/-/temp-0.8.34.tgz#03e4b3cb67cbb48c425bbf54b12230fef85540ac"
-  integrity sha512-oLa9c5LHXgS6UimpEVp08De7QvZ+Dfu5bMQuWyMhf92Z26Q10ubEMOWy9OEfUdzW7Y/sDWVHmUaLFtmnX/2j0w==
-  dependencies:
-    "@types/node" "*"
-
-abort-controller@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/abort-controller/-/abort-controller-3.0.0.tgz#eaf54d53b62bae4138e809ca225c8439a6efb392"
-  integrity sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==
-  dependencies:
-    event-target-shim "^5.0.0"
 
 anymatch@~3.1.1:
   version "3.1.1"
@@ -136,11 +93,6 @@ anymatch@~3.1.1:
   dependencies:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
-
-asynckit@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
-  integrity sha1-x57Zf380y48robyXkLzDZkdLS3k=
 
 balanced-match@^1.0.0:
   version "1.0.0"
@@ -182,13 +134,6 @@ chokidar@^3.3.0:
   optionalDependencies:
     fsevents "~2.1.2"
 
-combined-stream@^1.0.8:
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/combined-stream/-/combined-stream-1.0.8.tgz#c3d45a8b34fd730631a110a8a2520682b31d5a7f"
-  integrity sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==
-  dependencies:
-    delayed-stream "~1.0.0"
-
 concat-map@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/concat-map/-/concat-map-0.0.1.tgz#d8a96bd77fd68df7793a73036a3ba0d5405d477b"
@@ -200,25 +145,6 @@ define-properties@^1.1.2, define-properties@^1.1.3:
   integrity sha512-3MqfYKj2lLzdMSf8ZIZE/V+Zuy+BgD6f164e8K2w7dgnpKArBDerGYpM46IYYcjnkdPNMjPk9A6VFB8+3SKlXQ==
   dependencies:
     object-keys "^1.0.12"
-
-delayed-stream@~1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/delayed-stream/-/delayed-stream-1.0.0.tgz#df3ae199acadfb7d440aaae0b29e2272b24ec619"
-  integrity sha1-3zrhmayt+31ECqrgsp4icrJOxhk=
-
-discord.js@^12.2.0:
-  version "12.2.0"
-  resolved "https://registry.yarnpkg.com/discord.js/-/discord.js-12.2.0.tgz#31018732e42a495c92655055192221eab2ad11a9"
-  integrity sha512-Ueb/0SOsxXyqwvwFYFe0msMrGqH1OMqpp2Dpbplnlr4MzcRrFWwsBM9gKNZXPVBHWUKiQkwU8AihXBXIvTTSvg==
-  dependencies:
-    "@discordjs/collection" "^0.1.5"
-    "@discordjs/form-data" "^3.0.1"
-    abort-controller "^3.0.0"
-    node-fetch "^2.6.0"
-    prism-media "^1.2.0"
-    setimmediate "^1.0.5"
-    tweetnacl "^1.0.3"
-    ws "^7.2.1"
 
 es-abstract@^1.17.0-next.1, es-abstract@^1.17.4, es-abstract@^1.17.5:
   version "1.17.5"
@@ -259,11 +185,6 @@ es-to-primitive@^1.2.1:
     is-date-object "^1.0.1"
     is-symbol "^1.0.2"
 
-event-target-shim@^5.0.0:
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/event-target-shim/-/event-target-shim-5.0.1.tgz#5d4d3ebdf9583d63a5333ce2deb7480ab2b05789"
-  integrity sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==
-
 fill-range@^7.0.1:
   version "7.0.1"
   resolved "https://registry.yarnpkg.com/fill-range/-/fill-range-7.0.1.tgz#1919a6a7c75fe38b2c7c77e5198535da9acdda40"
@@ -277,9 +198,9 @@ fs.realpath@^1.0.0:
   integrity sha1-FQStJSMVjKpA20onh8sBQRmU6k8=
 
 fsevents@~2.1.2:
-  version "2.1.3"
-  resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.1.3.tgz#fb738703ae8d2f9fe900c33836ddebee8b97f23e"
-  integrity sha512-Auw9a4AxqWpa9GUfj370BMPzzyncfBABW8Mab7BGWBYDj4Isgq+cDKtx0i6u9jcX9pQDnswsaaOTgTmA5pEjuQ==
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.1.2.tgz#4c0a1fb34bc68e543b4b82a9ec392bfbda840805"
+  integrity sha512-R4wDiBwZ0KzpgOWetKDug1FZcYhqYnUYKtfZYt4mD5SBz76q0KR4Q9o7GIPamsVPGmW3EYPPJ0dOOjvx32ldZA==
 
 function-bind@^1.1.1:
   version "1.1.1"
@@ -481,34 +402,12 @@ isarray@^2.0.5:
   resolved "https://registry.yarnpkg.com/isarray/-/isarray-2.0.5.tgz#8af1e4c1221244cc62459faf38940d4e644a5723"
   integrity sha512-xHjhDr3cNBK0BzdUJSPXZntQUx/mwMS5Rw4A7lPJ90XGAO6ISP/ePDNuo0vhqOZU+UD5JoodwCAAoZQd3FeAKw==
 
-lodash@^4.17.15:
-  version "4.17.15"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
-  integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
-
-mime-db@1.43.0:
-  version "1.43.0"
-  resolved "https://registry.yarnpkg.com/mime-db/-/mime-db-1.43.0.tgz#0a12e0502650e473d735535050e7c8f4eb4fae58"
-  integrity sha512-+5dsGEEovYbT8UY9yD7eE4XTc4UwJ1jBYlgaQQF38ENsKR3wj/8q8RFZrF9WIZpB2V1ArTVFUva8sAul1NzRzQ==
-
-mime-types@^2.1.12:
-  version "2.1.26"
-  resolved "https://registry.yarnpkg.com/mime-types/-/mime-types-2.1.26.tgz#9c921fc09b7e149a65dfdc0da4d20997200b0a06"
-  integrity sha512-01paPWYgLrkqAyrlDorC1uDwl2p3qZT7yl806vW7DvDoxwXi46jsjFbg+WdwotBIk6/MbEhO/dh5aZ5sNj/dWQ==
-  dependencies:
-    mime-db "1.43.0"
-
 minimatch@^3.0.4:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-3.0.4.tgz#5166e286457f03306064be5497e8dbb0c3d32083"
   integrity sha512-yJHVQEhyqPLUTgt9B83PXu6W3rx4MvvHvSUvToogpwoGDOUQ+yDrR0HRot+yOCdCO7u4hX3pWft6kWBBcqh0UA==
   dependencies:
     brace-expansion "^1.1.7"
-
-node-fetch@^2.6.0:
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.0.tgz#e633456386d4aa55863f676a7ab0daa8fdecb0fd"
-  integrity sha512-8dG4H5ujfvFiqDmVu9fQ5bOHUC15JMjMY/Zumv26oOvvVJjM67KF8koCWIabKQ1GJIa9r2mMZscBq/TbdOcmNA==
 
 normalize-path@^3.0.0, normalize-path@~3.0.0:
   version "3.0.0"
@@ -562,11 +461,6 @@ picomatch@^2.0.4, picomatch@^2.0.7:
   resolved "https://registry.yarnpkg.com/picomatch/-/picomatch-2.2.2.tgz#21f333e9b6b8eaff02468f5146ea406d345f4dad"
   integrity sha512-q0M/9eZHzmr0AulXyPwNfZjtwZ/RBZlbN3K3CErVrk50T2ASYI7Bye0EvekFY3IP1Nt2DHu0re+V2ZHIpMkuWg==
 
-prism-media@^1.2.0:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/prism-media/-/prism-media-1.2.1.tgz#168f323712bcaacb1d70ae613bf9d9dc44cf43d4"
-  integrity sha512-R3EbKwJiYlTvGwcG1DpUt+06DsxOGS5W4AMEHT7oVOjG93MjpdhGX1whHyjnqknylLMupKAsKMEXcTNRbPe6Vw==
-
 readdirp@~3.3.0:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/readdirp/-/readdirp-3.3.0.tgz#984458d13a1e42e2e9f5841b129e162f369aff17"
@@ -585,16 +479,6 @@ rimraf@~2.6.2:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/safer-buffer/-/safer-buffer-2.1.2.tgz#44fa161b0187b9549dd84bb91802f9bd8385cd6a"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
-
-seedrandom@^3.0.5:
-  version "3.0.5"
-  resolved "https://registry.yarnpkg.com/seedrandom/-/seedrandom-3.0.5.tgz#54edc85c95222525b0c7a6f6b3543d8e0b3aa0a7"
-  integrity sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==
-
-setimmediate@^1.0.5:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/setimmediate/-/setimmediate-1.0.5.tgz#290cbb232e306942d7d7ea9b83732ab7856f8285"
-  integrity sha1-KQy7Iy4waULX1+qbg3Mqt4VvgoU=
 
 stream-now@^1.1.1:
   version "1.1.1"
@@ -651,11 +535,6 @@ to-regex-range@^5.0.1:
   dependencies:
     is-number "^7.0.0"
 
-tweetnacl@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/tweetnacl/-/tweetnacl-1.0.3.tgz#ac0af71680458d8a6378d0d0d050ab1407d35596"
-  integrity sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==
-
 which-boxed-primitive@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/which-boxed-primitive/-/which-boxed-primitive-1.0.1.tgz#cbe8f838ebe91ba2471bb69e9edbda67ab5a5ec1"
@@ -681,8 +560,3 @@ wrappy@1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
   integrity sha1-tSQ9jz7BqjXxNkYFvA0QNuMKtp8=
-
-ws@^7.2.1:
-  version "7.2.3"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-7.2.3.tgz#a5411e1fb04d5ed0efee76d26d5c46d830c39b46"
-  integrity sha512-HTDl9G9hbkNDk98naoR/cHDws7+EyYMOdL1BmjsZXRUjf7d+MficC4B7HLUPlSiho0vg+CWKrGIt/VJBd1xunQ==

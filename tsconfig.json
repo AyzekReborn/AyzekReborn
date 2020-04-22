@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"strict": true,
+		"allowSyntheticDefaultImports": true,
 		"noStrictGenericChecks": true,
 		"target": "es2017",
 		"module": "esnext",
