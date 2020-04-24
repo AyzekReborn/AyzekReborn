@@ -1,14 +1,16 @@
 import type { ArgumentType } from "@ayzek/command-parser/arguments";
 import StringReader from "@ayzek/command-parser/reader";
+import { replaceBut } from "@ayzek/core/util/escape";
+import { splitByMaxPossibleParts } from "@ayzek/core/util/split";
 import { Api } from "@ayzek/model/api";
 import type { Attachment, Image } from "@ayzek/model/attachment";
 import { Chat, Conversation, Gender, User } from "@ayzek/model/conversation";
 import { MessageEvent } from "@ayzek/model/events/message";
 import type ApiFeature from "@ayzek/model/features";
 import type { IMessage, IMessageOptions } from "@ayzek/model/message";
-import type { Text } from "@ayzek/text";
+import { opaqueToAyzek } from "@ayzek/model/text";
+import type { Text, TextPart } from "@ayzek/text";
 import type { MaybePromise } from "@meteor-it/utils";
-import { splitByMaxPossibleParts } from "@ayzek/core/util/split";
 import XRest from "@meteor-it/xrest";
 import * as https from 'https';
 
@@ -221,7 +223,7 @@ export default class TelegramApi extends Api<TelegramApi>{
 	}
 
 	async send(conv: Conversation<TelegramApi>, text: Text, _attachments: Attachment[], _options: IMessageOptions): Promise<void> {
-		const parts = splitByMaxPossibleParts(this.transformText(text), 4096);
+		const parts = splitByMaxPossibleParts(this.partToString(text), 4096);
 		for (let part of parts) {
 			await this.execute('sendMessage', {
 				chat_id: conv.targetId,
@@ -232,29 +234,56 @@ export default class TelegramApi extends Api<TelegramApi>{
 			});
 		}
 	}
-	transformText(text: Text): string {
-		if (!text) return '';
-		if (typeof text === 'number') {
-			return text + '';
-		} else if (typeof text === 'string') return text;
-		if (Array.isArray(text)) return text.map(this.transformText.bind(this)).join('');
-		if (text instanceof StringReader) return text.toString();
-		switch (text.type) {
-			case 'boldPart':
-				return this.transformText(text.data);
-			case 'chatRefPart':
-				return `<Чат ${text.data.title}>`;
-			case 'preservingWhitespace':
-				return this.transformText(text.data).replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
-			case 'code':
-				return `\`${this.transformText(text.data)}\``;
-			case 'hashTagPart':
-				return this.transformText(text.data).split(' ').map(e => e.length !== 0 ? `#${e}` : e).join(' ');
-			case 'mentionPart':
-				return `[${text.text ?? text.data.name}](tg://user?id=${text.data.targetId})`;
-			case 'underlinedPart':
-				return `_${this.transformText(text.data)}_`;
+
+	partToString(part: TextPart): string {
+		if (!part) return part + '';
+		if (typeof part === 'number') {
+			return part + '';
+		} else if (typeof part === 'string')
+			return part
+				.replace(/`/g, '\\`')
+				.replace(/_/g, '\\_')
+				.replace(/\*/g, '\\*');
+		if (part instanceof StringReader) {
+			return `${part.toStringWithCursor(`|`)}`
+		} else if (part instanceof Array) {
+			return part.map(l => this.partToString(l)).join('');
 		}
-		throw new Error(`Part ${JSON.stringify(text)} not handled`);
+		switch (part.type) {
+			case 'formatting': {
+				let string = this.partToString(part.data);
+				if (part.preserveMultipleSpaces) {
+					string = string.replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
+				}
+				if (part.bold) {
+					string = `**${replaceBut(string, /\*\*/g, /\\\*\*/g, '')}**`;
+				}
+				if (part.underlined) {
+					string = `__${replaceBut(string, /__/g, /\\__/g, '')}__`;
+				}
+				if (part.italic) {
+					string = `*${replaceBut(string, /\*/g, /\\\*/g, '')}*`;
+				}
+				return string;
+			}
+			case 'code':
+				return `\`\`\`${part.lang}\n${part.data.replace(/```/g, '\\`\\`\\`')}\`\`\``;
+			case 'opaque': {
+				const ayzekPart = opaqueToAyzek(part);
+				if (!ayzekPart) return '**IDK**';
+				switch (ayzekPart.ayzekPart) {
+					case 'user': {
+						return `[${ayzekPart.title ?? ayzekPart.user.name}](tg://user?id=${ayzekPart.user.targetId})`
+					}
+					case 'chat': {
+						return `<Чат ${(ayzekPart.chat as TelegramChat).title}>`;
+					}
+				}
+			}
+			case 'hashTagPart':
+				if (part.hideOnNoSupport) return '';
+				return this.partToString(part.data);
+		}
+		throw new Error(`Part ${JSON.stringify(part)} not handled`);
 	}
 }
