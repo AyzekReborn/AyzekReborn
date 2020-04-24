@@ -1,6 +1,7 @@
 import StringReader from "@ayzek/command-parser/reader";
-import { Api } from "@ayzek/model/api";
+import { replaceBut } from "@ayzek/core/util/escape";
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
+import { Api } from "@ayzek/model/api";
 import { Attachment, BaseFile, File } from "@ayzek/model/attachment";
 import type { Conversation } from "@ayzek/model/conversation";
 import { JoinGuildEvent, JoinReason } from "@ayzek/model/events/join";
@@ -9,6 +10,7 @@ import { MessageEvent } from "@ayzek/model/events/message";
 import { TypingEvent, TypingEventType } from "@ayzek/model/events/typing";
 import ApiFeature from "@ayzek/model/features";
 import type { IMessageOptions } from "@ayzek/model/message";
+import { opaqueToAyzek } from "@ayzek/model/text";
 import type { Text, TextPart } from "@ayzek/text";
 import { lookupByPath } from '@meteor-it/mime';
 import * as assert from 'assert';
@@ -173,7 +175,7 @@ export default class DiscordApi extends Api<DiscordApi> {
 	}
 
 	async send(conv: Conversation<DiscordApi>, text: Text, attachments: Attachment[] = [], _options: IMessageOptions = {}) {
-		const textParts = splitByMaxPossibleParts(this.textToString(text), MAX_MESSAGE_LENGTH);
+		const textParts = splitByMaxPossibleParts(this.partToString(text), MAX_MESSAGE_LENGTH);
 		const chat = await this.api.channels.fetch(conv.targetId) as TextChannel;
 		if (!chat) throw new Error(`Bad channel: ${conv.targetId}`);
 		const uploadPromises: [Promise<Buffer>, string][] = attachments.map(a => {
@@ -195,36 +197,54 @@ export default class DiscordApi extends Api<DiscordApi> {
 		assert.equal(textParts.length, 0, 'Text parts left unsent');
 	}
 
-	textToString(part: TextPart): string {
+	partToString(part: TextPart): string {
 		if (!part) return part + '';
 		if (typeof part === 'number') {
 			return part + '';
 		} else if (typeof part === 'string')
 			return part
 				.replace(/`/g, '\\`')
-				.replace(/_/g, '\\_');
+				.replace(/_/g, '\\_')
+				.replace(/\*/g, '\\*');
 		if (part instanceof StringReader) {
 			return `${part.toStringWithCursor(`|`)}`
 		} else if (part instanceof Array) {
-			return part.map(l => this.textToString(l)).join('');
+			return part.map(l => this.partToString(l)).join('');
 		}
 		switch (part.type) {
-			case 'preservingWhitespace':
-				return this.textToString(part.data).replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
+			case 'formatting': {
+				let string = this.partToString(part.data);
+				if (part.preserveMultipleSpaces) {
+					string = string.replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
+				}
+				if (part.bold) {
+					string = `**${replaceBut(string, /\*\*/g, /\\\*\*/g, '')}**`;
+				}
+				if (part.underlined) {
+					string = `__${replaceBut(string, /__/g, /\\__/g, '')}__`;
+				}
+				if (part.italic) {
+					string = `*${replaceBut(string, /\*/g, /\\\*/g, '')}*`;
+				}
+				return string;
+			}
 			case 'code':
-				// TODO: Multiline comments
-				return `\`${this.textToString(part.data)}\``;
-			case 'mentionPart':
-				return `<@${(part.data as any as DiscordUser).apiUser.id}>`;
-			case 'chatRefPart':
-				return `<#${part.data.targetId}>`;
-			case 'underlinedPart':
-				return `__${this.textToString(part.data)}__`;
-			case 'boldPart':
-				return `**${this.textToString(part.data)}**`;
+				return `\`\`\`${part.lang}\n${part.data.replace(/```/g, '\\`\\`\\`')}\`\`\``;
+			case 'opaque': {
+				const ayzekPart = opaqueToAyzek(part);
+				if (!ayzekPart) return '**IDK**';
+				switch (ayzekPart.ayzekPart) {
+					case 'user': {
+						return `<@${(ayzekPart.user as DiscordUser).apiUser.id}>`;
+					}
+					case 'chat': {
+						return `<#${ayzekPart.chat.targetId}>`;
+					}
+				}
+			}
 			case 'hashTagPart':
 				if (part.hideOnNoSupport) return '';
-				return this.textToString(part.data);
+				return this.partToString(part.data);
 		}
 		throw new Error(`Part ${JSON.stringify(part)} not handled`);
 	}
