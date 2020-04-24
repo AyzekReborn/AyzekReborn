@@ -12,6 +12,7 @@ import { ChatTitleChangeEvent } from "@ayzek/model/events/titleChange";
 import { TypingEvent, TypingEventType } from "@ayzek/model/events/typing";
 import ApiFeature from "@ayzek/model/features";
 import type { IMessage, IMessageOptions } from "@ayzek/model/message";
+import { opaqueToAyzek } from "@ayzek/model/text";
 import type { Text, TextPart } from '@ayzek/text';
 import { lookup as lookupMime } from '@meteor-it/mime';
 import type { MaybePromise } from '@meteor-it/utils';
@@ -438,7 +439,7 @@ export default class VKApi extends Api<VKApi> {
 	async send(conv: Conversation<VKApi>, text: Text, attachments: Attachment[] = [], options: IMessageOptions & IVKMessageOptions = {}) {
 		const peer_id = +conv.targetId;
 		if (options.forwarded || options.replyTo) throw new Error(`Message responses are not supported by vk bots`);
-		const texts = splitByMaxPossibleParts(this.textToString(text), MAX_MESSAGE_LENGTH);
+		const texts = splitByMaxPossibleParts(this.partToString(text), MAX_MESSAGE_LENGTH);
 		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[]
 		const attachmentUploadPromises = arrayChunks(attachments, MAX_ATTACHMENTS_PER_MESSAGE)
 			.map(chunk => chunk.map(name => this.uploadAttachment(name, peer_id.toString())));
@@ -495,29 +496,44 @@ export default class VKApi extends Api<VKApi> {
 		}
 	}
 
-	textToString(part: TextPart): string {
+	partToString(part: TextPart): string {
 		if (!part) return part + '';
 		if (typeof part === 'number') {
 			return part + '';
-		} else if (typeof part === 'string') return part;
+		} else if (typeof part === 'string')
+			return part
+				.replace(/`/g, '\\`')
+				.replace(/_/g, '\\_')
+				.replace(/\*/g, '\\*');
 		if (part instanceof StringReader) {
 			return `${part.toStringWithCursor(`|`)}`
 		} else if (part instanceof Array) {
-			return part.map(l => this.textToString(l)).join('');
+			return part.map(l => this.partToString(l)).join('');
 		}
 		switch (part.type) {
+			case 'formatting': {
+				let string = this.partToString(part.data);
+				if (part.preserveMultipleSpaces) {
+					string = string.replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
+				}
+				return string;
+			}
 			case 'code':
-			case 'preservingWhitespace':
-				return this.textToString(part.data).replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
-			case 'mentionPart':
-				return `[${part.data.profileUrl.slice(15)}|${part.text || part.data.name}]`
-			case 'chatRefPart':
-				return `<Чат ${part.data.title}>`;
-			case 'underlinedPart':
-			case 'boldPart':
-				return this.textToString(part.data);
+				return part.data.replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
+			case 'opaque': {
+				const ayzekPart = opaqueToAyzek(part);
+				if (!ayzekPart) return '**IDK**';
+				switch (ayzekPart.ayzekPart) {
+					case 'user': {
+						return `[${ayzekPart.user.profileUrl.slice(15)}|${ayzekPart.title || ayzekPart.user.name}]`
+					}
+					case 'chat': {
+						return `<Чат ${(ayzekPart.chat as VKChat).title}>`;
+					}
+				}
+			}
 			case 'hashTagPart':
-				return this.textToString(part.data).split(' ').map(e => e.length !== 0 ? `#${e}` : e).join(' ');
+				return this.partToString(part.data).split(' ').map(e => `#${e}`).join(' ');
 		}
 		throw new Error(`Part ${JSON.stringify(part)} not handled`);
 	}
