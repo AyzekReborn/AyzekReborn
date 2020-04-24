@@ -1,0 +1,4 @@
+FROM node:alpine
+
+RUN mkdir /bot/
+ADD . /bot

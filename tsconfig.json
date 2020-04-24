@@ -4,14 +4,10 @@
 		"allowSyntheticDefaultImports": true,
 		"noStrictGenericChecks": true,
 		"target": "es2017",
-		"module": "esnext",
+		"module": "commonjs",
 		"moduleResolution": "node",
 		"esModuleInterop": false,
 		"experimentalDecorators": true,
-		"types": [
-			"zarbis",
-			"jasmine"
-		],
 		"lib": [
 			"es2015",
 			"es2016",
@@ -20,5 +16,8 @@
 			"es2019",
 			"es2020"
 		]
-	}
+	},
+	"exclude": [
+		"random"
+	]
 }

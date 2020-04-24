@@ -19,14 +19,14 @@ export type FormattingTextPart = {
 	bold?: boolean,
 	underlined?: boolean,
 	color?: string,
-	monospace?: boolean,
+	preserveMultipleSpaces?: boolean,
 	italic?: boolean,
 	data: Text,
 }
 export type CodeTextPart = {
 	type: 'code',
 	lang: string,
-	data: Text,
+	data: string,
 }
 export type HashTagTextPart = {
 	type: 'hashTagPart',

@@ -14,3 +14,8 @@ node_modules
 .yarn
 .yarnrc.yml
 yarn-error.log
+
+# Typescript is used
+*.js
+*.d.ts
+*.js.map

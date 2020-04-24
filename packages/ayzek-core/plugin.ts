@@ -27,11 +27,11 @@ type PluginInfo = {
 	category: PluginCategory,
 	commands: LiteralArgumentBuilder<AyzekCommandSource, any, Text>[],
 	listeners: IMessageListener[],
-	userAttachments?: AttributeCreator<User<any>, any>[],
-	chatAttachments?: AttributeCreator<Chat<any>, any>[],
-	conversationAttachments?: AttributeCreator<Conversation<any>, any>[],
+	userAttributes?: AttributeCreator<User<any>, any>[],
+	chatAttributes?: AttributeCreator<Chat<any>, any>[],
+	conversationAttributes?: AttributeCreator<Conversation<any>, any>[],
 
-	ayzekAttachments?: AttributeCreator<Ayzek<any>, any>[],
+	ayzekAttributes?: AttributeCreator<Ayzek<any>, any>[],
 } & {
 	/**
 	 * Class name by default

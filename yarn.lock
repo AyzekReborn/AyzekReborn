@@ -4,9 +4,9 @@
 __metadata:
   version: 4
 
-"@ayzek/api-ds@workspace:packages/ayzek-api-discord":
+"@ayzek/api-discord@workspace:packages/ayzek-api-discord":
   version: 0.0.0-use.local
-  resolution: "@ayzek/api-ds@workspace:packages/ayzek-api-discord"
+  resolution: "@ayzek/api-discord@workspace:packages/ayzek-api-discord"
   dependencies:
     "@ayzek/command-parser": 1.0.2
     "@ayzek/core": "workspace:*"
@@ -144,6 +144,16 @@ __metadata:
     "@ayzek/command-parser": ^1.0.2
     "@ayzek/core": "workspace:*"
     "@ayzek/text": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@ayzek/root@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@ayzek/root@workspace:."
+  dependencies:
+    "@types/node": ^13.13.2
+    "@yarnpkg/pnpify": ^2.0.0-rc.21
+    typescript: ^3.9.0-dev.20200422
   languageName: unknown
   linkType: soft
 
@@ -2339,16 +2349,6 @@ fsevents@~2.1.2:
   checksum: 2/c9ce1854f19327606934558f4729b0f7aa7b9f1a3e7ca292d56261cce1074e20b0a0b16689166da6d8ab24ed9c30f7c71fba0df38e1d37f0233b6f48307c5c7a
   languageName: node
   linkType: hard
-
-"root-workspace-0b6124@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "root-workspace-0b6124@workspace:."
-  dependencies:
-    "@types/node": ^13.13.2
-    "@yarnpkg/pnpify": ^2.0.0-rc.21
-    typescript: ^3.9.0-dev.20200422
-  languageName: unknown
-  linkType: soft
 
 "run-parallel@npm:^1.1.9":
   version: 1.1.9

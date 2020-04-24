@@ -50,11 +50,8 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 		return craftCommandPayload(command, 'dummy');
 	}
 
-	constructor(logger: string | Logger, apis: A[], commandPrefix: string, logEvents: boolean) {
+	constructor(logger: string | Logger, commandPrefix: string, logEvents: boolean) {
 		super(logger);
-		for (let api of apis) {
-			this.attachApi(api);
-		}
 		if (logEvents) {
 			this.messageEvent.on(e => {
 				const chat = e.chat ? ` {yellow}${e.chat.title}{/yellow}` : ''
