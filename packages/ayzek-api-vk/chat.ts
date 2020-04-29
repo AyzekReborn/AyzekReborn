@@ -2,7 +2,7 @@ import { Chat } from '@ayzek/model/conversation';
 import type VKApi from '.';
 import type VKUser from './user/user';
 
-export default class VKChat extends Chat<VKApi>{
+export default class VKChat extends Chat {
 	constructor(api: VKApi, public apiChat: any, members: VKUser[], admins: VKUser[]) {
 		super(
 			api,

@@ -11,16 +11,16 @@ enum ConversationType {
 	OTHER
 }
 
-export interface IConversation<A extends Api<A>> {
+export interface IConversation {
 	// TODO: Edit message?
 	send(text: Text, attachments?: Attachment[], options?: IMessageOptions): Promise<void>;
-	waitForNext(shouldAccept: (message: IMessage<A>) => boolean, timeout: number | null): Promise<IMessage<A>>;
+	waitForNext(shouldAccept: (message: IMessage) => boolean, timeout: number | null): Promise<IMessage>;
 }
 
-export abstract class Conversation<A extends Api<A>> implements IConversation<A> {
-	readonly api: A
+export abstract class Conversation implements IConversation {
+	readonly api: Api
 	constructor(
-		api: A,
+		api: Api,
 		public readonly targetId: string,
 		public readonly conversationType: ConversationType,
 	) {
@@ -34,7 +34,7 @@ export abstract class Conversation<A extends Api<A>> implements IConversation<A>
 	}
 
 	// TODO: Move to message context somehow?
-	async waitForNext(shouldAccept: (message: IMessage<A>) => boolean, timeout: number | null): Promise<IMessage<A>> {
+	async waitForNext(shouldAccept: (message: IMessage) => boolean, timeout: number | null): Promise<IMessage> {
 		throw new Error('Method is not overridden by ayzek core');
 	}
 
@@ -63,9 +63,9 @@ export enum UserType {
 	BOT,
 }
 
-export abstract class User<A extends Api<A>> extends Conversation<A> {
+export abstract class User extends Conversation {
 	constructor(
-		api: A,
+		api: Api,
 		targetId: string,
 		public readonly uid: string,
 		public readonly nickName: string | null,
@@ -122,22 +122,22 @@ export abstract class User<A extends Api<A>> extends Conversation<A> {
 	}
 }
 
-export abstract class Guild<A extends Api<A>> {
+export abstract class Guild {
 	constructor(
-		public readonly api: A,
+		public readonly api: Api,
 		public readonly gid: string,
 	) { };
 };
 
-export abstract class Chat<A extends Api<A>> extends Conversation<A> {
+export abstract class Chat extends Conversation {
 	constructor(
-		api: A,
+		api: Api,
 		targetId: string,
 		public readonly cid: string,
-		public readonly users: User<A>[],
+		public readonly users: User[],
 		public readonly title: string,
-		public readonly admins: User<A>[],
-		public readonly guild: Guild<A> | null,
+		public readonly admins: User[],
+		public readonly guild: Guild | null,
 	) {
 		super(api, targetId, ConversationType.CHAT);
 	}

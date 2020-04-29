@@ -29,33 +29,33 @@ export class MessageContext<E> {
 	}
 }
 
-export class MessageEventContext<A extends Api<A>> extends MessageContext<MessageEvent<A>> implements IConversation<A> {
-	constructor(public ayzek: Ayzek<A>, public event: MessageEvent<A>) {
+export class MessageEventContext extends MessageContext<MessageEvent> implements IConversation {
+	constructor(public ayzek: Ayzek, public event: MessageEvent) {
 		super(event);
 	}
-	get api(): A {
+	get api(): Api {
 		return this.event.api;
 	}
-	get user(): User<A> {
+	get user(): User {
 		return this.event.user;
 	}
-	get chat(): Chat<A> | null {
+	get chat(): Chat | null {
 		return this.event.chat;
 	}
-	get conversation(): Conversation<A> {
+	get conversation(): Conversation {
 		return this.event.conversation;
 	}
 
 	send(text: Text, attachments?: Attachment[], options?: IMessageOptions): Promise<void> {
 		return this.event.conversation.send(text, attachments, options);
 	}
-	waitForNext(shouldAccept: (message: IMessage<A>) => boolean, timeout: number | null): Promise<IMessage<A>> {
+	waitForNext(shouldAccept: (message: IMessage) => boolean, timeout: number | null): Promise<IMessage> {
 		return this.event.conversation.waitForNext(shouldAccept, timeout);
 	}
 }
 
-export class CommandEventContext<A extends Api<A>> extends MessageEventContext<A> {
-	constructor(ayzek: Ayzek<A>, event: MessageEvent<A>, public command: string, public commandPrefix: string | null) {
+export class CommandEventContext extends MessageEventContext {
+	constructor(ayzek: Ayzek, event: MessageEvent, public command: string, public commandPrefix: string | null) {
 		super(ayzek, event);
 	}
 

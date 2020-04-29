@@ -22,7 +22,7 @@ import DiscordUser from "./user";
 
 const MAX_MESSAGE_LENGTH = 2000;
 
-export default class DiscordApi extends Api<DiscordApi> {
+export default class DiscordApi extends Api {
 
 	api: Client;
 	token: string;
@@ -174,7 +174,7 @@ export default class DiscordApi extends Api<DiscordApi> {
 		})
 	}
 
-	async send(conv: Conversation<DiscordApi>, text: Text, attachments: Attachment[] = [], _options: IMessageOptions = {}) {
+	async send(conv: Conversation, text: Text, attachments: Attachment[] = [], _options: IMessageOptions = {}) {
 		const textParts = splitByMaxPossibleParts(this.partToString(text), MAX_MESSAGE_LENGTH);
 		const chat = await this.api.channels.fetch(conv.targetId) as TextChannel;
 		if (!chat) throw new Error(`Bad channel: ${conv.targetId}`);

@@ -37,7 +37,7 @@ export type IVKMessageOptions = IMessageOptions & {
 	vkKeyboard?: IVKKeyboard,
 };
 
-export default class VKApi extends Api<VKApi> {
+export default class VKApi extends Api {
 	processor: VKApiProcessor;
 	userMap: VKUserMap;
 	botMap: VKBotMap;
@@ -146,7 +146,7 @@ export default class VKApi extends Api<VKApi> {
 		}
 		return result;
 	}
-	async parseReplyMessage(message: any): Promise<IMessage<VKApi>> {
+	async parseReplyMessage(message: any): Promise<IMessage> {
 		const [user, attachments, extraAttachments] = await Promise.all([
 			this.getApiUser(message.from_id),
 			Promise.all(message.attachments.map((e: any) => this.parseAttachment(e))) as Promise<Attachment[]>,
@@ -169,7 +169,7 @@ export default class VKApi extends Api<VKApi> {
 			replyTo: null,
 		};
 	}
-	async parseMessage(message: any, parseChat: boolean = false): Promise<IMessage<VKApi>> {
+	async parseMessage(message: any, parseChat: boolean = false): Promise<IMessage> {
 		// Do everything in parallel!
 		// Typescript fails to analyze dat shit 🤷‍
 		const [chat, user, attachments, extraAttachments, forwarded, replyTo] = await Promise.all([
@@ -179,7 +179,7 @@ export default class VKApi extends Api<VKApi> {
 			this.parseExtraAttachments(message),
 			(message.fwd_messages ? Promise.all(message.fwd_messages.map((m: any) => this.parseMessage(m))) : Promise.resolve([])),
 			message.reply_message ? (this.parseReplyMessage(message.reply_message)) : null
-		] as [Promise<VKChat | null>, Promise<VKUser | null>, Promise<Attachment[]>, Promise<Attachment[]>, Promise<IMessage<VKApi>[]>, Promise<IMessage<VKApi> | null>]);
+		] as [Promise<VKChat | null>, Promise<VKUser | null>, Promise<Attachment[]>, Promise<Attachment[]>, Promise<IMessage[]>, Promise<IMessage | null>]);
 		if (!user) throw new Error(`Bad user: ${message.from_id}`);
 		return {
 			api: this,
@@ -436,7 +436,7 @@ export default class VKApi extends Api<VKApi> {
 		}
 	}
 	// TODO: Add support for message editing (Also look at comment for message_reply)
-	async send(conv: Conversation<VKApi>, text: Text, attachments: Attachment[] = [], options: IMessageOptions & IVKMessageOptions = {}) {
+	async send(conv: Conversation, text: Text, attachments: Attachment[] = [], options: IMessageOptions & IVKMessageOptions = {}) {
 		const peer_id = +conv.targetId;
 		if (options.forwarded || options.replyTo) throw new Error(`Message responses are not supported by vk bots`);
 		const texts = splitByMaxPossibleParts(this.partToString(text), MAX_MESSAGE_LENGTH);

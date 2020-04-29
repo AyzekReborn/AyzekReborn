@@ -16,11 +16,11 @@ export enum LeaveReason {
 	SELF,
 }
 
-export abstract class LeaveEvent<A extends Api<A>> {
+export abstract class LeaveEvent {
 	constructor(
-		public api: A,
-		public user: User<A>,
-		public initiator: User<A> | null,
+		public api: Api,
+		public user: User,
+		public initiator: User | null,
 		public reason: LeaveReason,
 		public reasonString: string | null,
 	) { }
@@ -28,26 +28,26 @@ export abstract class LeaveEvent<A extends Api<A>> {
 		return this.reason === LeaveReason.SELF;
 	}
 }
-export class LeaveChatEvent<A extends Api<A>> extends LeaveEvent<A> {
+export class LeaveChatEvent extends LeaveEvent {
 	constructor(
-		api: A,
-		user: User<A>,
-		initiator: User<A> | null,
+		api: Api,
+		user: User,
+		initiator: User | null,
 		reason: LeaveReason,
 		reasonString: string | null,
-		public chat: Chat<A>,
+		public chat: Chat,
 	) {
 		super(api, user, initiator, reason, reasonString);
 	}
 }
-export class LeaveGuildEvent<A extends Api<A>> extends LeaveEvent<A> {
+export class LeaveGuildEvent extends LeaveEvent {
 	constructor(
-		api: A,
-		user: User<A>,
-		initiator: User<A> | null,
+		api: Api,
+		user: User,
+		initiator: User | null,
 		reason: LeaveReason,
 		reasonString: string | null,
-		public guild: Guild<A>,
+		public guild: Guild,
 	) {
 		super(api, user, initiator, reason, reasonString);
 	}

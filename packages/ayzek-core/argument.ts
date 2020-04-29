@@ -7,27 +7,24 @@ import type { User } from "@ayzek/model/conversation";
 import type { Ayzek } from "./ayzek";
 import type { AyzekCommandContext, AyzekParseEntryPoint } from "./command";
 
-export type ParsedUserArgument = [Api<any>, any, Ayzek<any>];
+export type ParsedUserArgument = [Api, any, Ayzek];
 
-// TODO: Type safety?
-export class UserArgumentType extends ArgumentType<ParsedUserArgument, User<any>> {
-	parse<P>(ctx: AyzekParseEntryPoint, reader: StringReader): ParsedUserArgument {
+export class UserArgumentType extends ArgumentType<ParsedUserArgument, User> {
+	parse(ctx: AyzekParseEntryPoint, reader: StringReader): ParsedUserArgument {
 		if (!ctx.source.api?.apiLocalUserArgumentType) throw new Error(`source is not ayzek one (${ctx.source})`);
 		const user = ctx.source.api.apiLocalUserArgumentType.parse(ctx, reader);
 		return [ctx.source.api, user, ctx.source.ayzek];
 	}
-	async load(parsed: ParsedUserArgument): Promise<User<any>> {
+	async load(parsed: ParsedUserArgument): Promise<User> {
 		const user = await parsed[0].apiLocalUserArgumentType.load(parsed[1]);
 		await parsed[2].attachToUser(user);
 		return user;
 	}
 	getExamples(ctx: AyzekParseEntryPoint) {
-		if (!(ctx.source.api as unknown as Api<any>)?.apiLocalUserArgumentType) throw new Error(`source is not ayzek one (${ctx.source})`);
 		return ctx.source.api.apiLocalUserArgumentType.getExamples(ctx);
 	}
 	async listSuggestions(entry: AyzekParseEntryPoint, ctx: AyzekCommandContext, builder: SuggestionsBuilder): Promise<Suggestions> {
-		if (!(ctx.source?.api as unknown as Api<any>)?.apiLocalUserArgumentType) throw new Error(`sourceProvider is not ayzek one (${ctx.source})`);
-		const api = ctx.source.api as Api<any>;
+		const api = ctx.source.api as Api;
 		return api.apiLocalUserArgumentType.listSuggestions(entry, ctx, builder);
 	}
 }

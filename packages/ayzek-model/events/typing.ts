@@ -26,12 +26,12 @@ export enum TypingEventType {
  *
  * TODO: RECORDING_VOICE_MESSAGE+SENDING_PHOTO => Uploading attachment, attachmentType field
  */
-export class TypingEvent<A extends Api<A>> {
+export class TypingEvent {
 	constructor(
-		public api: A,
-		public user: User<A>,
-		public chat: Chat<A> | null,
-		public conversation: Conversation<A>,
+		public api: Api,
+		public user: User,
+		public chat: Chat | null,
+		public conversation: Conversation,
 		/**
 		 * Action type
 		 */

@@ -1,6 +1,6 @@
 {
 	"name": "@ayzek/data",
-	"version": "1.0.1",
+	"version": "1.0.4",
 	"main": "index.js",
 	"license": "MIT",
 	"dependencies": {

@@ -31,18 +31,18 @@ async function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek<any>, plugi
 		additionalInfo,
 		...((availableCommands.length > 0 || plugin.listeners.length > 0) ? [
 			`\nСписок фич:\n`,
-			joinText('\n\n', ...[
-				joinText('\n', ...availableCommands.map(command => {
+			joinText('\n\n', [
+				joinText('\n', availableCommands.map(command => {
 					const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal)!;
 					return [
 						`⚡ /${command.literal} `,
 						{
 							type: 'preservingWhitespace',
-							data: joinText('\n', ...padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode, ctx.source, true)))
+							data: joinText('\n', padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode, ctx.source, true)))
 						}
 					];
 				}).map(e => e!) as any),
-				joinText('\n', ...plugin.listeners.map(listener => [
+				joinText('\n', plugin.listeners.map(listener => [
 					`👁‍🗨 ${listener.name}${listener.description ? ` — ${listener.description}` : ''}`
 				]))
 			].filter(e => e.length !== 0)),
@@ -180,10 +180,10 @@ const helpCommand = command('help')
 		event.conversation.send([
 			'Бот OpenSource! Исходники: https://github.com/CertainLach/AyzekReborn\n',
 			`В бота установлены следующие плагины:\n\n`,
-			joinText('\n\n', ...ayzek.plugins.map((plugin, i) => joinText('\n',
+			joinText('\n\n', ayzek.plugins.map((plugin, i) => joinText('\n', [
 				`${i + 1}. ${plugin.name} от ${plugin.author ?? 'Анонимного разработчика'}`,
 				`💬 ${plugin.description ?? 'Без описания'}`
-			))),
+			]))),
 			'\n\nДля просмотра информации о каждом плагине пиши /help <название>, либо /help all для просмотра всех в лс'
 		]);
 	}, 'Показ списка плагинов');

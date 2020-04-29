@@ -1,9 +1,9 @@
 import type { Api } from "../api";
 import type { Chat, Guild, User } from "../conversation";
 
-export abstract class TitleChangeEvent<A extends Api<A>> {
+export abstract class TitleChangeEvent {
 	constructor(
-		public api: A,
+		public api: Api,
 		/**
 		 * Title before change
 		 */
@@ -15,27 +15,27 @@ export abstract class TitleChangeEvent<A extends Api<A>> {
 		/**
 		 * Who is changing the title
 		 */
-		public initiator: User<A>,
+		public initiator: User,
 	) { }
 }
-export class ChatTitleChangeEvent<A extends Api<A>> extends TitleChangeEvent<A> {
+export class ChatTitleChangeEvent extends TitleChangeEvent {
 	constructor(
-		api: A,
+		api: Api,
 		oldTitle: string | null,
 		newTitle: string,
-		initiator: User<A>,
-		public chat: Chat<A>,
+		initiator: User,
+		public chat: Chat,
 	) {
 		super(api, oldTitle, newTitle, initiator);
 	}
 }
-export class GuildTitleChangeEvent<A extends Api<A>> extends TitleChangeEvent<A> {
+export class GuildTitleChangeEvent extends TitleChangeEvent {
 	constructor(
-		api: A,
+		api: Api,
 		oldTitle: string | null,
 		newTitle: string,
-		initiator: User<A>,
-		public chat: Guild<A>,
+		initiator: User,
+		public chat: Guild,
 	) {
 		super(api, oldTitle, newTitle, initiator);
 	}

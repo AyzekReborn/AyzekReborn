@@ -3,7 +3,7 @@ import { Gender, User } from "@ayzek/model/conversation";
 import type { User as DSUser } from "discord.js";
 import type DiscordApi from ".";
 
-export default class DiscordUser extends User<DiscordApi>{
+export default class DiscordUser extends User {
 	constructor(api: DiscordApi, public apiUser: DSUser) {
 		super(
 			api,

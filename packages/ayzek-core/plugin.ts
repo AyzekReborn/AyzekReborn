@@ -12,7 +12,7 @@ import type { MessageEventContext } from "./context";
 export type IMessageListener = {
 	name: string,
 	description?: string,
-	handler: (ctx: MessageEventContext<any>) => Promise<void>,
+	handler: (ctx: MessageEventContext) => Promise<void>,
 };
 
 export enum PluginCategory {
@@ -22,16 +22,16 @@ export enum PluginCategory {
 
 type PluginInfo = {
 	// Injected by ModernPluginSystem
-	ayzek?: Ayzek<any>,
+	ayzek?: Ayzek,
 
 	category: PluginCategory,
 	commands: LiteralArgumentBuilder<AyzekCommandSource, any, Text>[],
 	listeners: IMessageListener[],
-	userAttributes?: AttributeCreator<User<any>, any>[],
-	chatAttributes?: AttributeCreator<Chat<any>, any>[],
-	conversationAttributes?: AttributeCreator<Conversation<any>, any>[],
+	userAttributes?: AttributeCreator<User, any>[],
+	chatAttributes?: AttributeCreator<Chat, any>[],
+	conversationAttributes?: AttributeCreator<Conversation, any>[],
 
-	ayzekAttributes?: AttributeCreator<Ayzek<any>, any>[],
+	ayzekAttributes?: AttributeCreator<Ayzek, any>[],
 } & {
 	/**
 	 * Class name by default
@@ -77,7 +77,7 @@ export function command(names: string | string[]) {
  * @param handler message handler
  * @returns listener to add info PluginInfo#listeners
  */
-export function listener(name: string, description: string, handler: (ctx: MessageEventContext<any>) => Promise<void>): IMessageListener {
+export function listener(name: string, description: string, handler: (ctx: MessageEventContext) => Promise<void>): IMessageListener {
 	return { name, description, handler };
 }
 
@@ -88,11 +88,11 @@ export function listener(name: string, description: string, handler: (ctx: Messa
  * @param regexp expression with capture groups
  * @param handler message handler
  */
-export function regexpListener(name: string, description: string, regexp: RegExp, handler: (ctx: MessageEventContext<any>, args: string[]) => Promise<void>): IMessageListener {
+export function regexpListener(name: string, description: string, regexp: RegExp, handler: (ctx: MessageEventContext, args: string[]) => Promise<void>): IMessageListener {
 	return {
 		name,
 		description,
-		handler(ctx: MessageEventContext<any>) {
+		handler(ctx: MessageEventContext) {
 			const match = ctx.event.text.match(regexp);
 			if (match === null)
 				return Promise.resolve();

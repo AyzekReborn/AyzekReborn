@@ -25,23 +25,23 @@ export class NotImplementedInApiError extends Error {
 /**
  * Api implements bridges from messenger ifaces to ayzek events
  */
-export abstract class Api<A extends Api<A>> {
+export abstract class Api {
 	/**
 	 * Api should prefer to use this logger instead of implementing its own
 	 */
 	logger: Logger;
 
-	messageEvent = new TypedEvent<MessageEvent<A>>();
-	typingEvent = new TypedEvent<TypingEvent<A>>();
+	messageEvent = new TypedEvent<MessageEvent>();
+	typingEvent = new TypedEvent<TypingEvent>();
 
-	joinGuildEvent = new TypedEvent<JoinGuildEvent<A>>();
-	joinChatEvent = new TypedEvent<JoinChatEvent<A>>();
+	joinGuildEvent = new TypedEvent<JoinGuildEvent>();
+	joinChatEvent = new TypedEvent<JoinChatEvent>();
 
-	leaveGuildEvent = new TypedEvent<LeaveGuildEvent<A>>();
-	leaveChatEvent = new TypedEvent<LeaveChatEvent<A>>();
+	leaveGuildEvent = new TypedEvent<LeaveGuildEvent>();
+	leaveChatEvent = new TypedEvent<LeaveChatEvent>();
 
-	guildTitleChangeEvent = new TypedEvent<GuildTitleChangeEvent<A>>();
-	chatTitleChangeEvent = new TypedEvent<ChatTitleChangeEvent<A>>();
+	guildTitleChangeEvent = new TypedEvent<GuildTitleChangeEvent>();
+	chatTitleChangeEvent = new TypedEvent<ChatTitleChangeEvent>();
 
 	constructor(name: string | Logger) {
 		this.logger = Logger.from(name);
@@ -50,21 +50,21 @@ export abstract class Api<A extends Api<A>> {
 	/**
 	 * Get user by UID
 	 */
-	getUser(_uid: string): MaybePromise<User<A> | null> {
+	getUser(_uid: string): MaybePromise<User | null> {
 		return null;
 	}
 
 	/**
 	 * Get chat by CID
 	 */
-	getChat(_cid: string): MaybePromise<Chat<A> | null> {
+	getChat(_cid: string): MaybePromise<Chat | null> {
 		return null;
 	}
 
 	/**
 	 * Get either user or chat by UID or CID
 	 */
-	getConversation(id: string): MaybePromise<Conversation<A> | null> {
+	getConversation(id: string): MaybePromise<Conversation | null> {
 		const user = this.getUser(id);
 		if (!isPromise(user)) return user;
 		if (user === null) return null;
@@ -77,7 +77,7 @@ export abstract class Api<A extends Api<A>> {
 	/**
 	 * Get guild by GID
 	 */
-	getGuild(_gid: string): MaybePromise<Guild<A> | null> {
+	getGuild(_gid: string): MaybePromise<Guild | null> {
 		return null;
 	}
 
@@ -86,7 +86,7 @@ export abstract class Api<A extends Api<A>> {
 	 *
 	 * TODO: Return editable message
 	 */
-	send(_conv: Conversation<A>, _text: Text, _attachments: Attachment[], _options: IMessageOptions): Promise<void> {
+	send(_conv: Conversation, _text: Text, _attachments: Attachment[], _options: IMessageOptions): Promise<void> {
 		throw new NotImplementedInApiError('send');
 	}
 
@@ -114,5 +114,5 @@ export abstract class Api<A extends Api<A>> {
 	 * field holds propper implementation, which then consumed
 	 * by userArgument
 	 */
-	abstract get apiLocalUserArgumentType(): ArgumentType<any, User<A>>;
+	abstract get apiLocalUserArgumentType(): ArgumentType<any, User>;
 }

@@ -6,15 +6,15 @@ export type ForwardInfo = {
 	messageId: string,
 }
 
-export type IMessage<A extends Api<A>> = {
-	api: A,
-	user: User<A>,
-	chat: Chat<A> | null,
-	conversation: Conversation<A>,
+export type IMessage = {
+	api: Api,
+	user: User,
+	chat: Chat | null,
+	conversation: Conversation,
 	attachments: Attachment[],
 	text: string,
-	replyTo: IMessage<A> | null,
-	forwarded: IMessage<A>[],
+	replyTo: IMessage | null,
+	forwarded: IMessage[],
 	messageId: string,
 }
 

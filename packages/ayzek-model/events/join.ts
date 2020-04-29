@@ -16,11 +16,11 @@ export enum JoinReason {
 	RETURNED,
 }
 
-export abstract class JoinEvent<A extends Api<A>> {
+export abstract class JoinEvent {
 	constructor(
-		public api: A,
-		public user: User<A>,
-		public initiator: User<A> | null,
+		public api: Api,
+		public user: User,
+		public initiator: User | null,
 		public reason: JoinReason,
 		public reasonString: string | null,
 	) { }
@@ -28,26 +28,26 @@ export abstract class JoinEvent<A extends Api<A>> {
 		return this.reason === JoinReason.INVITE_LINK || this.reason === JoinReason.RETURNED;
 	}
 }
-export class JoinChatEvent<A extends Api<A>> extends JoinEvent<A> {
+export class JoinChatEvent extends JoinEvent {
 	constructor(
-		api: A,
-		user: User<A>,
-		initiator: User<A> | null,
+		api: Api,
+		user: User,
+		initiator: User | null,
 		reason: JoinReason,
 		reasonString: string | null,
-		public chat: Chat<A>
+		public chat: Chat
 	) {
 		super(api, user, initiator, reason, reasonString);
 	}
 }
-export class JoinGuildEvent<A extends Api<A>> extends JoinEvent<A> {
+export class JoinGuildEvent extends JoinEvent {
 	constructor(
-		api: A,
-		user: User<A>,
-		initiator: User<A> | null,
+		api: Api,
+		user: User,
+		initiator: User | null,
 		reason: JoinReason,
 		reasonString: string | null,
-		public guild: Guild<A>
+		public guild: Guild
 	) {
 		super(api, user, initiator, reason, reasonString);
 	}

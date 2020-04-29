@@ -42,6 +42,6 @@ export type TextPart =
 	| HashTagTextPart | ArrayTextPart;
 export type Text = TextPart;
 
-export function joinText(joiner: Text, ...arr: Text[]): Text[] {
+export function joinText(joiner: Text, arr: Text[]): Text[] {
 	return arr.flatMap((e: any, index: number) => index ? [joiner, e] : [e])
 }

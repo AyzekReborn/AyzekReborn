@@ -18,17 +18,17 @@ import { levenshteinDistance } from "./util/levenshtein";
 
 const FIX_MAX_DISTANCE = 3;
 
-export class Ayzek<A extends Api<any>> extends Api<A> {
+export class Ayzek extends Api {
 	/**
 	 * Loaded plugins
 	 */
 	plugins: PluginInfo[] = [];
 
-	userAttributeRepository: AttributeRepository<User<any>> = new AttributeRepository();
-	chatAttributeRepository: AttributeRepository<Chat<any>> = new AttributeRepository();
+	userAttributeRepository: AttributeRepository<User> = new AttributeRepository();
+	chatAttributeRepository: AttributeRepository<Chat> = new AttributeRepository();
 
-	ayzekAttributeRepository: AttributeRepository<Ayzek<A>> = new AttributeRepository();
-	attributeStorage: AttributeStorage<Ayzek<A>> = ownerlessEmptyAttributeStorage;
+	ayzekAttributeRepository: AttributeRepository<Ayzek> = new AttributeRepository();
+	attributeStorage: AttributeStorage<Ayzek> = ownerlessEmptyAttributeStorage;
 
 	async onAyzekAttributeRepositoryChange() {
 		this.attributeStorage = await this.ayzekAttributeRepository.getStorageFor(this);
@@ -37,11 +37,11 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 	commandDispatcher = new CommandDispatcher<AyzekCommandSource, Text>();
 	listeners: IMessageListener[] = [];
 
-	async attachToUser(user: User<any>) {
+	async attachToUser(user: User) {
 		user.attributeStorage = await this.userAttributeRepository.getStorageFor(user);
 	}
 
-	async attachToChat(chat: Chat<any>) {
+	async attachToChat(chat: Chat) {
 		chat.attributeStorage = await this.chatAttributeRepository.getStorageFor(chat);
 		await Promise.all([...chat.users, ...chat.admins].map(user => this.attachToUser(user)));
 	}
@@ -205,7 +205,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 	 * @param commandPrefix prefix of command to display in fix messages,
 	 * 	null in case of payload caused commands
 	 */
-	private async handleCommand(event: MessageEvent<any>, command: string, commandPrefix: string | null) {
+	private async handleCommand(event: MessageEvent, command: string, commandPrefix: string | null) {
 		let parseResult: AyzekParseResults | undefined;
 		const source = new CommandEventContext(this, event, command, commandPrefix);
 		const entry = { source };
@@ -221,11 +221,11 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 					let suggestionText = (await this.getSuggestionText(entry, parseResult, source));
 					await source.send([
 						`Все вызовы команды провалились:\n`,
-						joinText('\n', ...errored.map(e => (e as { error: Error }).error).map(e => this.formatError(e, commandPrefix))),
+						joinText('\n', errored.map(e => (e as { error: Error }).error).map(e => this.formatError(e, commandPrefix))),
 						suggestionText,
 					])
 				} else {
-					source.send(joinText('\n', ...result.map(e => {
+					source.send(joinText('\n', result.map(e => {
 						if (e.result === 'error') return this.formatError(e.error, commandPrefix);
 						return e.value;
 					}) as any))
@@ -258,17 +258,17 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 		}
 	}
 
-	private async handleMessage(event: MessageEvent<any>) {
+	private async handleMessage(event: MessageEvent) {
 		const source = new MessageEventContext(this, event);
 		for (let listener of this.listeners) {
 			listener.handler(source);
 		}
 	}
 
-	public apis: Api<A>[] = [];
+	public apis: Api[] = [];
 	private apiDisposables: Disposable[][] = []
 
-	public attachApi(api: A) {
+	public attachApi(api: Api) {
 		const disposables = [
 			api.typingEvent.pipe(this.typingEvent),
 			api.messageEvent.pipe(this.messageEvent),
@@ -286,7 +286,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 			throw new Error('Api list broken!');
 	}
 
-	public detachApi(api: Api<A>) {
+	public detachApi(api: Api) {
 		const index = this.apis.indexOf(api);
 		if (index === -1)
 			throw new Error('Api not found on detach');
@@ -295,23 +295,23 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 			disposable.dispose();
 	}
 
-	async getUser(uid: string): Promise<User<A> | null> {
+	async getUser(uid: string): Promise<User | null> {
 		const user = (await Promise.all(this.apis.map(e => e.getUser(uid)))).filter(e => e !== null)[0] || null;
 		if (user) await this.attachToUser(user);
 		return user;
 	}
-	async getChat(cid: string): Promise<Chat<A> | null> {
+	async getChat(cid: string): Promise<Chat | null> {
 		const chat = (await Promise.all(this.apis.map(e => e.getChat(cid)))).filter(e => e !== null)[0] || null;
 		if (chat) await this.attachToChat(chat);
 		return chat;
 	}
-	async getConversation(id: string): Promise<Conversation<A> | null> {
+	async getConversation(id: string): Promise<Conversation | null> {
 		const [chat, user] = await Promise.all([this.getUser(id), this.getChat(id)]);
 		if (chat) return chat;
 		return user;
 	}
 
-	async getGuild(gid: string): Promise<Guild<A> | null> {
+	async getGuild(gid: string): Promise<Guild | null> {
 		return (await Promise.all(this.apis.map(e => e.getGuild(gid)))).filter(e => e !== null)[0] || null;
 	}
 
@@ -323,7 +323,7 @@ export class Ayzek<A extends Api<any>> extends Api<A> {
 		throw new Error('Not implemented for ayzek');
 	}
 
-	get apiLocalUserArgumentType(): ArgumentType<void, User<A>> {
+	get apiLocalUserArgumentType(): ArgumentType<void, User> {
 		throw new Error("Method not implemented.");
 	}
 }

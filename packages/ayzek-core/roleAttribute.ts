@@ -11,9 +11,9 @@ export abstract class RoleAttribute extends Attribute {
 	}
 }
 
-export abstract class RoleAttributeCreator<A extends RoleAttribute> extends AttributeCreator<User<any>, A>{
+export abstract class RoleAttributeCreator<A extends RoleAttribute> extends AttributeCreator<User, A>{
 	abstract thisConstructor: AttributeConstructor<A>;
-	abstract async getAttributeFor(owner: User<any>, storage: AttributeStorage<User<any>>): Promise<A>;
+	abstract async getAttributeFor(owner: User, storage: AttributeStorage<User>): Promise<A>;
 }
 
 export abstract class PermissionAttribute extends Attribute {
@@ -25,9 +25,9 @@ export abstract class PermissionAttribute extends Attribute {
 	}
 }
 
-export abstract class PermissionAttributeCreator<A extends PermissionAttribute> extends AttributeCreator<User<any>, A>{
+export abstract class PermissionAttributeCreator<A extends PermissionAttribute> extends AttributeCreator<User, A>{
 	abstract thisConstructor: AttributeConstructor<A>;
-	abstract async getAttributeFor(owner: User<any>, storage: AttributeStorage<User<any>>): Promise<A>;
+	abstract async getAttributeFor(owner: User, storage: AttributeStorage<User>): Promise<A>;
 }
 
 export function requirePermission<P extends PermissionAttribute>(constructor: AttributeConstructor<P>, permission: string): AyzekCommandRequirement {

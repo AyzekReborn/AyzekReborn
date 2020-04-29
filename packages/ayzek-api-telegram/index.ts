@@ -14,7 +14,7 @@ import type { MaybePromise } from "@meteor-it/utils";
 import XRest from "@meteor-it/xrest";
 import * as https from 'https';
 
-export class TelegramUser extends User<TelegramApi>{
+export class TelegramUser extends User {
 	constructor(public apiUser: any, api: TelegramApi) {
 		super(
 			api,
@@ -32,7 +32,7 @@ export class TelegramUser extends User<TelegramApi>{
 		throw new Error("Method not implemented.");
 	}
 }
-export class TelegramChat extends Chat<TelegramApi>{
+export class TelegramChat extends Chat {
 	constructor(public apiChat: any, api: TelegramApi) {
 		super(
 			api,
@@ -55,7 +55,7 @@ function isChatType(type: string) {
 	return ['group', 'supergroup'].includes(type);
 }
 
-export default class TelegramApi extends Api<TelegramApi>{
+export default class TelegramApi extends Api {
 	xrest: XRest;
 	constructor(public descriptor: string, public username: string, public token: string) {
 		super('tg');
@@ -142,7 +142,7 @@ export default class TelegramApi extends Api<TelegramApi>{
 		}
 	}
 
-	async parseForwarded(message: any): Promise<IMessage<TelegramApi>[]> {
+	async parseForwarded(message: any): Promise<IMessage[]> {
 		if (!message.forward_from) return [];
 		if (message.forward_from)
 			this.updateUserMap(message.forward_from);
@@ -163,7 +163,7 @@ export default class TelegramApi extends Api<TelegramApi>{
 		}];
 	}
 
-	async parseMessage(message: any): Promise<MessageEvent<TelegramApi>> {
+	async parseMessage(message: any): Promise<MessageEvent> {
 		if (message.from)
 			this.updateUserMap(message.from);
 		if (isChatType(message.chat.type))
@@ -218,11 +218,11 @@ export default class TelegramApi extends Api<TelegramApi>{
 			}
 		}
 	}
-	get apiLocalUserArgumentType(): ArgumentType<void, User<TelegramApi>> {
+	get apiLocalUserArgumentType(): ArgumentType<void, User> {
 		throw new Error("Method not implemented.");
 	}
 
-	async send(conv: Conversation<TelegramApi>, text: Text, _attachments: Attachment[], _options: IMessageOptions): Promise<void> {
+	async send(conv: Conversation, text: Text, _attachments: Attachment[], _options: IMessageOptions): Promise<void> {
 		const parts = splitByMaxPossibleParts(this.partToString(text), 4096);
 		for (let part of parts) {
 			await this.execute('sendMessage', {

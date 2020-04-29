@@ -4,7 +4,7 @@ import type DiscordApi from ".";
 import type DiscordGuild from "./guild";
 import type DiscordUser from "./user";
 
-export default class DiscordChat extends Chat<DiscordApi>{
+export default class DiscordChat extends Chat {
 	constructor(api: DiscordApi, guild: DiscordGuild, public apiChat: TextChannel, admins: DiscordUser[], members: DiscordUser[]) {
 		super(
 			api,

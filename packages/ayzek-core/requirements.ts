@@ -1,5 +1,6 @@
 import ApiFeature from "@ayzek/model/features";
 import { AyzekCommandRequirement } from "./command";
+import { Attribute, AttributeConstructor } from "@ayzek/attribute";
 
 /**
  * Require feature is supported by sender api
@@ -23,4 +24,24 @@ export function requireHidden(): AyzekCommandRequirement {
  */
 export function requireDevelopment(): AyzekCommandRequirement {
 	return _source => process.env.NODE_ENV === 'DEVELOPMENT';
+}
+
+/**
+ * Fails if message sender doesn't have needed attribute
+ */
+export function requireAttribute<P extends Attribute>(constructor: AttributeConstructor<P>): AyzekCommandRequirement {
+	return ctx => {
+		const attribute = ctx.event.user.attributeStorage!.getIfAvailable(constructor);
+		return !!attribute;
+	}
+}
+
+/**
+ * Fails if message sender have specified attachment
+ */
+export function requireAttributeAbsent<P extends Attribute>(constructor: AttributeConstructor<P>): AyzekCommandRequirement {
+	return ctx => {
+		const attribute = ctx.event.user.attributeStorage!.getIfAvailable(constructor);
+		return !attribute;
+	}
 }
