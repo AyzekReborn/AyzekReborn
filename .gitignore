@@ -19,3 +19,7 @@ yarn-error.log
 *.js
 *.d.ts
 *.js.map
+
+# Private plugins
+.gitmodules
+packages/ayzek-private-plugin-*

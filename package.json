@@ -7,12 +7,13 @@
 	"devDependencies": {
 		"@types/node": "^13.13.2",
 		"@yarnpkg/pnpify": "^2.0.0-rc.21",
-		"typescript": "^3.9.0-dev.20200422"
+		"typescript": "^3.9.0-dev.20200424"
 	},
 	"scripts": {
-		"publish-all": "yarn workspaces foreach -t -v --exclude '@ayzek/root' npm publish --tolerate-republish --access=public"
-	},
-	"resolutions": {
-		"cristalix": "portal:/home/lach/workspaces/ayzek/cristalix"
+		"build": "tsc --sourceMap --declaration",
+		"publish-all": "yarn build ; yarn workspaces foreach -t -v --exclude '@ayzek/root' npm publish --tolerate-republish --access=public",
+		"install-plugin": "./scripts/install-plugin.fish",
+		"update-plugin": "./scripts/update-plugin.fish",
+		"install-or-update-plugin": "./scripts/install-or-update-plugin.fish"
 	}
 }

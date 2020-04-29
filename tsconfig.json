@@ -8,6 +8,7 @@
 		"moduleResolution": "node",
 		"esModuleInterop": false,
 		"experimentalDecorators": true,
+		"skipLibCheck": true,
 		"lib": [
 			"es2015",
 			"es2016",
@@ -18,6 +19,7 @@
 		]
 	},
 	"exclude": [
-		"random"
+		"random",
+		".yarn"
 	]
 }
