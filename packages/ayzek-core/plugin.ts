@@ -5,6 +5,7 @@ import type { Text } from "@ayzek/text";
 import type { Ayzek } from "./ayzek";
 import { AyzekCommandContext, AyzekCommandSource } from "./command";
 import type { MessageEventContext } from "./context";
+import * as t from 'io-ts';
 
 /**
  * TODO: Message requirements
@@ -59,7 +60,18 @@ type PluginInfo = {
 	 */
 	getHelpAdditionalInfo?(ctx: AyzekCommandContext): Text;
 };
-export { PluginInfo };
+
+type Configurable<P extends t.TypeC<any>> = {
+	config?: t.TypeOf<P>;
+	configType: P
+};
+
+function isConfigurable(t: any): t is Configurable<any> {
+	return t.configType !== undefined;
+}
+
+export { PluginInfo, Configurable };
+export { isConfigurable };
 
 /**
  * @param names primary name or name with aliases.

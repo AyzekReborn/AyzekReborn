@@ -18,7 +18,7 @@ function padAllListItemExceptFirst(list: string[]) {
 	];
 }
 
-async function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek<any>, plugin: PluginInfo): Promise<Text> {
+async function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek, plugin: PluginInfo): Promise<Text> {
 	const availableCommands = plugin.commands.filter(command => {
 		const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal)!;
 		return commandNode.canUse(ctx.source);
@@ -165,7 +165,7 @@ const helpCommand = command('help')
 		.executes(async ctx => {
 			const { source: { event, ayzek } } = ctx;
 			try {
-				await event.user.send(joinText({ type: 'formatting', preserveMultipleSpaces: true, data: '\n \n \n' }, ...await Promise.all(ayzek.plugins.map(p => describePlugin(ctx, ayzek, p)))));
+				await event.user.send(joinText({ type: 'formatting', preserveMultipleSpaces: true, data: '\n \n \n' }, await Promise.all(ayzek.plugins.map(p => describePlugin(ctx, ayzek, p)))));
 				if (event.conversation.isChat)
 					await event.conversation.send('Помощь отправлена тебе в ЛС');
 			} catch (e) {
