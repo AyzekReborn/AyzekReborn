@@ -1,23 +1,53 @@
 import type { CommandNode } from '@ayzek/command-parser/tree';
 import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
 import type { Ayzek } from '../ayzek';
-import type { PluginInfo } from '../plugin';
+import { PluginInfo, isConfigurable } from '../plugin';
+import YAML from 'yaml';
+import { PathReporter } from "io-ts/lib/PathReporter";
 
 export type PluginInfoAttribute = {
 	registered?: CommandNode<any, any, any>[];
 	file: string;
+	loaderData: any;
 };
 
 export type ModernPluginContext = {
-	ayzek: Ayzek<any>;
+	ayzek: Ayzek;
 }
 
 export default class ModernPluginSystem extends WebpackPluginLoader<ModernPluginContext, PluginInfo & PluginInfoAttribute> {
-	constructor(public ayzek: Ayzek<any>, requireContextGetter: () => any, acceptor: (acceptor: () => void, getContext: () => any) => void) {
-		super(`modern`, requireContextGetter, acceptor);
+	constructor(public ayzek: Ayzek, requireContextGetter: () => any, moduleHot: { accept: any }) {
+		super(`modern`, { ayzek }, requireContextGetter, moduleHot);
 	}
 
-	async onLoad(module: PluginInfo & PluginInfoAttribute): Promise<void> {
+	async onPreInit(module: PluginInfo & PluginInfoAttribute) {
+		if (isConfigurable(module)) {
+			const configEnv = 'CONFIG_' + module.name.replace(/([a-z])([A-Z])/g, (_, a, b) => {
+				return `${a.toUpperCase()}_${b.toUpperCase()}`;
+			}).toUpperCase().replace(/__+/g, '_');
+
+			this.logger.log(`Trying to load config from either env ${configEnv} or configs/${module.name}.yaml`);
+
+			const envString = process.env[configEnv];
+			if (!envString)
+				throw new Error(`Configuration not found for "${module.name}"`);
+
+			const config = YAML.parse(envString);
+
+			let decoded = module.configType.decode(config);
+			if (decoded.left) {
+				this.logger.error(`Failed to parse config for "${module.name}"`);
+				for(let err of PathReporter.report(decoded)) {
+					this.logger.error(err);
+				}
+				throw new Error('Configuration parse failed');
+				// throw new Error(`Failed to parse configuration for "${module.name}":\n${PathReporter.report(decoded).join('\n')}`)
+			}
+			module.config = config;
+		}
+	}
+
+	async onPostInit(module: PluginInfo & PluginInfoAttribute) {
 		// TODO: Also perform in-plugin conflict search (currently only cross-plugin check is done)
 		module.registered = module.commands.filter(command => {
 			// FIXME: O(n*m), somehow add alias map to make it O(1)
@@ -53,10 +83,15 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 		module.ayzek = this.ayzek;
 		this.ayzek.plugins.push(module);
 	}
-	async onUnload(module: PluginInfo & PluginInfoAttribute): Promise<void> {
-		module.registered!.forEach(c => {
-			this.ayzek.commandDispatcher.unregister(c);
-		});
+
+	async onPreDeinit(module: PluginInfo & PluginInfoAttribute) {
+	}
+
+	async onPostDeinit(module: PluginInfo & PluginInfoAttribute) {
+		if (module.registered)
+			module.registered?.forEach(c => {
+				this.ayzek.commandDispatcher.unregister(c);
+			});
 		if (module.userAttributes)
 			for (const attachment of module.userAttributes)
 				this.ayzek.userAttributeRepository.removeCreator(attachment);
@@ -80,11 +115,8 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 		}
 		this.ayzek.plugins.splice(this.ayzek.plugins.indexOf(module), 1);
 	}
-	async onReload(module: PluginInfo & PluginInfoAttribute): Promise<void> {
-		this.onLoad(module);
-	}
 
-	async loadPlugins() {
-		super.load({ ayzek: this.ayzek });
+	async onUnload(_module: PluginInfo & PluginInfoAttribute) {
+		throw new Error("Method not implemented.");
 	}
 }
