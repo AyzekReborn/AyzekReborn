@@ -10,10 +10,20 @@
 		"typescript": "^3.9.0-dev.20200424"
 	},
 	"scripts": {
-		"build": "tsc --sourceMap --declaration",
-		"publish-all": "yarn build ; yarn workspaces foreach -t -v --exclude '@ayzek/root' npm publish --tolerate-republish --access=public",
-		"install-plugin": "./scripts/install-plugin.fish",
-		"update-plugin": "./scripts/update-plugin.fish",
-		"install-or-update-plugin": "./scripts/install-or-update-plugin.fish"
+		"release:cleanup": "rm -f packages/**/*.js && rm -f packages/**/*.d.ts && rm -f packages/**/*.js.map && rm -f src/**/*.js && rm -f src/**/*.d.ts && rm -f src/**/*.js.map",
+		"release:build": "tsc --sourceMap --declaration",
+		"release:publish": "yarn release:build ; yarn workspaces foreach -t -v --exclude '@ayzek/root' npm publish --tolerate-republish --access=public ; yarn release:cleanup",
+		"plugin:install": "./scripts/install-plugin.fish",
+		"plugin:update": "./scripts/update-plugin.fish",
+		"plugin:install-or-update": "./scripts/install-or-update-plugin.fish",
+		"run:dev:build": "yarn zarbis-js development",
+		"run:dev:run": "yarn node dist/development/starter/",
+		"run:prod:build": "yarn zarbis-js production",
+		"run:prod:run": "yarn node dist/production/starter/"
+	},
+	"dependencies": {
+		"fp-ts": "^2.5.4",
+		"io-ts": "^2.2.1",
+		"zarbis-js": "^1.6.9"
 	}
 }

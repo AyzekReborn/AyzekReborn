@@ -23,3 +23,7 @@ yarn-error.log
 # Private plugins
 .gitmodules
 packages/ayzek-private-plugin-*
+docker-compose.yml
+
+# Built
+dist

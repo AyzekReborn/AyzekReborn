@@ -1,3 +1,31 @@
+# Git time metrics
+.gtm
+
+#
+.vscode
+
+# Testing shit
+random
+
+# Yarn specific
+node_modules
+
+.pnp.js
+.yarn
+.yarnrc.yml
+yarn-error.log
+
+# Typescript is used
+*.js
+*.d.ts
+*.js.map
+
+# Private plugins
+.gitmodules
+packages/ayzek-private-plugin-*
+
+# Built
 dist
+
 docs
-**/node_modules
+.git

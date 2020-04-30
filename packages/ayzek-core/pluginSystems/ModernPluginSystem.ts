@@ -1,9 +1,8 @@
 import type { CommandNode } from '@ayzek/command-parser/tree';
 import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
 import type { Ayzek } from '../ayzek';
-import { PluginInfo, isConfigurable } from '../plugin';
-import YAML from 'yaml';
-import { PathReporter } from "io-ts/lib/PathReporter";
+import { isConfigurable, PluginInfo } from '../plugin';
+import { parseConfig } from '../util/config';
 
 export type PluginInfoAttribute = {
 	registered?: CommandNode<any, any, any>[];
@@ -32,18 +31,7 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 			if (!envString)
 				throw new Error(`Configuration not found for "${module.name}"`);
 
-			const config = YAML.parse(envString);
-
-			let decoded = module.configType.decode(config);
-			if (decoded.left) {
-				this.logger.error(`Failed to parse config for "${module.name}"`);
-				for(let err of PathReporter.report(decoded)) {
-					this.logger.error(err);
-				}
-				throw new Error('Configuration parse failed');
-				// throw new Error(`Failed to parse configuration for "${module.name}":\n${PathReporter.report(decoded).join('\n')}`)
-			}
-			module.config = config;
+			module.config = parseConfig(envString, this.logger, module.configType);
 		}
 	}
 
