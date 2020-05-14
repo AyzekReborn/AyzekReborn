@@ -6,6 +6,7 @@
 
 # Testing shit
 random
+.env
 
 # Yarn specific
 node_modules
