@@ -37,13 +37,14 @@ async function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek, plugin: Pl
 					return [
 						`⚡ /${command.literal} `,
 						{
-							type: 'preservingWhitespace',
+							type: 'formatting',
+							preserveMultipleSpaces: true,
 							data: joinText('\n', padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode, ctx.source, true)))
-						}
+						} as Text
 					];
 				}).map(e => e!) as any),
 				joinText('\n', plugin.listeners.map(listener => [
-					`👁‍🗨 ${listener.name}${listener.description ? ` — ${listener.description}` : ''}`
+					`👀 ${listener.name}${listener.description ? ` — ${listener.description}` : ''}`
 				]))
 			].filter(e => e.length !== 0)),
 		] : [])
