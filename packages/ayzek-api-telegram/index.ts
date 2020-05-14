@@ -270,7 +270,11 @@ export default class TelegramApi extends Api {
 				return `\`\`\`${part.lang}\n${part.data.replace(/```/g, '\\`\\`\\`')}\`\`\``;
 			case 'opaque': {
 				const ayzekPart = opaqueToAyzek(part);
-				if (!ayzekPart) return '**IDK**';
+				if (!ayzekPart) {
+					if(part.fallback)
+						return this.partToString(part.fallback);
+					return '**IDK**';
+				}
 				switch (ayzekPart.ayzekPart) {
 					case 'user': {
 						return `[${ayzekPart.title ?? ayzekPart.user.name}](tg://user?id=${ayzekPart.user.targetId})`

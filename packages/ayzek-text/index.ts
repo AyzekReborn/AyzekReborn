@@ -1,7 +1,8 @@
 export type OpaqueTextPart = {
 	type: 'opaque',
 	opaqueType: Symbol,
-	opaque: any
+	opaque: any,
+	fallback: Text,
 };
 
 export function isOpaquePart(t: TextPart): t is OpaqueTextPart {

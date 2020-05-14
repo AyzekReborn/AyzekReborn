@@ -315,7 +315,7 @@ export class Ayzek extends Api {
 		return (await Promise.all(this.apis.map(e => e.getGuild(gid)))).filter(e => e !== null)[0] || null;
 	}
 
-	async doWork(): Promise<any> {}
+	async doWork(): Promise<any> { }
 
 	get supportedFeatures(): Set<ApiFeature> {
 		throw new Error('Not implemented for ayzek');

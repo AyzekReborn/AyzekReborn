@@ -75,9 +75,9 @@ export default class DiscordApi extends Api {
 		return [this.wrapUser(chat.recipient)];
 	}
 
-	wrapChat(chat: any): DiscordChat {
+	wrapChat(chat: TextChannel): DiscordChat {
 		let members = this.extractMembers(chat);
-		return new DiscordChat(this, this.wrapGuild(chat.guild), chat, [], members); // TODO fill one last parameter
+		return new DiscordChat(this, this.wrapGuild(chat.guild), chat, [], members);
 	}
 
 	async getApiUser(id: string): Promise<DiscordUser | null> {
@@ -90,7 +90,7 @@ export default class DiscordApi extends Api {
 	}
 
 	async getApiChat(id: string): Promise<DiscordChat> {
-		return this.wrapChat(this.api.channels.fetch(id));
+		return this.wrapChat(await this.api.channels.fetch(id) as TextChannel);
 	}
 
 	getUser(uid: string): Promise<DiscordUser | null> {
@@ -124,7 +124,7 @@ export default class DiscordApi extends Api {
 	}
 
 	async init() {
-		this.api.login(this.token);
+		await this.api.login(this.token);
 		this.api.on('guildMemberAdd', async member => {
 			this.joinGuildEvent.emit(new JoinGuildEvent(
 				this,
@@ -147,7 +147,7 @@ export default class DiscordApi extends Api {
 		});
 		this.api.on('message', message => {
 			if (message.author === this.api.user) return;
-			const chat = message.channel.type === 'dm' ? null : this.wrapChat(message.channel);
+			const chat = message.channel.type === 'dm' ? null : this.wrapChat(message.channel as TextChannel);
 			const user = this.wrapUser(message.author);
 			this.messageEvent.emit(new MessageEvent(
 				this,
@@ -162,7 +162,7 @@ export default class DiscordApi extends Api {
 			));
 		});
 		this.api.on('typingStart', async (ch, apiUser) => {
-			const chat = ch.type === 'dm' ? null : this.wrapChat(ch);
+			const chat = ch.type === 'dm' ? null : this.wrapChat(ch as TextChannel);
 			const user = this.wrapUser(await apiUser.fetch());
 			this.typingEvent.emit(new TypingEvent(
 				this,
@@ -232,7 +232,11 @@ export default class DiscordApi extends Api {
 				return `\`\`\`${part.lang}\n${part.data.replace(/```/g, '\\`\\`\\`')}\`\`\``;
 			case 'opaque': {
 				const ayzekPart = opaqueToAyzek(part);
-				if (!ayzekPart) return '**IDK**';
+				if (!ayzekPart) {
+					if (part.fallback)
+						return this.partToString(part.fallback);
+					return '**IDK**';
+				}
 				switch (ayzekPart.ayzekPart) {
 					case 'user': {
 						return `<@${(ayzekPart.user as DiscordUser).apiUser.id}>`;

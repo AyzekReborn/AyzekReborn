@@ -522,7 +522,11 @@ export default class VKApi extends Api {
 				return part.data.replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
 			case 'opaque': {
 				const ayzekPart = opaqueToAyzek(part);
-				if (!ayzekPart) return '**IDK**';
+				if (!ayzekPart) {
+					if(part.fallback)
+						return this.partToString(part.fallback);
+					return '**IDK**';
+				}
 				switch (ayzekPart.ayzekPart) {
 					case 'user': {
 						return `[${ayzekPart.user.profileUrl.slice(15)}|${ayzekPart.title || ayzekPart.user.name}]`
