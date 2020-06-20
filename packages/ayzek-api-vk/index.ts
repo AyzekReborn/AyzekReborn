@@ -534,7 +534,7 @@ export default class VKApi extends Api {
 				}
 			}
 			case 'hashTagPart':
-				return this.partToString(part.data).split(' ').map(e => `#${e}`).join(' ');
+				return this.partToString(part.data).split(' ').map(e => e.length > 0 ? `#${e}` : e).join(' ');
 		}
 		throw new Error(`Part ${JSON.stringify(part)} not handled`);
 	}
