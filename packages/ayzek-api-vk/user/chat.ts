@@ -1,10 +1,41 @@
-import { PromiseMap } from "@meteor-it/utils";
-import type VKApi from ".";
-import VKChat from "./chat";
-import GroupingVKApiRequester from "./groupingRequester";
-import type VKUser from "./user/user";
+import { Chat } from '@ayzek/model/conversation';
+import type VKApi from '..';
+import type VKUser from '../user/user';
+import { PromiseMap } from '@meteor-it/utils';
+import GroupingVKApiRequester from '../groupingRequester';
+import * as t from 'io-ts';
+import { validateData } from '@ayzek/core/util/config';
 
-export default class VKChatMap extends PromiseMap<number, VKChat> {
+export const VKApiChat = t.interface({
+	peer: t.interface({
+		id: t.number,
+		local_id: t.number,
+	}),
+	chat_settings: t.interface({
+		title: t.string,
+		owner_id: t.number,
+		admin_ids: t.array(t.number),
+	}),
+});
+export type VKApiChatType = t.TypeOf<typeof VKApiChat>;
+
+export class VKChat extends Chat {
+	constructor(api: VKApi, public apiChat: VKApiChatType, members: VKUser[], admins: VKUser[]) {
+		super(
+			api,
+			api.encodeChatCid(apiChat.peer.local_id),
+			members,
+			apiChat.chat_settings.title,
+			admins,
+			null,
+		);
+	}
+	get photoImage(): Promise<null> {
+		return Promise.resolve(null);
+	}
+}
+
+export class VKChatMap extends PromiseMap<number, VKChat> {
 	processor: GroupingVKApiRequester<number>;
 
 	constructor(public api: VKApi) {
@@ -34,6 +65,7 @@ export default class VKChatMap extends PromiseMap<number, VKChat> {
 					title: `Unprivileged #${key}`,
 				}
 			};
+		const validatedChat = validateData(apiChat, VKApiChat);
 		let members = null;
 		try {
 			members = await this.api.execute('messages.getConversationMembers', {
@@ -44,11 +76,11 @@ export default class VKChatMap extends PromiseMap<number, VKChat> {
 			members = { items: [] };
 		const [memberUsers, adminUsers] = await Promise.all([
 			Promise.all(members.items.map((e: any) => this.api.getApiUser(e.member_id)) as Promise<VKUser>[]),
-			Promise.all([apiChat.chat_settings.owner_id, ...apiChat.chat_settings.admin_ids].map((e: any) => this.api.getApiUser(e)))
+			Promise.all([validatedChat.chat_settings.owner_id, ...validatedChat.chat_settings.admin_ids].map((e: any) => this.api.getApiUser(e)))
 		]);
 		return new VKChat(
 			this.api,
-			apiChat,
+			validatedChat,
 			memberUsers.filter((e: VKUser | null) => e !== null) as VKUser[],
 			adminUsers.filter((e: VKUser | null) => e !== null) as VKUser[]
 		);
