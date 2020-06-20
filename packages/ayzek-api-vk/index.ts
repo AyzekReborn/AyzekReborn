@@ -21,12 +21,11 @@ import * as multipart from '@meteor-it/xrest/multipart';
 import { pick } from 'lodash';
 import VKApiProcessor from "./apiProcessor";
 import { VKUserArgumentType } from './arguments';
-import VKBotMap from "./botMap";
-import type VKChat from "./chat";
-import VKChatMap from "./chatMap";
 import type { IVKKeyboard } from './keyboard';
-import type VKUser from "./user/user";
-import VKUserMap from "./userMap";
+import { VKBot, VKBotMap } from "./user/bot";
+import { VKChat, VKChatMap } from "./user/chat";
+import { VKRealUser, VKUserMap } from "./user/realUser";
+import VKUser from "./user/user";
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
@@ -520,7 +519,7 @@ export default class VKApi extends Api {
 			case 'opaque': {
 				const ayzekPart = opaqueToAyzek(part);
 				if (!ayzekPart) {
-					if(part.fallback)
+					if (part.fallback)
 						return this.partToString(part.fallback);
 					return '**IDK**';
 				}
