@@ -436,7 +436,16 @@ export default class VKApi extends Api {
 	}
 	// TODO: Add support for message editing (Also look at comment for message_reply)
 	async send(conv: Conversation, text: Text, attachments: Attachment[] = [], options: IMessageOptions & IVKMessageOptions = {}) {
-		const peer_id = +conv.targetId;
+		let peer_id: number;
+		if (conv instanceof VKRealUser) {
+			peer_id = conv.apiUser.id;
+		} else if (conv instanceof VKBot) {
+			throw new Error('Bots have no PM');
+		} else if (conv instanceof VKChat) {
+			peer_id = conv.apiChat.peer.id;
+		} else {
+			throw new Error('Bad receiver');
+		}
 		if (options.forwarded || options.replyTo) throw new Error(`Message responses are not supported by vk bots`);
 		const texts = splitByMaxPossibleParts(this.partToString(text), MAX_MESSAGE_LENGTH);
 		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[]
