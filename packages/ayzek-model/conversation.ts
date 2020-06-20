@@ -21,7 +21,6 @@ export abstract class Conversation implements IConversation {
 	readonly api: Api
 	constructor(
 		api: Api,
-		public readonly targetId: string,
 		public readonly conversationType: ConversationType,
 	) {
 		this.api = api;
@@ -63,10 +62,9 @@ export enum UserType {
 	BOT,
 }
 
-export abstract class User extends Conversation {
+export abstract class User<I = unknown> extends Conversation {
 	constructor(
 		api: Api,
-		targetId: string,
 		public readonly uid: string,
 		public readonly nickName: string | null,
 		public readonly firstName: string | null,
@@ -75,13 +73,13 @@ export abstract class User extends Conversation {
 		public readonly profileUrl: string,
 		public readonly isBot: boolean,
 	) {
-		super(api, targetId, ConversationType.USER);
+		super(api, ConversationType.USER);
 	}
 
 	/**
 	 * API specific user representation
 	 */
-	abstract apiUser: any;
+	abstract apiUser: I;
 
 	abstract get photoImage(): Promise<Image | null>;
 
@@ -129,23 +127,22 @@ export abstract class Guild {
 	) { };
 };
 
-export abstract class Chat extends Conversation {
+export abstract class Chat<I = unknown> extends Conversation {
 	constructor(
 		api: Api,
-		targetId: string,
 		public readonly cid: string,
 		public readonly users: User[],
 		public readonly title: string,
 		public readonly admins: User[],
 		public readonly guild: Guild | null,
 	) {
-		super(api, targetId, ConversationType.CHAT);
+		super(api, ConversationType.CHAT);
 	}
 
 	/**
 	* API specific chat representation
 	*/
-	abstract apiChat: any;
+	abstract apiChat: I;
 
 	abstract get photoImage(): Promise<Image | null>;
 
