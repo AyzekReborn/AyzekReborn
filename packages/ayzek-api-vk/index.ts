@@ -501,10 +501,7 @@ export default class VKApi extends Api {
 		if (typeof part === 'number') {
 			return part + '';
 		} else if (typeof part === 'string')
-			return part
-				.replace(/`/g, '\\`')
-				.replace(/_/g, '\\_')
-				.replace(/\*/g, '\\*');
+			return part;
 		if (part instanceof StringReader) {
 			return `${part.toStringWithCursor(`|`)}`
 		} else if (part instanceof Array) {
