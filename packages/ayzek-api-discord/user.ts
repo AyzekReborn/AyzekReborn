@@ -7,7 +7,6 @@ export default class DiscordUser extends User {
 	constructor(api: DiscordApi, public apiUser: DSUser) {
 		super(
 			api,
-			apiUser.dmChannel && apiUser.dmChannel.id || '0',
 			api.encodeUserUid(apiUser.id),
 			apiUser.username,
 			null,
@@ -20,6 +19,10 @@ export default class DiscordUser extends User {
 		);
 	}
 	private _photoImage: Promise<Image> | null = null;
+
+	get channelId(): string {
+		return this.apiUser.dmChannel && this.apiUser.dmChannel.id || '0';
+	}
 
 	get photoImage() {
 		return this._photoImage || (this._photoImage = Promise.resolve(Image.fromUrl('GET', this.apiUser.avatar || this.apiUser.defaultAvatarURL, {}, 'photo.png', 'image/png')));

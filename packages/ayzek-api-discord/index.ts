@@ -174,10 +174,10 @@ export default class DiscordApi extends Api {
 		})
 	}
 
-	async send(conv: Conversation, text: Text, attachments: Attachment[] = [], _options: IMessageOptions = {}) {
+	async send(conv: DiscordChat | DiscordUser, text: Text, attachments: Attachment[] = [], _options: IMessageOptions = {}) {
 		const textParts = splitByMaxPossibleParts(this.partToString(text), MAX_MESSAGE_LENGTH);
-		const chat = await this.api.channels.fetch(conv.targetId) as TextChannel;
-		if (!chat) throw new Error(`Bad channel: ${conv.targetId}`);
+		const chat = await this.api.channels.fetch(conv.channelId) as TextChannel;
+		if (!chat) throw new Error(`Bad channel: ${conv.channelId}`);
 		const uploadPromises: [Promise<Buffer>, string][] = attachments.map(a => {
 			if (a.type === 'location' || a.type === 'messenger_specific')
 				throw new Error('Unsupported attachment type for discord: ' + a.type);
@@ -242,7 +242,7 @@ export default class DiscordApi extends Api {
 						return `<@${(ayzekPart.user as DiscordUser).apiUser.id}>`;
 					}
 					case 'chat': {
-						return `<#${ayzekPart.chat.targetId}>`;
+						return `<#${(ayzekPart.chat as DiscordChat).apiChat.id}>`;
 					}
 				}
 			}

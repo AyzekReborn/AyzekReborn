@@ -8,13 +8,16 @@ export default class DiscordChat extends Chat {
 	constructor(api: DiscordApi, guild: DiscordGuild, public apiChat: TextChannel, admins: DiscordUser[], members: DiscordUser[]) {
 		super(
 			api,
-			apiChat.id,
 			api.encodeChatUid(apiChat.id),
 			members,
 			apiChat.name,
 			admins,
 			guild
 		);
+	}
+
+	get channelId(): string {
+		return this.apiChat.id
 	}
 
 	get photoImage() {
