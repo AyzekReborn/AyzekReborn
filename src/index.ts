@@ -6,7 +6,7 @@ import VKApi from '@ayzek/api-vk';
 import DiscordApi from '../packages/ayzek-api-discord';
 import TelegramApi from '../packages/ayzek-api-telegram';
 import * as t from 'io-ts';
-import { parseConfig } from '@ayzek/core/util/config';
+import { parseYaml } from '@ayzek/core/util/config';
 
 Logger.addReceiver(new NodeReceiver());
 
@@ -62,7 +62,7 @@ const pluginSystem = new ModernPluginSystem(ayzek,
 	ayzek.logger.log('Attaching static apis');
 	const configString = process.env['CONFIG_AYZEK_API'];
 	if (!configString) throw new Error('API configuration not found at env CONFIG_AYZEK_API');
-	const apis = parseConfig(configString, ayzek.logger, t.array(ApiData)).map(createApi);
+	const apis = parseYaml(configString, t.array(ApiData)).map(createApi);
 	apis.forEach(a => ayzek.attachApi(a));
 
 	ayzek.logger.log('Starting');

@@ -2,7 +2,7 @@ import type { CommandNode } from '@ayzek/command-parser/tree';
 import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
 import type { Ayzek } from '../ayzek';
 import { isConfigurable, PluginInfo } from '../plugin';
-import { parseConfig } from '../util/config';
+import { parseYaml } from '../util/config';
 
 export type PluginInfoAttribute = {
 	registered?: CommandNode<any, any, any>[];
@@ -31,7 +31,7 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 			if (!envString)
 				throw new Error(`Configuration not found for "${module.name}"`);
 
-			module.config = parseConfig(envString, this.logger, module.configType);
+			module.config = parseYaml(envString, module.configType);
 		}
 	}
 

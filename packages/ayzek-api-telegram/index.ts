@@ -13,12 +13,25 @@ import type { Text, TextPart } from "@ayzek/text";
 import type { MaybePromise } from "@meteor-it/utils";
 import XRest from "@meteor-it/xrest";
 import * as https from 'https';
+import * as t from 'io-ts';
+import { validateData } from "@ayzek/core/util/config";
+
+const ApiUser = t.interface({
+	id: t.number,
+	username: t.string,
+	first_name: t.union([t.null, t.string]),
+	last_name: t.union([t.null, t.string]),
+	is_bot: t.boolean,
+});
+const ApiChat = t.interface({
+	id: t.number,
+	title: t.string,
+});
 
 export class TelegramUser extends User {
-	constructor(public apiUser: any, api: TelegramApi) {
+	constructor(public apiUser: t.TypeOf<typeof ApiUser>, api: TelegramApi) {
 		super(
 			api,
-			apiUser.id.toString(),
 			`TGU:${api.descriptor}:${apiUser.id.toString()}`,
 			apiUser.username,
 			apiUser.first_name ?? null,
@@ -33,10 +46,9 @@ export class TelegramUser extends User {
 	}
 }
 export class TelegramChat extends Chat {
-	constructor(public apiChat: any, api: TelegramApi) {
+	constructor(public apiChat: t.TypeOf<typeof ApiChat>, api: TelegramApi) {
 		super(
 			api,
-			apiChat.id,
 			`TGC:${api.descriptor}:${-apiChat.id}`,
 			[],
 			apiChat.title,
