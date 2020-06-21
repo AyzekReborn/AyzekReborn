@@ -3,8 +3,8 @@ import ModernPluginSystem from '@ayzek/core/pluginSystems/ModernPluginSystem';
 import Logger from '@meteor-it/logger';
 import NodeReceiver from '@meteor-it/logger/receivers/node';
 import VKApi from '@ayzek/api-vk';
-import DiscordApi from '../packages/ayzek-api-discord';
-import TelegramApi from '../packages/ayzek-api-telegram';
+import DiscordApi from '@ayzek/api-discord';
+import TelegramApi from '@ayzek/api-telegram';
 import * as t from 'io-ts';
 import { parseYaml } from '@ayzek/core/util/config';
 
