@@ -134,21 +134,19 @@ export default class TelegramApi extends Api {
 	users: Map<number, TelegramUser> = new Map();
 	chats: Map<number, TelegramChat> = new Map();
 
-	updateUserMap(user: any) {
-		if (!this.users.get(user.id)) {
-			this.users.set(user.id, new TelegramUser(user, this));
+	updateUserMap(user: unknown) {
+		const correctUser = validateData(user, ApiUser)
+		if (!this.users.get(correctUser.id)) {
+			this.users.set(correctUser.id, new TelegramUser(correctUser, this));
 		} else {
 			// TODO: Update
 		}
 	}
 
-	updateChatMap(chat: any) {
-		if (!chat.id) {
-			this.logger.debug('No id:', chat);
-			return;
-		}
-		if (!this.chats.get(-chat.id)) {
-			this.chats.set(-chat.id, new TelegramChat(chat, this));
+	updateChatMap(chat: unknown) {
+		const correctChat = validateData(chat, ApiChat);
+		if (!this.chats.get(-correctChat.id)) {
+			this.chats.set(-correctChat.id, new TelegramChat(correctChat, this));
 		} else {
 			// TODO: Update
 		}
@@ -236,9 +234,11 @@ export default class TelegramApi extends Api {
 
 	async send(conv: Conversation, text: Text, _attachments: Attachment[], _options: IMessageOptions): Promise<void> {
 		const parts = splitByMaxPossibleParts(this.partToString(text), 4096);
+		if (!(conv instanceof TelegramUser || conv instanceof TelegramChat))
+			throw new Error('Tried to send message to non telegram user');
 		for (let part of parts) {
 			await this.execute('sendMessage', {
-				chat_id: conv.targetId,
+				chat_id: (conv instanceof TelegramUser) ? conv.apiUser.id : conv.apiChat.id,
 				text: part,
 				parseMode: 'MarkdownV2',
 				disable_web_page_preview: true,
@@ -283,13 +283,16 @@ export default class TelegramApi extends Api {
 			case 'opaque': {
 				const ayzekPart = opaqueToAyzek(part);
 				if (!ayzekPart) {
-					if(part.fallback)
+					if (part.fallback)
 						return this.partToString(part.fallback);
 					return '**IDK**';
 				}
 				switch (ayzekPart.ayzekPart) {
 					case 'user': {
-						return `[${ayzekPart.title ?? ayzekPart.user.name}](tg://user?id=${ayzekPart.user.targetId})`
+						if (ayzekPart.user instanceof TelegramUser)
+							return `[${ayzekPart.title ?? ayzekPart.user.name}](tg://user?id=${ayzekPart.user.apiUser})`;
+						else
+							return `${ayzekPart.user.name} (${ayzekPart.user.profileUrl})`;
 					}
 					case 'chat': {
 						return `<Чат ${(ayzekPart.chat as TelegramChat).title}>`;
