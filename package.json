@@ -19,7 +19,7 @@
 		"plugin:update": "./scripts/update-plugin.fish",
 		"plugin:install-or-update": "./scripts/install-or-update-plugin.fish",
 		"run:dev:build": "yarn zarbis development",
-		"run:dev:run": "yarn node dist/development/starter/",
+		"run:dev:run": "yarn node -r source-map-support/register dist/development/starter/main-p.js",
 		"run:prod:build": "yarn zarbis production",
 		"run:prod:run": "yarn node dist/production/starter/",
 		"lint:fix": "eslint --ignore-path .eslintignore --fix ."
@@ -27,6 +27,7 @@
 	"dependencies": {
 		"fp-ts": "^2.6.6",
 		"io-ts": "^2.2.6",
+		"source-map-support": "^0.5.19",
 		"zarbis": "^1.6.14"
 	}
 }
