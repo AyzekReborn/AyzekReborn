@@ -1,0 +1,15 @@
+{
+	"name": "AyzekReborn",
+	"dockerFile": "Dockerfile",
+	"settings": {
+		"terminal.integrated.shell.linux": "/usr/bin/fish",
+		"editor.codeActionsOnSave": {
+			"source.fixAll": true
+		}
+	},
+	"extensions": [
+		"dbaeumer.vscode-eslint"
+	],
+	"postCreateCommand": "yarn",
+	"remoteUser": "developer"
+}
