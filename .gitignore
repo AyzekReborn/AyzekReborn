@@ -12,14 +12,10 @@ random
 node_modules
 
 .pnp.js
-.yarn
-.yarnrc.yml
+.yarn/cache
+.yarn/build-state.yml
+.yarn/install-state.gz
 yarn-error.log
-
-# Typescript is used
-*.js
-*.d.ts
-*.js.map
 
 # Private plugins
 .gitmodules
