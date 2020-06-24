@@ -50,7 +50,7 @@ export class Ayzek extends Api {
 		return craftCommandPayload(command, 'dummy');
 	}
 
-	constructor(logger: string | Logger, commandPrefix: string, logEvents: boolean) {
+	constructor(logger: string | Logger, commandPrefix: string, logEvents: boolean, public dataDir: string) {
 		super(logger);
 		if (logEvents) {
 			this.messageEvent.on(e => {

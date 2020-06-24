@@ -51,7 +51,7 @@ function createApi(apiDesc: t.TypeOf<typeof ApiData>) {
 	}
 }
 
-const ayzek = new Ayzek('ayzek', '/', true);
+const ayzek = new Ayzek('ayzek', '/', true, `${__dirname}/../../config/`);
 
 const pluginSystem = new ModernPluginSystem(ayzek,
 	() => (require as any).context('../packages/', true, /ayzek(:?-private)?-plugin-[a-z\-_0-9]+\/index\.ts$/, 'lazy'),

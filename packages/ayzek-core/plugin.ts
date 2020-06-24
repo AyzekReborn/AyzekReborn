@@ -62,8 +62,9 @@ type PluginInfo = {
 };
 
 type Configurable<P extends t.TypeC<any>> = {
-	config?: t.TypeOf<P>;
-	configType: P
+	config: t.TypeOf<P>;
+	configType: P;
+	defaultConfig: t.TypeOf<P>;
 };
 
 function isConfigurable(t: any): t is Configurable<any> {

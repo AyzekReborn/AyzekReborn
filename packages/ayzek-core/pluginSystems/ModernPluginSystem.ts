@@ -3,6 +3,8 @@ import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
 import type { Ayzek } from '../ayzek';
 import { isConfigurable, PluginInfo } from '../plugin';
 import { parseYaml } from '../util/config';
+import { readFile, writeFile } from '@meteor-it/fs';
+import { resolve } from 'path';
 
 export type PluginInfoAttribute = {
 	registered?: CommandNode<any, any, any>[];
@@ -24,14 +26,25 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 			const configEnv = 'CONFIG_' + module.name.replace(/([a-z])([A-Z])/g, (_, a, b) => {
 				return `${a.toUpperCase()}_${b.toUpperCase()}`;
 			}).toUpperCase().replace(/__+/g, '_');
+			const configPath = resolve(this.ayzek.dataDir, module.name.replace(/([a-z])([A-Z])/g, (_, a, b) => {
+				return `${a}${b.toUpperCase()}`;
+			}) + '.json');
 
-			this.logger.log(`Trying to load config from either env ${configEnv} or configs/${module.name}.yaml`);
+			this.logger.log(`Trying to load config from either env ${configEnv} or ${configPath}`);
 
 			const envString = process.env[configEnv];
-			if (!envString)
-				throw new Error(`Configuration not found for "${module.name}"`);
-
-			module.config = parseYaml(envString, module.configType);
+			if (envString) {
+				module.config = parseYaml(envString, module.configType);
+			} else {
+				try {
+					const fileString = await readFile(configPath);
+					module.config = JSON.parse(fileString.toString('utf8'));
+				} catch {
+					this.logger.log('Config not found, creating default');
+					module.config = module.defaultConfig;
+					await writeFile(configPath, JSON.stringify(module.config, null, '\t'));
+				}
+			}
 		}
 	}
 
