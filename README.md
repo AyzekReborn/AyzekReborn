@@ -36,18 +36,6 @@ No heavy enterprise framework used
 
 Chapter is WIP.
 
-### Prepare newer yarn, add workspace plugin, install sdk support for typescript
-
-This can be added to repo, but i dont want to have 8mb blobs
-
-```sh
-yarn policies set-version berry # May fail if already set
-yarn set version latest
-yarn plugin import workspace-tools
-yarn install
-yarn pnpify --sdk
-```
-
 ### Switch to workspace's typescript
 
 - Open any .ts file
