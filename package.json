@@ -5,9 +5,11 @@
 		"packages/*"
 	],
 	"devDependencies": {
-		"@types/node": "^13.13.2",
-		"@yarnpkg/pnpify": "^2.0.0-rc.21",
-		"typescript": "^3.9.0-dev.20200424"
+		"@types/node": "^14.0.13",
+		"@typescript-eslint/eslint-plugin": "^3.4.0",
+		"@typescript-eslint/parser": "^3.4.0",
+		"eslint": "^7.3.1",
+		"typescript": "^3.9.5"
 	},
 	"scripts": {
 		"release:cleanup": "rm -f packages/**/*.js && rm -f packages/**/*.d.ts && rm -f packages/**/*.js.map && rm -f src/**/*.js && rm -f src/**/*.d.ts && rm -f src/**/*.js.map",
@@ -16,14 +18,14 @@
 		"plugin:install": "./scripts/install-plugin.fish",
 		"plugin:update": "./scripts/update-plugin.fish",
 		"plugin:install-or-update": "./scripts/install-or-update-plugin.fish",
-		"run:dev:build": "yarn zarbis-js development",
+		"run:dev:build": "yarn zarbis development",
 		"run:dev:run": "yarn node dist/development/starter/",
-		"run:prod:build": "yarn zarbis-js production",
+		"run:prod:build": "yarn zarbis production",
 		"run:prod:run": "yarn node dist/production/starter/"
 	},
 	"dependencies": {
-		"fp-ts": "^2.5.4",
-		"io-ts": "^2.2.1",
-		"zarbis-js": "^1.6.9"
+		"fp-ts": "^2.6.6",
+		"io-ts": "^2.2.6",
+		"zarbis": "^1.6.14"
 	}
 }
