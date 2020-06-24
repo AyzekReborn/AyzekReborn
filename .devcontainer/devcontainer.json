@@ -4,11 +4,13 @@
 	"settings": {
 		"terminal.integrated.shell.linux": "/usr/bin/fish",
 		"editor.codeActionsOnSave": {
-			"source.fixAll": true
+			"source.fixAll.eslint": true,
+			"source.organizeImports": true
 		}
 	},
 	"extensions": [
-		"dbaeumer.vscode-eslint"
+		"dbaeumer.vscode-eslint",
+		"pflannery.vscode-versionlens"
 	],
 	"postCreateCommand": "yarn",
 	"remoteUser": "developer"
