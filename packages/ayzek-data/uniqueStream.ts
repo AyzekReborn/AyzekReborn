@@ -2,13 +2,13 @@ import { unlink, writeFile } from '@meteor-it/fs';
 import { readStreamToBuffer } from '@meteor-it/utils';
 import { Readable } from 'stream';
 import temp from 'temp';
-import { Data, MaybeTemporary } from "./data";
+import { Data, MaybeTemporary } from './data';
 
 /**
  * Should be used with care
  */
 export class UniqueStreamData extends Data {
-	got: boolean = false;
+	got = false;
 	constructor(public readonly stream: Readable) {
 		super();
 	}
@@ -23,12 +23,12 @@ export class UniqueStreamData extends Data {
 		return this.cachedBuffer = readStreamToBuffer(this.toStream(), Infinity);
 	}
 	async toFile() {
-		let path = temp.path({ prefix: 'ayzek-' });
+		const path = temp.path({ prefix: 'ayzek-' });
 		await writeFile(path, await this.toBuffer());
 		return {
 			path,
-			cleanIfTemporary: () => unlink(path)
-		}
+			cleanIfTemporary: () => unlink(path),
+		};
 	}
 	async toExternalUrl(): Promise<MaybeTemporary> {
 		throw new Error('Not implemented');

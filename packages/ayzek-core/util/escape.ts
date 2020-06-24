@@ -4,6 +4,7 @@
  * @param str
  */
 export function chooseCharacter(str: string): string {
+	// eslint-disable-next-line no-constant-condition
 	while (true) {
 		const ch = String.fromCharCode(Math.random() * 6399 | 0 + 57344);
 		if (str.indexOf(ch) === -1)
@@ -30,7 +31,7 @@ export function escapeStringParts(str: string, regexp: RegExp): [string, StringE
 		{
 			char,
 			replaced,
-		}
+		},
 	];
 }
 

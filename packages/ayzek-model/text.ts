@@ -1,7 +1,7 @@
-import { castOpaquePart, OpaqueTextPart } from "@ayzek/text";
-import { Chat, User } from "./conversation";
+import { castOpaquePart, OpaqueTextPart } from '@ayzek/text';
+import { Chat, User } from './conversation';
 
-export const OPAQUE_TYPE = Symbol('text:ayzek')
+export const OPAQUE_TYPE = Symbol('text:ayzek');
 
 export type UserTextPart = { ayzekPart: 'user', title?: string, user: User };
 export type ChatTextPart = { ayzekPart: 'chat', chat: Chat };
@@ -16,5 +16,6 @@ export function ayzekToOpaque(part: AyzekTextPart): OpaqueTextPart {
 		type: 'opaque',
 		opaqueType: OPAQUE_TYPE,
 		opaque: part,
-	}
+		fallback: null,
+	};
 }

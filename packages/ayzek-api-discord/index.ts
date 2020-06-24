@@ -1,24 +1,23 @@
-import StringReader from "@ayzek/command-parser/reader";
-import { replaceBut } from "@ayzek/core/util/escape";
+import StringReader from '@ayzek/command-parser/reader';
+import { replaceBut } from '@ayzek/core/util/escape';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import { Api } from "@ayzek/model/api";
-import { Attachment, BaseFile, File } from "@ayzek/model/attachment";
-import type { Conversation } from "@ayzek/model/conversation";
-import { JoinGuildEvent, JoinReason } from "@ayzek/model/events/join";
-import { LeaveGuildEvent, LeaveReason } from "@ayzek/model/events/leave";
-import { MessageEvent } from "@ayzek/model/events/message";
-import { TypingEvent, TypingEventType } from "@ayzek/model/events/typing";
-import ApiFeature from "@ayzek/model/features";
-import type { IMessageOptions } from "@ayzek/model/message";
-import { opaqueToAyzek } from "@ayzek/model/text";
-import type { Text, TextPart } from "@ayzek/text";
+import { Api } from '@ayzek/model/api';
+import { Attachment, BaseFile, File } from '@ayzek/model/attachment';
+import { JoinGuildEvent, JoinReason } from '@ayzek/model/events/join';
+import { LeaveGuildEvent, LeaveReason } from '@ayzek/model/events/leave';
+import { MessageEvent } from '@ayzek/model/events/message';
+import { TypingEvent, TypingEventType } from '@ayzek/model/events/typing';
+import ApiFeature from '@ayzek/model/features';
+import type { IMessageOptions } from '@ayzek/model/message';
+import { opaqueToAyzek } from '@ayzek/model/text';
+import type { Text, TextPart } from '@ayzek/text';
 import { lookupByPath } from '@meteor-it/mime';
 import * as assert from 'assert';
-import { Client, Guild, GuildMember, MessageAttachment, TextChannel, User } from "discord.js";
+import { Client, Guild, GuildMember, MessageAttachment, TextChannel, User } from 'discord.js';
 import { DSUserArgumentType } from './arguments';
-import DiscordChat from "./chat";
-import DiscordGuild from "./guild";
-import DiscordUser from "./user";
+import DiscordChat from './chat';
+import DiscordGuild from './guild';
+import DiscordUser from './user';
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -64,11 +63,11 @@ export default class DiscordApi extends Api {
 	}
 
 	private extractMembers(chat: any): DiscordUser[] {
-		let members = chat.members;
+		const members = chat.members;
 		if (members) {
 			return members.map((u: User) => this.wrapUser(u));
 		}
-		let recipients = chat.recipients;
+		const recipients = chat.recipients;
 		if (recipients) {
 			return recipients.map((u: User) => this.wrapUser(u));
 		}
@@ -76,7 +75,7 @@ export default class DiscordApi extends Api {
 	}
 
 	wrapChat(chat: TextChannel): DiscordChat {
-		let members = this.extractMembers(chat);
+		const members = this.extractMembers(chat);
 		return new DiscordChat(this, this.wrapGuild(chat.guild), chat, [], members);
 	}
 
@@ -111,14 +110,14 @@ export default class DiscordApi extends Api {
 
 	parseAttachments(attachments: MessageAttachment[]): Attachment[] {
 		return attachments.map(a => {
-			let filename = a.name || '';
+			const filename = a.name || '';
 			return File.fromUrlWithSizeKnown(
 				'GET',
 				a.url,
 				{},
 				a.size,
 				filename,
-				lookupByPath(filename) || ''
+				lookupByPath(filename) || '',
 			);
 		});
 	}
@@ -132,7 +131,7 @@ export default class DiscordApi extends Api {
 				null,
 				JoinReason.INVITE_LINK,
 				null,
-				this.wrapGuild(member.guild)
+				this.wrapGuild(member.guild),
 			));
 		});
 		this.api.on('guildMemberRemove', async member => {
@@ -142,7 +141,7 @@ export default class DiscordApi extends Api {
 				null,
 				LeaveReason.SELF,
 				null,
-				this.wrapGuild(member.guild)
+				this.wrapGuild(member.guild),
 			));
 		});
 		this.api.on('message', message => {
@@ -158,7 +157,7 @@ export default class DiscordApi extends Api {
 				message.content,
 				[],
 				message.id,
-				null
+				null,
 			));
 		});
 		this.api.on('typingStart', async (ch, apiUser) => {
@@ -169,9 +168,9 @@ export default class DiscordApi extends Api {
 				user,
 				chat,
 				chat || user,
-				TypingEventType.WRITING_TEXT
+				TypingEventType.WRITING_TEXT,
 			));
-		})
+		});
 	}
 
 	async send(conv: DiscordChat | DiscordUser, text: Text, attachments: Attachment[] = [], _options: IMessageOptions = {}) {
@@ -207,7 +206,7 @@ export default class DiscordApi extends Api {
 				.replace(/_/g, '\\_')
 				.replace(/\*/g, '\\*');
 		if (part instanceof StringReader) {
-			return `${part.toStringWithCursor(`|`)}`
+			return `${part.toStringWithCursor('|')}`;
 		} else if (part instanceof Array) {
 			return part.map(l => this.partToString(l)).join('');
 		}
@@ -215,7 +214,7 @@ export default class DiscordApi extends Api {
 			case 'formatting': {
 				let string = this.partToString(part.data);
 				if (part.preserveMultipleSpaces) {
-					string = string.replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
+					string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
 				}
 				if (part.bold) {
 					string = `**${replaceBut(string, /\*\*/g, /\\\*\*/g, '')}**`;
@@ -245,12 +244,12 @@ export default class DiscordApi extends Api {
 						return `<#${(ayzekPart.chat as DiscordChat).apiChat.id}>`;
 					}
 				}
+				throw new Error('Unreachable');
 			}
 			case 'hashTagPart':
 				if (part.hideOnNoSupport) return '';
 				return this.partToString(part.data);
 		}
-		throw new Error(`Part ${JSON.stringify(part)} not handled`);
 	}
 
 	async doWork(): Promise<void> {
@@ -263,6 +262,6 @@ export default class DiscordApi extends Api {
 		ApiFeature.IncomingMessageWithMultipleAttachments,
 		ApiFeature.OutgoingMessageWithMultipleAttachments,
 		ApiFeature.GuildSupport,
-		ApiFeature.MessageReactions
+		ApiFeature.MessageReactions,
 	]);
 }

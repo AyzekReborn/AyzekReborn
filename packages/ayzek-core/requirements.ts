@@ -1,6 +1,6 @@
-import ApiFeature from "@ayzek/model/features";
-import { AyzekCommandRequirement } from "./command";
-import { Attribute, AttributeConstructor } from "@ayzek/attribute";
+import { Attribute, AttributeConstructor } from '@ayzek/attribute';
+import ApiFeature from '@ayzek/model/features';
+import { AyzekCommandRequirement } from './command';
 
 /**
  * Require feature is supported by sender api
@@ -33,7 +33,7 @@ export function requireAttribute<P extends Attribute>(constructor: AttributeCons
 	return ctx => {
 		const attribute = ctx.event.user.attributeStorage!.getIfAvailable(constructor);
 		return !!attribute;
-	}
+	};
 }
 
 /**
@@ -43,5 +43,5 @@ export function requireAttributeAbsent<P extends Attribute>(constructor: Attribu
 	return ctx => {
 		const attribute = ctx.event.user.attributeStorage!.getIfAvailable(constructor);
 		return !attribute;
-	}
+	};
 }

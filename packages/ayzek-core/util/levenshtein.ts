@@ -10,7 +10,7 @@ function min(d0: number, d1: number, d2: number, bx: number, ay: number) {
 
 const VECTOR: number[] = [];
 
-export function levenshteinDistance(a: string, b: string, max: number = 0): number {
+export function levenshteinDistance(a: string, b: string, max = 0): number {
 	if (a === b)
 		return 0;
 
@@ -58,8 +58,8 @@ export function levenshteinDistance(a: string, b: string, max: number = 0): numb
 	let d1: number;
 	let d2: number;
 	let d3: number;
-	let dd: number = 0;
-	let minDistance: number = Infinity;
+	let dd = 0;
+	let minDistance = Infinity;
 
 	const vector: number[] = VECTOR;
 

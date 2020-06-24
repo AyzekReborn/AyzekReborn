@@ -1,11 +1,11 @@
 import { IRequestOptions } from '@meteor-it/xrest';
 import { Readable } from 'stream';
-import { BufferData } from "./buffer";
-import { Data } from "./data";
+import { BufferData } from './buffer';
+import { Data } from './data';
 import { EmptyData } from './empty';
-import { ExternalUrlData } from "./externalUrl";
-import { FileData } from "./file";
-import { UniqueStreamData } from "./uniqueStream";
+import { ExternalUrlData } from './externalUrl';
+import { FileData } from './file';
+import { UniqueStreamData } from './uniqueStream';
 
 export { Data };
 

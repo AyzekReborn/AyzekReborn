@@ -1,8 +1,8 @@
-import { isFile, stat } from "@meteor-it/fs";
+import { Data, empty as emptyData, fromBuffer, fromExternalUrl, fromFile, fromStreamUnique } from '@ayzek/data';
+import { isFile, stat } from '@meteor-it/fs';
 import { lookupByPath } from '@meteor-it/mime';
 import { emitStreaming, IRequestOptions } from '@meteor-it/xrest';
 import { constants } from 'http2';
-import { Data, empty as emptyData, fromStreamUnique, fromFile, fromBuffer, fromExternalUrl } from "@ayzek/data";
 
 export type AttachmentType = 'messenger_specific' | 'location' | 'file';
 
@@ -18,7 +18,7 @@ export class Attachment {
  */
 export class MessengerSpecificUnknownAttachment extends Attachment {
 	constructor(public apiType: string, public apiData: any) {
-		super('messenger_specific')
+		super('messenger_specific');
 	}
 }
 
@@ -45,16 +45,16 @@ interface ParsedData {
 	size: number,
 	name: string,
 	mime: string,
-};
+}
 
 async function parseUrlData(method: string, url: string, options: IRequestOptions, name: string, mime: string | null, defaultMime: string): Promise<ParsedData> {
-	let res = await emitStreaming(method, url, options);
+	const res = await emitStreaming(method, url, options);
 	let size = 0;
-	let contentLengthHeaderValue = res.headers[constants.HTTP2_HEADER_CONTENT_LENGTH];
+	const contentLengthHeaderValue = res.headers[constants.HTTP2_HEADER_CONTENT_LENGTH];
 	if (typeof contentLengthHeaderValue === 'string')
 		size = +contentLengthHeaderValue;
 	if (mime === null) {
-		let mimeTypeHeaderValue = res.headers[constants.HTTP2_HEADER_CONTENT_TYPE];
+		const mimeTypeHeaderValue = res.headers[constants.HTTP2_HEADER_CONTENT_TYPE];
 		if (typeof mimeTypeHeaderValue === 'string') {
 			mime = mimeTypeHeaderValue;
 		} else {
@@ -67,20 +67,20 @@ async function parseUrlData(method: string, url: string, options: IRequestOption
 		size,
 		name,
 		mime,
-	}
+	};
 }
 
 async function parseFilePathData(path: string, name: string, mime: string | null, defaultMime: string): Promise<ParsedData> {
 	if (!await isFile(path))
 		throw new Error(`This is not a file! ${path}`);
-	let size = (await stat(path)).size;
+	const size = (await stat(path)).size;
 	if (mime === null)
 		mime = lookupByPath(path) || defaultMime;
 	return {
 		data: fromFile(path),
 		size,
 		name,
-		mime
+		mime,
 	};
 }
 
@@ -92,18 +92,18 @@ export class File extends BaseFile {
 		super(data, size, name);
 	}
 
-	static async fromBuffer(buffer: Buffer, name: string, mime: string = 'text/plain') {
+	static async fromBuffer(buffer: Buffer, name: string, mime = 'text/plain') {
 		return new File(fromBuffer(buffer), buffer.length, name, mime);
 	}
 	static async fromUrl(method: string, url: string, options: IRequestOptions, name: string, mime: string | null = null) {
-		let parsed = await parseUrlData(method, url, options, name, mime, 'text/plain');
+		const parsed = await parseUrlData(method, url, options, name, mime, 'text/plain');
 		return new File(parsed.data, parsed.size, parsed.name, parsed.mime);
 	}
-	static fromUrlWithSizeKnown(method: string, url: string, options: IRequestOptions, size: number, name: string, mime: string = 'text/plain') {
+	static fromUrlWithSizeKnown(method: string, url: string, options: IRequestOptions, size: number, name: string, mime = 'text/plain') {
 		return new File(fromExternalUrl(method, url, options), size, name, mime);
 	}
 	static async fromFilePath(path: string, name: string, mime: string | null = null) {
-		let parsed = await parseFilePathData(path, name, mime, 'text/plain');
+		const parsed = await parseFilePathData(path, name, mime, 'text/plain');
 		return new File(parsed.data, parsed.size, parsed.name, parsed.mime);
 	}
 }
@@ -116,11 +116,11 @@ export class Image extends BaseFile {
 		super(data, size, name);
 	}
 	static async fromUrl(method: string, url: string, options: IRequestOptions, name: string, mime: string) {
-		let parsed = await parseUrlData(method, url, options, name, mime, mime);
+		const parsed = await parseUrlData(method, url, options, name, mime, mime);
 		return new Image(parsed.data, parsed.size, parsed.name, parsed.mime);
 	}
 	static async fromFilePath(path: string, name: string, mime: string) {
-		let parsed = await parseFilePathData(path, name, mime, mime);
+		const parsed = await parseFilePathData(path, name, mime, mime);
 		return new Image(parsed.data, parsed.size, parsed.name, parsed.mime);
 	}
 	static async fromBuffer(buffer: Buffer, name: string, mime: string) {
@@ -146,7 +146,7 @@ export class Voice extends BaseFile {
 		super(data, size, name);
 	}
 	static async fromUrl(method: string, url: string, options: IRequestOptions, title: string, mime: string, duration?: number) {
-		let parsed = await parseUrlData(method, url, options, title, mime, mime);
+		const parsed = await parseUrlData(method, url, options, title, mime, mime);
 		return new Voice(parsed.data, parsed.size, parsed.name, parsed.mime, duration);
 	}
 }
@@ -162,11 +162,11 @@ export class Audio extends BaseFile {
 		return new Audio(emptyData, 0, artist, title, mime);
 	}
 	static async fromUrl(method: string, url: string, options: IRequestOptions, artist: string | null, title: string, mime: string) {
-		let parsed = await parseUrlData(method, url, options, title, mime, mime);
+		const parsed = await parseUrlData(method, url, options, title, mime, mime);
 		return new Audio(parsed.data, parsed.size, artist, parsed.name, parsed.mime);
 	}
 	static async fromFilePath(path: string, artist: string | null, title: string, mime: string) {
-		let parsed = await parseFilePathData(path, title, mime, mime);
+		const parsed = await parseFilePathData(path, title, mime, mime);
 		return new Audio(parsed.data, parsed.size, artist, parsed.name, parsed.mime);
 	}
 }

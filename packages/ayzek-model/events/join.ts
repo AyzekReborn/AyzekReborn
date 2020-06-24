@@ -1,5 +1,5 @@
-import type { Api } from "../api";
-import type { Chat, Guild, User } from "../conversation";
+import type { Api } from '../api';
+import type { Chat, Guild, User } from '../conversation';
 
 export enum JoinReason {
 	/**
@@ -35,7 +35,7 @@ export class JoinChatEvent extends JoinEvent {
 		initiator: User | null,
 		reason: JoinReason,
 		reasonString: string | null,
-		public chat: Chat
+		public chat: Chat,
 	) {
 		super(api, user, initiator, reason, reasonString);
 	}
@@ -47,7 +47,7 @@ export class JoinGuildEvent extends JoinEvent {
 		initiator: User | null,
 		reason: JoinReason,
 		reasonString: string | null,
-		public guild: Guild
+		public guild: Guild,
 	) {
 		super(api, user, initiator, reason, reasonString);
 	}

@@ -1,6 +1,6 @@
 export function extractMax(text: string, length: number, separator: string): [string | null, string] {
 	let result = null;
-	let lines = text.split(separator);
+	const lines = text.split(separator);
 	while (lines.length !== 0 && (result ? (result.length + 1) : 0) + lines[0].length <= length) {
 		if (result === null)
 			result = lines[0];
@@ -22,9 +22,9 @@ export function extractMaxPossiblePart(text: string, length: number): [string, s
 }
 // TODO: Ability to attach metadata to parts
 export function splitByMaxPossibleParts(text: string, length: number): string[] {
-	let result = [];
+	const result = [];
 	while (text.length !== 0) {
-		let max = extractMaxPossiblePart(text, length);
+		const max = extractMaxPossiblePart(text, length);
 		result.push(max[0]);
 		text = max[1];
 	}

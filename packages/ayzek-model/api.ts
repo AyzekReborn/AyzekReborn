@@ -1,16 +1,16 @@
-import type { ArgumentType } from "@ayzek/command-parser/arguments";
-import type ApiFeature from "@ayzek/model/features";
+import type { ArgumentType } from '@ayzek/command-parser/arguments';
+import type ApiFeature from '@ayzek/model/features';
 import type { Text } from '@ayzek/text';
-import Logger from "@meteor-it/logger";
-import { isPromise, MaybePromise, TypedEvent } from "@meteor-it/utils";
-import type { Attachment } from "./attachment";
-import type { Chat, Conversation, Guild, User } from "./conversation";
-import type { JoinChatEvent, JoinGuildEvent } from "./events/join";
-import type { LeaveChatEvent, LeaveGuildEvent } from "./events/leave";
+import Logger from '@meteor-it/logger';
+import { isPromise, MaybePromise, TypedEvent } from '@meteor-it/utils';
+import type { Attachment } from './attachment';
+import type { Chat, Conversation, Guild, User } from './conversation';
+import type { JoinChatEvent, JoinGuildEvent } from './events/join';
+import type { LeaveChatEvent, LeaveGuildEvent } from './events/leave';
 import type { MessageEvent } from './events/message';
-import type { ChatTitleChangeEvent, GuildTitleChangeEvent } from "./events/titleChange";
-import type { TypingEvent } from "./events/typing";
-import type { IMessageOptions } from "./message";
+import type { ChatTitleChangeEvent, GuildTitleChangeEvent } from './events/titleChange';
+import type { TypingEvent } from './events/typing';
+import type { IMessageOptions } from './message';
 
 /**
  * Error thrown if feature isn't supported by api

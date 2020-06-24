@@ -21,7 +21,8 @@
 		"run:dev:build": "yarn zarbis development",
 		"run:dev:run": "yarn node dist/development/starter/",
 		"run:prod:build": "yarn zarbis production",
-		"run:prod:run": "yarn node dist/production/starter/"
+		"run:prod:run": "yarn node dist/production/starter/",
+		"lint:fix": "eslint --ignore-path .eslintignore --fix ."
 	},
 	"dependencies": {
 		"fp-ts": "^2.6.6",

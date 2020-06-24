@@ -1,7 +1,7 @@
 import { Image } from '@ayzek/model/attachment';
-import { Gender, User } from "@ayzek/model/conversation";
-import type { User as DSUser } from "discord.js";
-import type DiscordApi from ".";
+import { Gender, User } from '@ayzek/model/conversation';
+import type { User as DSUser } from 'discord.js';
+import type DiscordApi from '.';
 
 export default class DiscordUser extends User {
 	constructor(api: DiscordApi, public apiUser: DSUser) {
@@ -15,7 +15,7 @@ export default class DiscordUser extends User {
 			Gender.UNSPECIFIED,
 			// Available only for friends/users who present in same guilds as you
 			`https://discordapp.com/users/${apiUser.id}`,
-			apiUser.bot
+			apiUser.bot,
 		);
 	}
 	private _photoImage: Promise<Image> | null = null;

@@ -1,11 +1,11 @@
-import { ArgumentType } from "@ayzek/command-parser/arguments";
-import { UserDisplayableError } from "@ayzek/command-parser/error";
-import type StringReader from "@ayzek/command-parser/reader";
-import type { Suggestions, SuggestionsBuilder } from "@ayzek/command-parser/suggestions";
-import type { Api } from "@ayzek/model/api";
-import type { User } from "@ayzek/model/conversation";
-import type { Ayzek } from "./ayzek";
-import type { AyzekCommandContext, AyzekParseEntryPoint } from "./command";
+import { ArgumentType } from '@ayzek/command-parser/arguments';
+import { UserDisplayableError } from '@ayzek/command-parser/error';
+import type StringReader from '@ayzek/command-parser/reader';
+import type { Suggestions, SuggestionsBuilder } from '@ayzek/command-parser/suggestions';
+import type { Api } from '@ayzek/model/api';
+import type { User } from '@ayzek/model/conversation';
+import type { Ayzek } from './ayzek';
+import type { AyzekCommandContext, AyzekParseEntryPoint } from './command';
 
 export type ParsedUserArgument = [Api, any, Ayzek];
 

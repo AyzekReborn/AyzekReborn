@@ -54,10 +54,10 @@ export class AttributeStorage<O> {
 	async fill() {
 		while (this.remainingCreators.size !== 0) {
 			let resolvedOnThisStep = 0;
-			for (let creator of this.remainingCreators) {
+			for (const creator of this.remainingCreators) {
 				const depencencyErrors = getDependencyErrors(creator, this);
 				if (depencencyErrors.length !== 0) {
-					this.resolutionErrors.set(creator.thisConstructor, new DependencyResolutionErrors(creator.thisConstructor, depencencyErrors))
+					this.resolutionErrors.set(creator.thisConstructor, new DependencyResolutionErrors(creator.thisConstructor, depencencyErrors));
 					this.remainingCreators.delete(creator);
 				} else if (isCreatorHaveAllDependenciesResolved(creator, this)) {
 					try {
@@ -70,7 +70,7 @@ export class AttributeStorage<O> {
 				resolvedOnThisStep++;
 			}
 			if (resolvedOnThisStep === 0) {
-				for (let creator of this.remainingCreators) {
+				for (const creator of this.remainingCreators) {
 					this.resolutionErrors.set(creator.thisConstructor, new DependencyNotFoundErrors(creator.thisConstructor, getMissingDependencies(creator, this)));
 					this.remainingCreators.delete(creator);
 				}
@@ -101,7 +101,7 @@ export class AttributeStorage<O> {
 }
 
 // Used when no attributes is attached
-export const ownerlessEmptyAttributeStorage = new AttributeStorage<any>(null, new Set())
+export const ownerlessEmptyAttributeStorage = new AttributeStorage<any>(null, new Set());
 
 function getDependencyErrors(creator: AttributeCreator<any, any>, storage: AttributeStorage<any>): Error[] {
 	return creator.dependencies.map(e => storage.resolutionErrors.get(e)).filter(e => e !== undefined).map(e => e!);

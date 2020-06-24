@@ -1,5 +1,5 @@
-import type { Api } from "../api";
-import type { Chat, Guild, User } from "../conversation";
+import type { Api } from '../api';
+import type { Chat, Guild, User } from '../conversation';
 
 export abstract class TitleChangeEvent {
 	constructor(

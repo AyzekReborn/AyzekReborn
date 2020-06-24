@@ -1,12 +1,12 @@
-import { Ayzek } from '@ayzek/core/ayzek';
-import ModernPluginSystem from '@ayzek/core/pluginSystems/ModernPluginSystem';
-import Logger from '@meteor-it/logger';
-import NodeReceiver from '@meteor-it/logger/receivers/node';
-import VKApi from '@ayzek/api-vk';
 import DiscordApi from '@ayzek/api-discord';
 import TelegramApi from '@ayzek/api-telegram';
-import * as t from 'io-ts';
+import VKApi from '@ayzek/api-vk';
+import { Ayzek } from '@ayzek/core/ayzek';
+import ModernPluginSystem from '@ayzek/core/pluginSystems/ModernPluginSystem';
 import { parseYaml } from '@ayzek/core/util/config';
+import Logger from '@meteor-it/logger';
+import NodeReceiver from '@meteor-it/logger/receivers/node';
+import * as t from 'io-ts';
 
 Logger.addReceiver(new NodeReceiver());
 
@@ -55,7 +55,7 @@ const ayzek = new Ayzek('ayzek', '/', true);
 
 const pluginSystem = new ModernPluginSystem(ayzek,
 	() => (require as any).context('../packages/', true, /ayzek(:?-private)?-plugin-[a-z\-_0-9]+\/index\.ts$/, 'lazy'),
-	(module as any).hot
+	(module as any).hot,
 );
 
 (async () => {

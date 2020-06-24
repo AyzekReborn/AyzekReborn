@@ -1,10 +1,10 @@
-import { ArgumentType } from "@ayzek/command-parser/arguments";
-import { ExpectedSomethingError } from "@ayzek/command-parser/error";
-import type StringReader from "@ayzek/command-parser/reader";
-import { NoSuchUserError } from "@ayzek/core/argument";
-import type { AyzekParseEntryPoint } from "@ayzek/core/command";
-import type VKApi from ".";
-import type VKUser from "./user/user";
+import { ArgumentType } from '@ayzek/command-parser/arguments';
+import { ExpectedSomethingError } from '@ayzek/command-parser/error';
+import type StringReader from '@ayzek/command-parser/reader';
+import { NoSuchUserError } from '@ayzek/core/argument';
+import type { AyzekParseEntryPoint } from '@ayzek/core/command';
+import type VKApi from '.';
+import type VKUser from './user/user';
 
 type ParsedVKUser = {
 	isBot: boolean,
@@ -25,7 +25,7 @@ export class VKUserArgumentType extends ArgumentType<ParsedVKUser, VKUser>{
 	}
 
 	get examples() {
-		return ['[id78591039|Разраб]', '[club188280200|@ayzekng]']
+		return ['[id78591039|Разраб]', '[club188280200|@ayzekng]'];
 	}
 
 	parse(_ctx: AyzekParseEntryPoint, reader: StringReader): ParsedVKUser {

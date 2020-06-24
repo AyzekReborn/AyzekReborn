@@ -16,7 +16,7 @@ export type ModernPluginContext = {
 
 export default class ModernPluginSystem extends WebpackPluginLoader<ModernPluginContext, PluginInfo & PluginInfoAttribute> {
 	constructor(public ayzek: Ayzek, requireContextGetter: () => any, moduleHot: { accept: any }) {
-		super(`modern`, { ayzek }, requireContextGetter, moduleHot);
+		super('modern', { ayzek }, requireContextGetter, moduleHot);
 	}
 
 	async onPreInit(module: PluginInfo & PluginInfoAttribute) {
@@ -72,7 +72,7 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 		this.ayzek.plugins.push(module);
 	}
 
-	async onPreDeinit(module: PluginInfo & PluginInfoAttribute) {
+	async onPreDeinit(_module: PluginInfo & PluginInfoAttribute) {
 	}
 
 	async onPostDeinit(module: PluginInfo & PluginInfoAttribute) {
@@ -105,6 +105,6 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 	}
 
 	async onUnload(_module: PluginInfo & PluginInfoAttribute) {
-		throw new Error("Method not implemented.");
+		throw new Error('Method not implemented.');
 	}
 }

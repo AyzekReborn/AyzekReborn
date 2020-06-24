@@ -1,31 +1,31 @@
-import StringReader from "@ayzek/command-parser/reader";
-import arrayChunks from "@ayzek/core/util/arrayChunks";
-import { splitByMaxPossibleParts } from "@ayzek/core/util/split";
-import type { Writeable } from "@ayzek/core/util/writeable";
-import { Api } from "@ayzek/model/api";
-import { Attachment, Audio, File, Image, Location, MessengerSpecificUnknownAttachment, Video, Voice } from "@ayzek/model/attachment";
-import type { Conversation } from "@ayzek/model/conversation";
-import { JoinChatEvent, JoinReason } from "@ayzek/model/events/join";
-import { LeaveChatEvent, LeaveReason } from "@ayzek/model/events/leave";
+import StringReader from '@ayzek/command-parser/reader';
+import arrayChunks from '@ayzek/core/util/arrayChunks';
+import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
+import type { Writeable } from '@ayzek/core/util/writeable';
+import { Api } from '@ayzek/model/api';
+import { Attachment, Audio, File, Image, Location, MessengerSpecificUnknownAttachment, Video, Voice } from '@ayzek/model/attachment';
+import type { Conversation } from '@ayzek/model/conversation';
+import { JoinChatEvent, JoinReason } from '@ayzek/model/events/join';
+import { LeaveChatEvent, LeaveReason } from '@ayzek/model/events/leave';
 import { MessageEvent } from '@ayzek/model/events/message';
-import { ChatTitleChangeEvent } from "@ayzek/model/events/titleChange";
-import { TypingEvent, TypingEventType } from "@ayzek/model/events/typing";
-import ApiFeature from "@ayzek/model/features";
-import type { IMessage, IMessageOptions } from "@ayzek/model/message";
-import { opaqueToAyzek } from "@ayzek/model/text";
+import { ChatTitleChangeEvent } from '@ayzek/model/events/titleChange';
+import { TypingEvent, TypingEventType } from '@ayzek/model/events/typing';
+import ApiFeature from '@ayzek/model/features';
+import type { IMessage, IMessageOptions } from '@ayzek/model/message';
+import { opaqueToAyzek } from '@ayzek/model/text';
 import type { Text, TextPart } from '@ayzek/text';
 import { lookup as lookupMime } from '@meteor-it/mime';
 import type { MaybePromise } from '@meteor-it/utils';
-import { emit } from "@meteor-it/xrest";
+import { emit } from '@meteor-it/xrest';
 import * as multipart from '@meteor-it/xrest/multipart';
 import { pick } from 'lodash';
-import VKApiProcessor from "./apiProcessor";
+import VKApiProcessor from './apiProcessor';
 import { VKUserArgumentType } from './arguments';
 import type { IVKKeyboard } from './keyboard';
-import { VKBot, VKBotMap } from "./user/bot";
-import { VKChat, VKChatMap } from "./user/chat";
-import { VKRealUser, VKUserMap } from "./user/realUser";
-import VKUser from "./user/user";
+import { VKBot, VKBotMap } from './user/bot';
+import { VKChat, VKChatMap } from './user/chat';
+import { VKRealUser, VKUserMap } from './user/realUser';
+import VKUser from './user/user';
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 10;
@@ -91,14 +91,14 @@ export default class VKApi extends Api {
 	}
 	execute(method: string, params: any) {
 		return this.processor.runTask({
-			method, params
+			method, params,
 		});
 	}
 	async parseAttachment(attachment: any): Promise<Attachment> {
 		switch (attachment.type) {
 			case 'photo': {
 				const sizes = attachment.photo.sizes;
-				let maxSize = sizes[sizes.length - 1];
+				const maxSize = sizes[sizes.length - 1];
 				return Image.fromUrl('GET', maxSize.url, {}, 'photo.jpeg', 'image/jpeg');
 			}
 			case 'audio': {
@@ -111,7 +111,7 @@ export default class VKApi extends Api {
 				return File.fromUrlWithSizeKnown('GET',
 					attachment.doc.url, {}, attachment.doc.size, attachment.doc.title,
 					// Because VK does same thing
-					lookupMime(attachment.doc.ext) || 'text/plain'
+					lookupMime(attachment.doc.ext) || 'text/plain',
 				);
 			}
 			case 'audio_message': {
@@ -120,7 +120,7 @@ export default class VKApi extends Api {
 			case 'video': {
 				// TODO: Extract something useful? Maybe create
 				// TODO: VKVideoData extends Data?
-				return Video.fromEmpty(attachment.video.title, 'video/mp4')
+				return Video.fromEmpty(attachment.video.title, 'video/mp4');
 			}
 			case 'poll': {
 				return new MessengerSpecificUnknownAttachment('vk:poll', attachment.poll);
@@ -149,7 +149,7 @@ export default class VKApi extends Api {
 		const [user, attachments, extraAttachments] = await Promise.all([
 			this.getApiUser(message.from_id),
 			Promise.all(message.attachments.map((e: any) => this.parseAttachment(e))) as Promise<Attachment[]>,
-			this.parseExtraAttachments(message)
+			this.parseExtraAttachments(message),
 		]);
 		if (!user) throw new Error(`Bad user: ${message.from_id}`);
 		return {
@@ -159,7 +159,7 @@ export default class VKApi extends Api {
 			conversation: user,
 			attachments: [
 				...(attachments as Attachment[]),
-				...(extraAttachments as Attachment[])
+				...(extraAttachments as Attachment[]),
 			] as Attachment[],
 			text: message.text || '',
 			// Replies have no forwarded messages
@@ -168,7 +168,7 @@ export default class VKApi extends Api {
 			replyTo: null,
 		};
 	}
-	async parseMessage(message: any, parseChat: boolean = false): Promise<IMessage> {
+	async parseMessage(message: any, parseChat = false): Promise<IMessage> {
 		// Do everything in parallel!
 		// Typescript fails to analyze dat shit 🤷‍
 		const [chat, user, attachments, extraAttachments, forwarded, replyTo] = await Promise.all([
@@ -177,7 +177,7 @@ export default class VKApi extends Api {
 			Promise.all(message.attachments.map((e: any) => this.parseAttachment(e))),
 			this.parseExtraAttachments(message),
 			(message.fwd_messages ? Promise.all(message.fwd_messages.map((m: any) => this.parseMessage(m))) : Promise.resolve([])),
-			message.reply_message ? (this.parseReplyMessage(message.reply_message)) : null
+			message.reply_message ? (this.parseReplyMessage(message.reply_message)) : null,
 		] as [Promise<VKChat | null>, Promise<VKUser | null>, Promise<Attachment[]>, Promise<Attachment[]>, Promise<IMessage[]>, Promise<IMessage | null>]);
 		if (!user) throw new Error(`Bad user: ${message.from_id}`);
 		return {
@@ -187,7 +187,7 @@ export default class VKApi extends Api {
 			conversation: chat ?? user,
 			attachments: [
 				...(attachments as Attachment[]),
-				...(extraAttachments as Attachment[])
+				...(extraAttachments as Attachment[]),
 			] as Attachment[],
 			text: message.text ?? '',
 			forwarded: forwarded ?? [],
@@ -201,7 +201,7 @@ export default class VKApi extends Api {
 				case 'chat_title_update': {
 					const [user, chat] = await Promise.all([
 						this.getApiUser(update.from_id),
-						this.getApiChat(update.peer_id - 2e9)
+						this.getApiChat(update.peer_id - 2e9),
 					]);
 					if (!user) throw new Error(`Bad user: ${update.from_id}`);
 					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
@@ -212,7 +212,7 @@ export default class VKApi extends Api {
 						chat.title === newTitle ? null : chat.title,
 						newTitle,
 						user,
-						chat
+						chat,
 					));
 					(chat as Writeable<VKChat>).title = newTitle;
 					return;
@@ -220,7 +220,7 @@ export default class VKApi extends Api {
 				case 'chat_invite_user_by_link': {
 					const [user, chat] = await Promise.all([
 						this.getApiUser(update.from_id),
-						this.getApiChat(update.peer_id - 2e9)
+						this.getApiChat(update.peer_id - 2e9),
 					]);
 					if (!user) throw new Error(`Bad user: ${update.from_id}`);
 					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
@@ -230,7 +230,7 @@ export default class VKApi extends Api {
 						null,
 						JoinReason.INVITE_LINK,
 						null,
-						chat
+						chat,
 					));
 					if (!chat.users.includes(user))
 						chat.users.push(user);
@@ -239,7 +239,7 @@ export default class VKApi extends Api {
 				case 'chat_invite_user': {
 					const [user, chat] = await Promise.all([
 						this.getApiUser(update.action.member_id),
-						this.getApiChat(update.peer_id - 2e9)
+						this.getApiChat(update.peer_id - 2e9),
 					]);
 					if (!user) throw new Error(`Bad user: ${update.action.member_id}`);
 					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
@@ -250,7 +250,7 @@ export default class VKApi extends Api {
 							null,
 							JoinReason.RETURNED,
 							null,
-							chat
+							chat,
 						));
 					} else {
 						this.joinChatEvent.emit(new JoinChatEvent(
@@ -259,7 +259,7 @@ export default class VKApi extends Api {
 							await this.getApiUser(update.from_id),
 							JoinReason.INVITED,
 							null,
-							chat
+							chat,
 						));
 					}
 					if (!chat.users.includes(user))
@@ -269,7 +269,7 @@ export default class VKApi extends Api {
 				case 'chat_kick_user': {
 					const [user, chat] = await Promise.all([
 						this.getApiUser(update.action.member_id),
-						this.getApiChat(update.peer_id - 2e9)
+						this.getApiChat(update.peer_id - 2e9),
 					]);
 					if (!user) throw new Error(`Bad user: ${update.action.member_id}`);
 					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
@@ -280,7 +280,7 @@ export default class VKApi extends Api {
 							null,
 							LeaveReason.SELF,
 							null,
-							chat
+							chat,
 						));
 					} else {
 						this.leaveChatEvent.emit(new LeaveChatEvent(
@@ -289,8 +289,8 @@ export default class VKApi extends Api {
 							await this.getApiUser(update.from_id),
 							LeaveReason.KICKED,
 							null,
-							chat
-						))
+							chat,
+						));
 					}
 					if (chat.users.includes(user))
 						chat.users.splice(chat.users.indexOf(user), 1);
@@ -320,7 +320,7 @@ export default class VKApi extends Api {
 			user,
 			null,
 			user,
-			TypingEventType.WRITING_TEXT
+			TypingEventType.WRITING_TEXT,
 		));
 	}
 	async processUpdate(update: { type: string, object: any }) {
@@ -342,19 +342,22 @@ export default class VKApi extends Api {
 	}
 	async loop() {
 		await this.init();
+		// eslint-disable-next-line no-constant-condition
 		while (true) {
 			try {
-				let data = await this.execute('groups.getLongPollServer', {
-					group_id: this.groupId
+				const data = await this.execute('groups.getLongPollServer', {
+					group_id: this.groupId,
 				});
 				if (!data || !data.server) {
-					this.logger.error("Can't get data!")
+					this.logger.error('Can\'t get data!');
 					this.logger.error(data);
 					continue;
 				}
-				let { key, server, ts } = data;
+				const { key, server } = data;
+				let { ts } = data;
+				// eslint-disable-next-line no-constant-condition
 				eventLoop: while (true) {
-					let events = (await emit('GET', server, {
+					const events = (await emit('GET', server, {
 						query: {
 							act: 'a_check',
 							key,
@@ -362,7 +365,7 @@ export default class VKApi extends Api {
 							wait: 25,
 							mode: 66,
 						},
-						timeout: 0
+						timeout: 0,
 					})).jsonBody!;
 
 					if (events.failed) {
@@ -377,7 +380,7 @@ export default class VKApi extends Api {
 							default:
 								this.logger.error(`receive error: ${events}`);
 								break eventLoop;
-						};
+						}
 					}
 					ts = events.ts;
 
@@ -385,7 +388,7 @@ export default class VKApi extends Api {
 						try {
 							await this.processUpdate(update);
 						} catch (e) {
-							this.logger.error(`Update processing error: `, update);
+							this.logger.error('Update processing error: ', update);
 							this.logger.error(e.stack);
 						}
 					});
@@ -394,7 +397,7 @@ export default class VKApi extends Api {
 				await new Promise(res => setTimeout(res, 5000));
 				this.logger.warn('Loop restart');
 			} catch (e) {
-				this.logger.error(`Hard error`);
+				this.logger.error('Hard error');
 				this.logger.error(e.stack);
 			}
 		}
@@ -404,26 +407,26 @@ export default class VKApi extends Api {
 		if (attachment instanceof Image) {
 			return await this.genericUpload('photos.getMessagesUploadServer', 'photos.saveMessagesPhoto', attachment, peerId, 'photo', ['server', 'hash'], photo => `photo${photo[0].owner_id}_${photo[0].id}`);
 		} else if (attachment instanceof File) {
-			return await this.genericUpload('docs.getMessagesUploadServer', 'docs.save', attachment, peerId, 'file', [], doc => `doc${doc.doc.owner_id}_${doc.doc.id}`)
+			return await this.genericUpload('docs.getMessagesUploadServer', 'docs.save', attachment, peerId, 'file', [], doc => `doc${doc.doc.owner_id}_${doc.doc.id}`);
 		}
 		throw new Error('Not implemented');
 	}
 
 	async genericUpload(getServerMethod: string, saveMethod: string, attachment: Image | File, peerId: string, field: string, additionalField: string[], toId: (uploaded: any) => string): Promise<string> {
 		// TODO: Upload server pool/cache
-		let server = await this.execute(getServerMethod, { peer_id: peerId });
+		const server = await this.execute(getServerMethod, { peer_id: peerId });
 		const stream = attachment.data.toStream();
-		let res = await emit('POST', server.upload_url, {
+		const res = await emit('POST', server.upload_url, {
 			multipart: true,
 			timeout: 50000,
 			data: {
 				// attachment.name MUST contain extension (At least, for images)
-				[field]: new multipart.FileStream(stream, attachment.name, attachment.size, 'binary', attachment.mime)
-			}
+				[field]: new multipart.FileStream(stream, attachment.name, attachment.size, 'binary', attachment.mime),
+			},
 		});
-		let uploaded = await this.execute(saveMethod, {
+		const uploaded = await this.execute(saveMethod, {
 			[field]: res.jsonBody![field],
-			...pick(res.jsonBody!, additionalField)
+			...pick(res.jsonBody!, additionalField),
 		});
 		return toId(uploaded);
 	}
@@ -446,13 +449,13 @@ export default class VKApi extends Api {
 		} else {
 			throw new Error('Bad receiver');
 		}
-		if (options.forwarded || options.replyTo) throw new Error(`Message responses are not supported by vk bots`);
+		if (options.forwarded || options.replyTo) throw new Error('Message responses are not supported by vk bots');
 		const texts = splitByMaxPossibleParts(this.partToString(text), MAX_MESSAGE_LENGTH);
-		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[]
+		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[];
 		const attachmentUploadPromises = arrayChunks(attachments, MAX_ATTACHMENTS_PER_MESSAGE)
 			.map(chunk => chunk.map(name => this.uploadAttachment(name, peer_id.toString())));
 		for (let i = 0; i < texts.length; i++) {
-			let isLast = i === texts.length - 1;
+			const isLast = i === texts.length - 1;
 			const apiObject: any = {
 				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
 				peer_id,
@@ -475,7 +478,7 @@ export default class VKApi extends Api {
 			await this.execute('messages.send', apiObject);
 		}
 		for (let i = 0; i < attachmentUploadPromises.length; i++) {
-			let isLast = i === attachmentUploadPromises.length - 1;
+			const isLast = i === attachmentUploadPromises.length - 1;
 			const apiObject: any = {
 				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
 				peer_id,
@@ -490,7 +493,7 @@ export default class VKApi extends Api {
 			await this.execute('messages.send', apiObject);
 		}
 		let extraAttachment: ExtraAttachment | undefined;
-		while (extraAttachment = extraAttachments.shift()) {
+		while ((extraAttachment = extraAttachments.shift())) {
 			const isLast = extraAttachments.length === 0;
 			const apiObject: any = {
 				random_id: Math.floor(Math.random() * (Math.random() * 1e17)),
@@ -511,7 +514,7 @@ export default class VKApi extends Api {
 		} else if (typeof part === 'string')
 			return part;
 		if (part instanceof StringReader) {
-			return `${part.toStringWithCursor(`|`)}`
+			return `${part.toStringWithCursor('|')}`;
 		} else if (part instanceof Array) {
 			return part.map(l => this.partToString(l)).join('');
 		}
@@ -519,12 +522,12 @@ export default class VKApi extends Api {
 			case 'formatting': {
 				let string = this.partToString(part.data);
 				if (part.preserveMultipleSpaces) {
-					string = string.replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
+					string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
 				}
 				return string;
 			}
 			case 'code':
-				return part.data.replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
+				return part.data.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
 			case 'opaque': {
 				const ayzekPart = opaqueToAyzek(part);
 				if (!ayzekPart) {
@@ -534,12 +537,13 @@ export default class VKApi extends Api {
 				}
 				switch (ayzekPart.ayzekPart) {
 					case 'user': {
-						return `[${ayzekPart.user.profileUrl.slice(15)}|${ayzekPart.title || ayzekPart.user.name}]`
+						return `[${ayzekPart.user.profileUrl.slice(15)}|${ayzekPart.title || ayzekPart.user.name}]`;
 					}
 					case 'chat': {
 						return `<Чат ${(ayzekPart.chat as VKChat).title}>`;
 					}
 				}
+				throw new Error('Unreachable');
 			}
 			case 'hashTagPart':
 				return this.partToString(part.data).split(' ').map(e => e.length > 0 ? `#${e}` : e).join(' ');

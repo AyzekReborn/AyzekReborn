@@ -9,7 +9,7 @@ export function parseYaml<P extends t.Type<any, any, any>>(data: string, type: P
 }
 
 export function validateData<P extends t.Type<any, any, any>>(data: unknown, type: P): t.TypeOf<P> {
-	let decoded = type.decode(data);
+	const decoded = type.decode(data);
 	if (isLeft(decoded))
 		throw new Error(`Validation failed:\n${PathReporter.report(decoded).join('\n')}`);
 	return decoded.right;

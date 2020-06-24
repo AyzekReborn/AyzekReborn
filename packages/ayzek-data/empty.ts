@@ -1,5 +1,5 @@
-import { Readable } from "stream";
-import { Data, MaybeTemporary } from "./data";
+import { Readable } from 'stream';
+import { Data, MaybeTemporary } from './data';
 
 /**
  * Data with no data available

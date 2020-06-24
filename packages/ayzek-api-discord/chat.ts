@@ -1,8 +1,8 @@
-import type { TextChannel } from "discord.js";
-import { Chat } from "@ayzek/model/conversation";
-import type DiscordApi from ".";
-import type DiscordGuild from "./guild";
-import type DiscordUser from "./user";
+import { Chat } from '@ayzek/model/conversation';
+import type { TextChannel } from 'discord.js';
+import type DiscordApi from '.';
+import type DiscordGuild from './guild';
+import type DiscordUser from './user';
 
 export default class DiscordChat extends Chat {
 	constructor(api: DiscordApi, guild: DiscordGuild, public apiChat: TextChannel, admins: DiscordUser[], members: DiscordUser[]) {
@@ -12,12 +12,12 @@ export default class DiscordChat extends Chat {
 			members,
 			apiChat.name,
 			admins,
-			guild
+			guild,
 		);
 	}
 
 	get channelId(): string {
-		return this.apiChat.id
+		return this.apiChat.id;
 	}
 
 	get photoImage() {

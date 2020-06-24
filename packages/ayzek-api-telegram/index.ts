@@ -1,20 +1,20 @@
-import type { ArgumentType } from "@ayzek/command-parser/arguments";
-import StringReader from "@ayzek/command-parser/reader";
-import { replaceBut } from "@ayzek/core/util/escape";
-import { splitByMaxPossibleParts } from "@ayzek/core/util/split";
-import { Api } from "@ayzek/model/api";
-import type { Attachment, Image } from "@ayzek/model/attachment";
-import { Chat, Conversation, Gender, User } from "@ayzek/model/conversation";
-import { MessageEvent } from "@ayzek/model/events/message";
-import type ApiFeature from "@ayzek/model/features";
-import type { IMessage, IMessageOptions } from "@ayzek/model/message";
-import { opaqueToAyzek } from "@ayzek/model/text";
-import type { Text, TextPart } from "@ayzek/text";
-import type { MaybePromise } from "@meteor-it/utils";
-import XRest from "@meteor-it/xrest";
+import type { ArgumentType } from '@ayzek/command-parser/arguments';
+import StringReader from '@ayzek/command-parser/reader';
+import { validateData } from '@ayzek/core/util/config';
+import { replaceBut } from '@ayzek/core/util/escape';
+import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
+import { Api } from '@ayzek/model/api';
+import type { Attachment, Image } from '@ayzek/model/attachment';
+import { Chat, Conversation, Gender, User } from '@ayzek/model/conversation';
+import { MessageEvent } from '@ayzek/model/events/message';
+import type ApiFeature from '@ayzek/model/features';
+import type { IMessage, IMessageOptions } from '@ayzek/model/message';
+import { opaqueToAyzek } from '@ayzek/model/text';
+import type { Text, TextPart } from '@ayzek/text';
+import type { MaybePromise } from '@meteor-it/utils';
+import XRest from '@meteor-it/xrest';
 import * as https from 'https';
 import * as t from 'io-ts';
-import { validateData } from "@ayzek/core/util/config";
 
 const ApiUser = t.interface({
 	id: t.number,
@@ -39,10 +39,10 @@ export class TelegramUser extends User {
 			apiUser.is_bot ? Gender.BOT : Gender.UNSPECIFIED,
 			`https://t.me/${apiUser.username}`,
 			apiUser.is_bot,
-		)
+		);
 	}
 	get photoImage(): Promise<Image | null> {
-		throw new Error("Method not implemented.");
+		throw new Error('Method not implemented.');
 	}
 }
 export class TelegramChat extends Chat {
@@ -58,7 +58,7 @@ export class TelegramChat extends Chat {
 	}
 
 	get photoImage(): Promise<Image | null> {
-		throw new Error("Method not implemented.");
+		throw new Error('Method not implemented.');
 	}
 }
 
@@ -77,7 +77,7 @@ export default class TelegramApi extends Api {
 				keepAliveMsecs: 5000,
 				maxSockets: Infinity,
 				maxFreeSockets: 256,
-			})
+			}),
 		});
 	}
 	protected supportedFeatures: Set<ApiFeature> = new Set();
@@ -110,7 +110,7 @@ export default class TelegramApi extends Api {
 		if (!cid.startsWith(chatPrefix)) {
 			return Promise.resolve(null);
 		}
-		let id = -parseInt(cid.replace(chatPrefix, ''), 10);
+		const id = -parseInt(cid.replace(chatPrefix, ''), 10);
 		if (isNaN(id))
 			return Promise.resolve(null);
 		if (this.chats.has(id))
@@ -129,13 +129,13 @@ export default class TelegramApi extends Api {
 		return data.result;
 	}
 
-	lastUpdateId: number = 0;
+	lastUpdateId = 0;
 
 	users: Map<number, TelegramUser> = new Map();
 	chats: Map<number, TelegramChat> = new Map();
 
 	updateUserMap(user: unknown) {
-		const correctUser = validateData(user, ApiUser)
+		const correctUser = validateData(user, ApiUser);
 		if (!this.users.get(correctUser.id)) {
 			this.users.set(correctUser.id, new TelegramUser(correctUser, this));
 		} else {
@@ -205,6 +205,7 @@ export default class TelegramApi extends Api {
 		}
 	}
 	async doWork() {
+		/*eslint no-constant-condition: off*/
 		while (true) {
 			try {
 				const data = await this.execute('getUpdates', {
@@ -229,14 +230,14 @@ export default class TelegramApi extends Api {
 		}
 	}
 	get apiLocalUserArgumentType(): ArgumentType<void, User> {
-		throw new Error("Method not implemented.");
+		throw new Error('Method not implemented.');
 	}
 
 	async send(conv: Conversation, text: Text, _attachments: Attachment[], _options: IMessageOptions): Promise<void> {
 		const parts = splitByMaxPossibleParts(this.partToString(text), 4096);
 		if (!(conv instanceof TelegramUser || conv instanceof TelegramChat))
 			throw new Error('Tried to send message to non telegram user');
-		for (let part of parts) {
+		for (const part of parts) {
 			await this.execute('sendMessage', {
 				chat_id: (conv instanceof TelegramUser) ? conv.apiUser.id : conv.apiChat.id,
 				text: part,
@@ -257,7 +258,7 @@ export default class TelegramApi extends Api {
 				.replace(/_/g, '\\_')
 				.replace(/\*/g, '\\*');
 		if (part instanceof StringReader) {
-			return `${part.toStringWithCursor(`|`)}`
+			return `${part.toStringWithCursor('|')}`;
 		} else if (part instanceof Array) {
 			return part.map(l => this.partToString(l)).join('');
 		}
@@ -265,7 +266,7 @@ export default class TelegramApi extends Api {
 			case 'formatting': {
 				let string = this.partToString(part.data);
 				if (part.preserveMultipleSpaces) {
-					string = string.replace(/(:?^ |  )/g, e => '\u2002'.repeat(e.length));
+					string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
 				}
 				if (part.bold) {
 					string = `**${replaceBut(string, /\*\*/g, /\\\*\*/g, '')}**`;
@@ -298,6 +299,7 @@ export default class TelegramApi extends Api {
 						return `<Чат ${(ayzekPart.chat as TelegramChat).title}>`;
 					}
 				}
+				throw new Error('Unreachable');
 			}
 			case 'hashTagPart':
 				if (part.hideOnNoSupport) return '';

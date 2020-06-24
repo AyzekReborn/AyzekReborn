@@ -1,9 +1,9 @@
 import { Image } from '@ayzek/model/attachment';
-import { Gender } from "@ayzek/model/conversation";
-import type VKApi from "..";
-import VKUser from "./user";
+import { Gender } from '@ayzek/model/conversation';
 import { PromiseMap } from '@meteor-it/utils';
+import type VKApi from '..';
 import GroupingVKApiRequester from '../groupingRequester';
+import VKUser from './user';
 
 export class VKBot extends VKUser {
 	constructor(public apiUser: any, api: VKApi) {
@@ -34,8 +34,8 @@ export class VKBotMap extends PromiseMap<number, VKBot> {
 			method: 'groups.getById',
 			params: {
 				group_ids: ids.join(','),
-				fields: 'photo_200'
-			}
+				fields: 'photo_200',
+			},
 		}), (v) => v, (u: any) => u.id);
 	}
 	protected async getPromise(key: number): Promise<VKBot> {

@@ -1,6 +1,6 @@
-import type { Api } from "./api"
-import type { Attachment } from "./attachment"
-import type { Chat, Conversation, User } from "./conversation"
+import type { Api } from './api';
+import type { Attachment } from './attachment';
+import type { Chat, Conversation, User } from './conversation';
 
 export type ForwardInfo = {
 	messageId: string,

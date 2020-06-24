@@ -1,6 +1,6 @@
-import type StringReader from "@ayzek/command-parser/reader";
-import type { Api } from "../api";
-import type { Chat, Conversation, User } from "../conversation";
+import type StringReader from '@ayzek/command-parser/reader';
+import type { Api } from '../api';
+import type { Chat, Conversation, User } from '../conversation';
 
 export enum TypingEventType {
 	/**
@@ -39,6 +39,6 @@ export class TypingEvent {
 		/**
 		 * If available - current typed message with cursor position
 		 */
-		public buffer?: StringReader
+		public buffer?: StringReader,
 	) { }
 }

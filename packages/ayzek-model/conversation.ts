@@ -1,9 +1,9 @@
-import { AttributeStorage, ownerlessEmptyAttributeStorage } from "@ayzek/attribute";
-import type { Api } from "./api";
-import type { Attachment, Image } from "./attachment";
-import type { IMessage, IMessageOptions } from "./message";
+import { AttributeStorage, ownerlessEmptyAttributeStorage } from '@ayzek/attribute';
 import type { Text, TextPart } from '@ayzek/text';
-import { ayzekToOpaque } from "./text";
+import type { Api } from './api';
+import type { Attachment, Image } from './attachment';
+import type { IMessage, IMessageOptions } from './message';
+import { ayzekToOpaque } from './text';
 
 enum ConversationType {
 	USER,
@@ -33,7 +33,7 @@ export abstract class Conversation implements IConversation {
 	}
 
 	// TODO: Move to message context somehow?
-	async waitForNext(shouldAccept: (message: IMessage) => boolean, timeout: number | null): Promise<IMessage> {
+	async waitForNext(_shouldAccept: (message: IMessage) => boolean, _timeout: number | null): Promise<IMessage> {
 		throw new Error('Method is not overridden by ayzek core');
 	}
 
@@ -55,7 +55,7 @@ export enum Gender {
 	UNSPECIFIED,
 	ANDROGYNOUS,
 	BOT,
-};
+}
 
 export enum UserType {
 	NORMAL,
@@ -124,8 +124,8 @@ export abstract class Guild {
 	constructor(
 		public readonly api: Api,
 		public readonly gid: string,
-	) { };
-};
+	) { }
+}
 
 export abstract class Chat<I = unknown> extends Conversation {
 	constructor(

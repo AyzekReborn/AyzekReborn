@@ -1,20 +1,20 @@
-import { AttributeRepository, AttributeStorage, ownerlessEmptyAttributeStorage } from "@ayzek/attribute";
-import type { ArgumentType } from "@ayzek/command-parser/arguments";
-import { CommandDispatcher } from "@ayzek/command-parser/command";
-import { CommandSyntaxError, UserDisplayableError } from "@ayzek/command-parser/error";
-import { Api } from "@ayzek/model/api";
-import type { Chat, Conversation, Guild, User } from "@ayzek/model/conversation";
-import type { MessageEvent } from "@ayzek/model/events/message";
-import type ApiFeature from "@ayzek/model/features";
-import { joinText, Text } from "@ayzek/text";
-import type Logger from "@meteor-it/logger";
-import type { Disposable } from "@meteor-it/utils";
+import { AttributeRepository, AttributeStorage, ownerlessEmptyAttributeStorage } from '@ayzek/attribute';
+import type { ArgumentType } from '@ayzek/command-parser/arguments';
+import { CommandDispatcher } from '@ayzek/command-parser/command';
+import { CommandSyntaxError, UserDisplayableError } from '@ayzek/command-parser/error';
+import { Api } from '@ayzek/model/api';
+import type { Chat, Conversation, Guild, User } from '@ayzek/model/conversation';
+import type { MessageEvent } from '@ayzek/model/events/message';
+import type ApiFeature from '@ayzek/model/features';
+import { joinText, Text } from '@ayzek/text';
+import type Logger from '@meteor-it/logger';
+import type { Disposable } from '@meteor-it/utils';
 import type { AyzekCommandSource, AyzekParseEntryPoint, AyzekParseResults } from './command';
-import { CommandEventContext, MessageEventContext } from "./context";
-import { craftCommandPayload, parsePayload } from "./model/payload";
-import type { IMessageListener, PluginInfo } from "./plugin";
-import { exclude } from "./util/array";
-import { levenshteinDistance } from "./util/levenshtein";
+import { CommandEventContext, MessageEventContext } from './context';
+import { craftCommandPayload, parsePayload } from './model/payload';
+import type { IMessageListener, PluginInfo } from './plugin';
+import { exclude } from './util/array';
+import { levenshteinDistance } from './util/levenshtein';
 
 const FIX_MAX_DISTANCE = 3;
 
@@ -54,9 +54,9 @@ export class Ayzek extends Api {
 		super(logger);
 		if (logEvents) {
 			this.messageEvent.on(e => {
-				const chat = e.chat ? ` {yellow}${e.chat.title}{/yellow}` : ''
+				const chat = e.chat ? ` {yellow}${e.chat.title}{/yellow}` : '';
 				const text = e.text.trim().length > 0 ? ` ${e.text.trim()}` : '';
-				const attachments = e.attachments.length > 0 ? ` {yellow}+${e.attachments.length}A{/yellow}` : ''
+				const attachments = e.attachments.length > 0 ? ` {yellow}+${e.attachments.length}A{/yellow}` : '';
 				const forwarded = e.maybeForwarded ? ` {green}+${e.forwarded.length + (e.replyTo ? 1 : 0)}F{/green}` : '';
 				e.api.logger.log(`${e.user.fullName}${chat} {gray}»{/gray}${text}${attachments}${forwarded}`);
 			});
@@ -113,33 +113,33 @@ export class Ayzek extends Api {
 	}
 
 	private async getSuggestionText(entry: AyzekParseEntryPoint, parseResult: AyzekParseResults, source: AyzekCommandSource): Promise<Text> {
-		let suggestionListNextCommand = [];
+		const suggestionListNextCommand = [];
 		let suggestionList = [];
 		let possibleFixes: string[] = [];
-		let suggestionThisArgument = [];
+		const suggestionThisArgument = [];
 		if (parseResult.reader.string.length === parseResult.reader.cursor) {
 			const oldString = parseResult.reader.string;
 			const oldCursor = parseResult.reader.cursor;
 			parseResult.reader.string += ' ';
 			parseResult.reader.cursor++;
 			const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult as any, parseResult.reader.cursor, source as any);
-			for (let suggestion of suggestions.suggestions) {
-				suggestionListNextCommand.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
+			for (const suggestion of suggestions.suggestions) {
+				suggestionListNextCommand.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim());
 			}
 			parseResult.reader.string = oldString;
 			parseResult.reader.cursor = oldCursor;
 		}
 		{
 			const parsedSuccessfully = parseResult.exceptions.size === 0;
-			let neededCursor = parsedSuccessfully ? (() => {
+			const neededCursor = parsedSuccessfully ? (() => {
 				return parseResult.context.nodes[parseResult.context.nodes.length - 1]?.range.start ?? 0;
 			})() : parseResult.reader.cursor;
-			const currentArgument = parseResult.reader.string.slice(neededCursor)
+			const currentArgument = parseResult.reader.string.slice(neededCursor);
 			const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, neededCursor, source);
 			const possibleFixesUnsorted: [string, number][] = [];
-			for (let suggestion of suggestions.suggestions) {
+			for (const suggestion of suggestions.suggestions) {
 				const text = `${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim();
-				suggestionList.push(text)
+				suggestionList.push(text);
 				const distance = levenshteinDistance(suggestion.text, currentArgument, FIX_MAX_DISTANCE);
 				if (distance <= FIX_MAX_DISTANCE) {
 					possibleFixesUnsorted.push([text, distance]);
@@ -151,8 +151,8 @@ export class Ayzek extends Api {
 			const oldCursor = parseResult.reader.cursor;
 			parseResult.reader.cursor = parseResult.reader.string.length;
 			const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, parseResult.reader.cursor, source);
-			for (let suggestion of suggestions.suggestions) {
-				suggestionThisArgument.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim())
+			for (const suggestion of suggestions.suggestions) {
+				suggestionThisArgument.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim());
 			}
 			parseResult.reader.cursor = oldCursor;
 		}
@@ -163,24 +163,24 @@ export class Ayzek extends Api {
 		const suggestionText = [
 			suggestionListNextCommand.length === 0 ? [] : [
 				'\n\n',
-				`Пример того, что можно поставить следующей командой:\n`,
-				suggestionListNextCommand.join(', ')
+				'Пример того, что можно поставить следующей командой:\n',
+				suggestionListNextCommand.join(', '),
 			],
 			suggestionThisArgument.length === 0 ? [] : [
 				'\n\n',
-				`Пример того, как можно продолжить текущий аргумент:\n`,
-				suggestionThisArgument.join(', ')
+				'Пример того, как можно продолжить текущий аргумент:\n',
+				suggestionThisArgument.join(', '),
 			],
 			possibleFixes.length === 0 ? [] : [
 				'\n\n',
-				`Возможно ты имел в виду:\n`,
-				possibleFixes.join(', ')
+				'Возможно ты имел в виду:\n',
+				possibleFixes.join(', '),
 			],
 			suggestionList.length === 0 ? [] : [
 				'\n\n',
-				`Пример того, что ещё можно поставить в этом месте:\n`,
-				suggestionList.join(', ')
-			]
+				'Пример того, что ещё можно поставить в этом месте:\n',
+				suggestionList.join(', '),
+			],
 		].filter(e => e.length !== 0);
 
 		return suggestionText;
@@ -218,41 +218,41 @@ export class Ayzek extends Api {
 				const errored = result
 					.filter(e => e.result === 'error');
 				if (errored.length === result.length) {
-					let suggestionText = (await this.getSuggestionText(entry, parseResult, source));
+					const suggestionText = (await this.getSuggestionText(entry, parseResult, source));
 					await source.send([
-						`Все вызовы команды провалились:\n`,
+						'Все вызовы команды провалились:\n',
 						joinText('\n', errored.map(e => (e as { error: Error }).error).map(e => this.formatError(e, commandPrefix))),
 						suggestionText,
-					])
+					]);
 				} else {
 					source.send(joinText('\n', result.map(e => {
 						if (e.result === 'error') return this.formatError(e.error, commandPrefix);
 						return e.value;
-					}) as any))
+					}) as any));
 				}
 			}
 		} catch (err) {
-			let suggestionText = parseResult ? (await this.getSuggestionText(entry, parseResult, source)) : null;
+			const suggestionText = parseResult ? (await this.getSuggestionText(entry, parseResult, source)) : null;
 			if (err instanceof CommandSyntaxError || err instanceof UserDisplayableError) {
 				if (commandPrefix === null) {
 					this.sendErrorFeedback(err);
 					await source.send([
 						err.message,
 						'\nПо видимому, эта ошибка вызвана кривой кнопкой.',
-						'\nВозможно, ты использовал кнопку на сообщении, которое отсылалось слишком давно'
+						'\nВозможно, ты использовал кнопку на сообщении, которое отсылалось слишком давно',
 					]);
 				} else {
 					await source.send([
 						err.message,
 						err.reader ? ['\n', `${commandPrefix}`, err.reader.toString()] : [],
-						suggestionText
+						suggestionText,
 					]);
 				}
 			} else {
 				this.sendErrorFeedback(err);
 				await source.send([
-					`Произошла ошибка, репорт передан разработчику.\nПока можешь попробовать воспользоваться данными предложениями:`,
-					suggestionText
+					'Произошла ошибка, репорт передан разработчику.\nПока можешь попробовать воспользоваться данными предложениями:',
+					suggestionText,
 				]);
 			}
 		}
@@ -260,7 +260,7 @@ export class Ayzek extends Api {
 
 	private async handleMessage(event: MessageEvent) {
 		const source = new MessageEventContext(this, event);
-		for (let listener of this.listeners) {
+		for (const listener of this.listeners) {
 			listener.handler(source);
 		}
 	}
@@ -291,7 +291,7 @@ export class Ayzek extends Api {
 		if (index === -1)
 			throw new Error('Api not found on detach');
 		this.apis.splice(index, 1);
-		for (let disposable of this.apiDisposables.splice(index, 1)[0])
+		for (const disposable of this.apiDisposables.splice(index, 1)[0])
 			disposable.dispose();
 	}
 
@@ -322,6 +322,6 @@ export class Ayzek extends Api {
 	}
 
 	get apiLocalUserArgumentType(): ArgumentType<void, User> {
-		throw new Error("Method not implemented.");
+		throw new Error('Method not implemented.');
 	}
 }

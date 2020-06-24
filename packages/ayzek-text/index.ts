@@ -1,6 +1,6 @@
 export type OpaqueTextPart = {
 	type: 'opaque',
-	opaqueType: Symbol,
+	opaqueType: symbol,
 	opaque: any,
 	fallback: Text,
 };
@@ -9,7 +9,7 @@ export function isOpaquePart(t: TextPart): t is OpaqueTextPart {
 	return typeof t === 'object' && !(t instanceof Array) && t?.type === 'opaque';
 }
 
-export function castOpaquePart(t: OpaqueTextPart, neededOpaqueType: Symbol): any | null {
+export function castOpaquePart(t: OpaqueTextPart, neededOpaqueType: symbol): any | null {
 	if (!isOpaquePart(t)) return null;
 	if (t.opaqueType !== neededOpaqueType) return null;
 	return t.opaque as any;
@@ -35,7 +35,7 @@ export type HashTagTextPart = {
 	hideOnNoSupport?: boolean
 }
 
-interface ArrayTextPart extends Array<TextPart> { }
+type ArrayTextPart = Array<TextPart>
 export type TextPart =
 	undefined | null | string | number
 	| OpaqueTextPart
@@ -44,5 +44,5 @@ export type TextPart =
 export type Text = TextPart;
 
 export function joinText(joiner: Text, arr: Text[]): Text[] {
-	return arr.flatMap((e: any, index: number) => index ? [joiner, e] : [e])
+	return arr.flatMap((e: any, index: number) => index ? [joiner, e] : [e]);
 }

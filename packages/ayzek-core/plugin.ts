@@ -1,11 +1,11 @@
-import type { AttributeCreator } from "@ayzek/attribute";
-import { LiteralArgumentBuilder } from "@ayzek/command-parser/builder";
-import type { Chat, Conversation, User } from "@ayzek/model/conversation";
-import type { Text } from "@ayzek/text";
-import type { Ayzek } from "./ayzek";
-import { AyzekCommandContext, AyzekCommandSource } from "./command";
-import type { MessageEventContext } from "./context";
+import type { AttributeCreator } from '@ayzek/attribute';
+import { LiteralArgumentBuilder } from '@ayzek/command-parser/builder';
+import type { Chat, Conversation, User } from '@ayzek/model/conversation';
+import type { Text } from '@ayzek/text';
 import * as t from 'io-ts';
+import type { Ayzek } from './ayzek';
+import { AyzekCommandContext, AyzekCommandSource } from './command';
+import type { MessageEventContext } from './context';
 
 /**
  * TODO: Message requirements
@@ -79,6 +79,8 @@ export { isConfigurable };
  * @returns builder to add into PluginInfo#commands
  */
 export function command(names: string | string[]) {
+	// There {} literally means "empty object"
+	// eslint-disable-next-line @typescript-eslint/ban-types
 	return new LiteralArgumentBuilder<AyzekCommandSource, {}, Text>((typeof names === 'string' ? [names] : names));
 }
 
@@ -109,6 +111,6 @@ export function regexpListener(name: string, description: string, regexp: RegExp
 			if (match === null)
 				return Promise.resolve();
 			return handler(ctx, match);
-		}
-	}
+		},
+	};
 }

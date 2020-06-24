@@ -1,5 +1,5 @@
-import { getReadStream, readFile } from "@meteor-it/fs";
-import { Data, MaybeTemporary } from "./data";
+import { getReadStream, readFile } from '@meteor-it/fs';
+import { Data, MaybeTemporary } from './data';
 
 export class FileData extends Data {
 	constructor(public readonly path: string) {
@@ -14,7 +14,7 @@ export class FileData extends Data {
 	toFile() {
 		return Promise.resolve({
 			path: this.path,
-			cleanIfTemporary: () => Promise.resolve()
+			cleanIfTemporary: () => Promise.resolve(),
 		});
 	}
 	toExternalUrl(): Promise<MaybeTemporary> {

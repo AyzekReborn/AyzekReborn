@@ -1,10 +1,10 @@
-import type { Api } from "@ayzek/model/api";
-import type { Attachment } from "@ayzek/model/attachment";
-import type { Chat, Conversation, IConversation, User } from "@ayzek/model/conversation";
-import type { MessageEvent } from "@ayzek/model/events/message";
-import type { IMessage, IMessageOptions } from "@ayzek/model/message";
+import type { Api } from '@ayzek/model/api';
+import type { Attachment } from '@ayzek/model/attachment';
+import type { Chat, Conversation, IConversation, User } from '@ayzek/model/conversation';
+import type { MessageEvent } from '@ayzek/model/events/message';
+import type { IMessage, IMessageOptions } from '@ayzek/model/message';
 import type { Text } from '@ayzek/text';
-import type { Ayzek } from "./ayzek";
+import type { Ayzek } from './ayzek';
 
 export class ContextAttachment {
 

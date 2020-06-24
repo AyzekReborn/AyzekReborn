@@ -1,11 +1,11 @@
 import { Image } from '@ayzek/model/attachment';
-import { Gender } from "@ayzek/model/conversation";
-import type VKApi from "..";
-import VKUser from "./user";
-import { validateData } from "@ayzek/core/util/config";
-import { PromiseMap } from "@meteor-it/utils";
+import { Gender } from '@ayzek/model/conversation';
+import type VKApi from '..';
+import VKUser from './user';
+import { validateData } from '@ayzek/core/util/config';
+import { PromiseMap } from '@meteor-it/utils';
 import * as t from 'io-ts';
-import GroupingVKApiRequester from "../groupingRequester";
+import GroupingVKApiRequester from '../groupingRequester';
 
 export class VKRealUser extends VKUser {
 	constructor(api: VKApi, public apiUser: VKApiUserType) {
@@ -51,8 +51,8 @@ export class VKUserMap extends PromiseMap<number, VKRealUser> {
 			method: 'users.get',
 			params: {
 				user_ids: ids.join(','),
-				fields: 'sex,bdate,photo_max,online,domain'
-			}
+				fields: 'sex,bdate,photo_max,online,domain',
+			},
 		}), (v) => v, (u: any) => +u.id);
 	}
 	protected async getPromise(key: number): Promise<VKRealUser | null> {

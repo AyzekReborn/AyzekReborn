@@ -1,6 +1,6 @@
-import recombine, { RecombineKeyExtractor } from "@ayzek/core/util/recombine";
-import { CollapseQueueProcessor } from "@meteor-it/queue";
-import type VKApiProcessor from "./apiProcessor";
+import recombine, { RecombineKeyExtractor } from '@ayzek/core/util/recombine';
+import { CollapseQueueProcessor } from '@meteor-it/queue';
+import type VKApiProcessor from './apiProcessor';
 import type { IVKApiRequest } from './apiProcessor';
 
 export default class GroupingVKApiRequester<V> extends CollapseQueueProcessor<V, any>{
