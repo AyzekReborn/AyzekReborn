@@ -1,1 +1,1 @@
-FROM deltarocks/devcontainer:1
+FROM deltarocks/devcontainer:3
