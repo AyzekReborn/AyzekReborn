@@ -7,6 +7,9 @@ export function parseYaml<P extends t.Type<any, any, any>>(data: string, type: P
 	const config = YAML.parse(data);
 	return validateData(config, type);
 }
+export function stringifyYaml(data: any): string {
+	return YAML.stringify(data);
+}
 
 export function validateData<P extends t.Type<any, any, any>>(data: unknown, type: P): t.TypeOf<P> {
 	const decoded = type.decode(data);
