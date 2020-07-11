@@ -1,10 +1,10 @@
 import type { CommandNode } from '@ayzek/command-parser/tree';
+import { readFile, writeFile } from '@meteor-it/fs';
 import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
+import { resolve } from 'path';
 import type { Ayzek } from '../ayzek';
 import { isConfigurable, PluginInfo } from '../plugin';
-import { parseYaml } from '../util/config';
-import { readFile, writeFile } from '@meteor-it/fs';
-import { resolve } from 'path';
+import { parseYaml, stringifyYaml } from '../util/config';
 
 export type PluginInfoAttribute = {
 	registered?: CommandNode<any, any, any>[];
@@ -28,21 +28,28 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 			}).toUpperCase().replace(/__+/g, '_');
 			const configPath = resolve(this.ayzek.dataDir, module.name.replace(/([a-z])([A-Z])/g, (_, a, b) => {
 				return `${a}${b.toUpperCase()}`;
-			}) + '.json');
+			}) + '.yaml');
 
 			this.logger.log(`Trying to load config from either env ${configEnv} or ${configPath}`);
 
-			const envString = process.env[configEnv];
-			if (envString) {
-				module.config = parseYaml(envString, module.configType);
+			let configString = process.env[configEnv];
+			if (!configString) {
+				try {
+					configString = (await readFile(configPath)).toString('utf8');
+				} catch {
+					// File not found
+				}
+			}
+			if (!configString) {
+				this.logger.warn('Config not found, loaded and written default');
+				module.config = module.defaultConfig;
+				await writeFile(configPath, stringifyYaml(module.config));
 			} else {
 				try {
-					const fileString = await readFile(configPath);
-					module.config = JSON.parse(fileString.toString('utf8'));
-				} catch {
-					this.logger.log('Config not found, creating default');
-					module.config = module.defaultConfig;
-					await writeFile(configPath, JSON.stringify(module.config, null, '\t'));
+					module.config = parseYaml(configString, module.configType);
+				} catch (e) {
+					this.logger.error('Failed to parse config');
+					throw e;
 				}
 			}
 		}
@@ -50,7 +57,7 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 
 	async onPostInit(module: PluginInfo & PluginInfoAttribute) {
 		// TODO: Also perform in-plugin conflict search (currently only cross-plugin check is done)
-		module.registered = module.commands.filter(command => {
+		module.registered = module.commands?.filter(command => {
 			// FIXME: O(n*m), somehow add alias map to make it O(1)
 			if ([...this.ayzek.commandDispatcher.root.literals.values()].some(otherCommand => command.literals.some(name => otherCommand.isMe(name)))) {
 				this.logger.warn(`Command ${command.literal} is already registered`);
