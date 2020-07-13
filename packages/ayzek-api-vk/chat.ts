@@ -1,10 +1,10 @@
+import { Chat } from '@ayzek/core/conversation';
 import { validateData } from '@ayzek/core/util/config';
-import { Chat } from '@ayzek/model/conversation';
 import { PromiseMap } from '@meteor-it/utils';
 import * as t from 'io-ts';
-import type VKApi from '..';
-import GroupingVKApiRequester from '../groupingRequester';
-import type VKUser from '../user/user';
+import { VKApi } from '.';
+import GroupingVKApiRequester from './groupingRequester';
+import type VKUser from './user/user';
 
 export const VKApiChat = t.interface({
 	peer: t.interface({

@@ -1,6 +1,6 @@
 import { intArgument } from '@ayzek/command-parser/arguments';
+import { File, Image } from '@ayzek/core/model/attachment';
 import { command, PluginCategory, PluginInfo } from '@ayzek/core/plugin';
-import { File, Image } from '@ayzek/model/attachment';
 import { emit } from '@meteor-it/xrest';
 
 const SHRUG = '¯\\_(ツ)_/¯';

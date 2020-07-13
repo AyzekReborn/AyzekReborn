@@ -2,10 +2,10 @@ import { ArgumentType } from '@ayzek/command-parser/arguments';
 import { UserDisplayableError } from '@ayzek/command-parser/error';
 import type StringReader from '@ayzek/command-parser/reader';
 import type { Suggestions, SuggestionsBuilder } from '@ayzek/command-parser/suggestions';
-import type { Api } from '@ayzek/model/api';
-import type { User } from '@ayzek/model/conversation';
+import { Api } from './api';
 import type { Ayzek } from './ayzek';
 import type { AyzekCommandContext, AyzekParseEntryPoint } from './command';
+import { User } from './conversation';
 
 export type ParsedUserArgument = [Api, any, Ayzek];
 
@@ -13,7 +13,7 @@ export class UserArgumentType extends ArgumentType<ParsedUserArgument, User> {
 	parse(ctx: AyzekParseEntryPoint, reader: StringReader): ParsedUserArgument {
 		if (!ctx.source.api?.apiLocalUserArgumentType) throw new Error(`source is not ayzek one (${ctx.source})`);
 		const user = ctx.source.api.apiLocalUserArgumentType.parse(ctx, reader);
-		return [ctx.source.api, user, ctx.source.ayzek];
+		return [ctx.source.api, user, ctx.source.ayzek!];
 	}
 	async load(parsed: ParsedUserArgument): Promise<User> {
 		const user = await parsed[0].apiLocalUserArgumentType.load(parsed[1]);

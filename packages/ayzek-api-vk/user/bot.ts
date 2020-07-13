@@ -1,5 +1,5 @@
-import { Image } from '@ayzek/model/attachment';
-import { Gender } from '@ayzek/model/conversation';
+import { Gender } from '@ayzek/core/conversation';
+import { Image } from '@ayzek/core/model/attachment';
 import { PromiseMap } from '@meteor-it/utils';
 import type VKApi from '..';
 import GroupingVKApiRequester from '../groupingRequester';

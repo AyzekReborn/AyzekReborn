@@ -6,7 +6,6 @@
 	"dependencies": {
 		"@ayzek/attribute": "workspace:*",
 		"@ayzek/command-parser": "^1.0.2",
-		"@ayzek/model": "workspace:*",
 		"@ayzek/text": "workspace:*",
 		"@meteor-it/ajson": "^0.4.20",
 		"@meteor-it/logger": "2.3.45",

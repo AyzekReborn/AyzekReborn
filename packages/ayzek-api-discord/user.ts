@@ -1,5 +1,5 @@
-import { Image } from '@ayzek/model/attachment';
-import { Gender, User } from '@ayzek/model/conversation';
+import { Gender, User } from '@ayzek/core/conversation';
+import { Image } from '@ayzek/core/model/attachment';
 import type { User as DSUser } from 'discord.js';
 import type DiscordApi from '.';
 

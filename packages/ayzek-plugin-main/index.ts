@@ -1,11 +1,11 @@
-import VKApi, { IVKMessageOptions } from '@ayzek/api-vk';
 import { SimpleArgumentType } from '@ayzek/command-parser/arguments';
-import { UserDisplayableError } from '@ayzek/command-parser/error';
+import { CommandSyntaxError, UnknownSomethingError, UserDisplayableError } from '@ayzek/command-parser/error';
 import type StringReader from '@ayzek/command-parser/reader';
 import type { Requirement } from '@ayzek/command-parser/requirement';
 import type { Suggestions, SuggestionsBuilder } from '@ayzek/command-parser/suggestions';
 import type { Ayzek } from '@ayzek/core/ayzek';
-import { AyzekCommandContext, AyzekCommandRequirement, AyzekParseEntryPoint } from '@ayzek/core/command';
+import { AyzekCommandContext, AyzekCommandRequirement, AyzekCommandSource, AyzekParseEntryPoint, AyzekParseResults } from '@ayzek/core/command';
+import { CommandErrorEvent } from '@ayzek/core/events/custom';
 import { command, PluginCategory, PluginInfo } from '@ayzek/core/plugin';
 import { requireHidden } from '@ayzek/core/requirements';
 import { padList } from '@ayzek/core/util/pad';

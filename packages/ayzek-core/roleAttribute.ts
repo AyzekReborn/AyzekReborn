@@ -1,6 +1,6 @@
 import { Attribute, AttributeConstructor, AttributeCreator, AttributeStorage } from '@ayzek/attribute';
 import type { AyzekCommandRequirement } from '@ayzek/core/command';
-import type { User } from '@ayzek/model/conversation';
+import { User } from './conversation';
 
 export abstract class RoleAttribute extends Attribute {
 	public constructor(public roles: string[]) {
@@ -32,7 +32,7 @@ export abstract class PermissionAttributeCreator<A extends PermissionAttribute> 
 
 export function requirePermission<P extends PermissionAttribute>(constructor: AttributeConstructor<P>, permission: string): AyzekCommandRequirement {
 	return source => {
-		const attribute = source.event.user.attributeStorage!.getIfAvailable(constructor);
+		const attribute = source.user.attributeStorage!.getIfAvailable(constructor);
 		if (!attribute) return false;
 		return attribute.hasPermission(permission);
 	};
@@ -40,7 +40,7 @@ export function requirePermission<P extends PermissionAttribute>(constructor: At
 
 export function requireRole<P extends RoleAttribute>(constructor: AttributeConstructor<P>, role: string): AyzekCommandRequirement {
 	return source => {
-		const attribute = source.event.user.attributeStorage!.getIfAvailable(constructor);
+		const attribute = source.user.attributeStorage!.getIfAvailable(constructor);
 		if (!attribute) return false;
 		return attribute.hasRole(role);
 	};

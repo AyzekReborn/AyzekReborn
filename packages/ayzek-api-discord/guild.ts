@@ -1,4 +1,4 @@
-import { Guild } from '@ayzek/model/conversation';
+import { Guild } from '@ayzek/core/conversation';
 import type { Guild as DSGuild } from 'discord.js';
 import type DiscordApi from '.';
 
