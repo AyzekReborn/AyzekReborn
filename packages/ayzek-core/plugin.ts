@@ -1,22 +1,23 @@
 import type { AttributeCreator } from '@ayzek/attribute';
 import { LiteralArgumentBuilder } from '@ayzek/command-parser/builder';
-import type { Chat, Conversation, User } from '@ayzek/model/conversation';
 import type { Text } from '@ayzek/text';
 import * as t from 'io-ts';
 import type { Ayzek } from './ayzek';
 import { AyzekCommandContext, AyzekCommandSource } from './command';
-import type { MessageEventContext } from './context';
+import { Chat, Conversation, User } from './conversation';
+import { CustomEventConstructor } from './events/custom';
+import { PlainMessageEvent } from './events/message';
 
-/**
- * TODO: Message requirements
- */
-export type IMessageListener = {
+export type IListener<S> = {
 	name: string,
-	description?: string,
-	handler: (ctx: MessageEventContext) => Promise<void>,
-};
+	description: string,
+
+	type: CustomEventConstructor<S>,
+	handler: (event: S) => void,
+}
 
 export enum PluginCategory {
+	API,
 	UTILITY,
 	FUN,
 }
@@ -26,8 +27,10 @@ type PluginInfo = {
 	ayzek?: Ayzek,
 
 	category: PluginCategory,
-	commands: LiteralArgumentBuilder<AyzekCommandSource, any, Text>[],
-	listeners: IMessageListener[],
+	commands?: LiteralArgumentBuilder<AyzekCommandSource, any, Text>[],
+
+	listeners?: IListener<any>[],
+
 	userAttributes?: AttributeCreator<User, any>[],
 	chatAttributes?: AttributeCreator<Chat, any>[],
 	conversationAttributes?: AttributeCreator<Conversation, any>[],
@@ -92,8 +95,16 @@ export function command(names: string | string[]) {
  * @param handler message handler
  * @returns listener to add info PluginInfo#listeners
  */
-export function listener(name: string, description: string, handler: (ctx: MessageEventContext) => Promise<void>): IMessageListener {
-	return { name, description, handler };
+export function plainMessageListener(name: string, description: string, handler: (ctx: PlainMessageEvent) => Promise<void>): IListener<PlainMessageEvent> {
+	// return { name, description, handler };
+	return {
+		name,
+		description,
+		type: PlainMessageEvent,
+		async handler(event) {
+			return await handler(event);
+		},
+	};
 }
 
 /**
@@ -103,15 +114,11 @@ export function listener(name: string, description: string, handler: (ctx: Messa
  * @param regexp expression with capture groups
  * @param handler message handler
  */
-export function regexpListener(name: string, description: string, regexp: RegExp, handler: (ctx: MessageEventContext, args: string[]) => Promise<void>): IMessageListener {
-	return {
-		name,
-		description,
-		handler(ctx: MessageEventContext) {
-			const match = ctx.event.text.match(regexp);
-			if (match === null)
-				return Promise.resolve();
-			return handler(ctx, match);
-		},
-	};
+export function regexpMessageListener(name: string, description: string, regexp: RegExp, handler: (ctx: PlainMessageEvent, args: string[]) => Promise<void>): IListener<PlainMessageEvent> {
+	return plainMessageListener(name, description, ctx => {
+		const match = ctx.text.match(regexp);
+		if (match === null)
+			return Promise.resolve();
+		return handler(ctx, match);
+	});
 }

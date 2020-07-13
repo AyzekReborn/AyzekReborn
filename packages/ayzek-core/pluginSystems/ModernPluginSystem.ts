@@ -86,7 +86,9 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 				await this.ayzek.onAyzekAttributeRepositoryChange();
 		}
 		if (module.listeners) {
-			this.ayzek.listeners.push(...module.listeners);
+			for (const listener of module.listeners) {
+				this.ayzek.bus.on(listener.type, listener.handler);
+			}
 		}
 		module.ayzek = this.ayzek;
 		this.ayzek.plugins.push(module);
@@ -119,7 +121,9 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 				await this.ayzek.onAyzekAttributeRepositoryChange();
 		}
 		if (module.listeners) {
-			this.ayzek.listeners.splice(this.ayzek.listeners.indexOf(module.listeners[0]), module.listeners.length);
+			for (const listener of module.listeners) {
+				this.ayzek.bus.off(listener.type, listener.handler);
+			}
 		}
 		this.ayzek.plugins.splice(this.ayzek.plugins.indexOf(module), 1);
 	}
