@@ -32,7 +32,7 @@ export class TelegramUser extends User {
 	constructor(public apiUser: t.TypeOf<typeof ApiUser>, api: TelegramApi) {
 		super(
 			api,
-			`TGU:${api.descriptor}:${apiUser.id.toString()}`,
+			`TGU:${api.config.descriminator}:${apiUser.id.toString()}`,
 			apiUser.username,
 			apiUser.first_name ?? null,
 			apiUser.last_name ?? null,
@@ -49,7 +49,7 @@ export class TelegramChat extends Chat {
 	constructor(public apiChat: t.TypeOf<typeof ApiChat>, api: TelegramApi) {
 		super(
 			api,
-			`TGC:${api.descriptor}:${-apiChat.id}`,
+			`TGC:${api.config.descriminator}:${-apiChat.id}`,
 			[],
 			apiChat.title,
 			[],
@@ -67,11 +67,17 @@ function isChatType(type: string) {
 	return ['group', 'supergroup'].includes(type);
 }
 
-export default class TelegramApi extends Api {
+const TelegramApiConfiguration = t.interface({
+	descriminator: t.string,
+	username: t.string,
+	token: t.string,
+});
+
+export class TelegramApi extends Api {
 	xrest: XRest;
-	constructor(public descriptor: string, public username: string, public token: string) {
+	constructor(public config: t.TypeOf<typeof TelegramApiConfiguration>) {
 		super('tg');
-		this.xrest = new XRest(`https://api.telegram.org/bot${token}/`, {
+		this.xrest = new XRest(`https://api.telegram.org/bot${config.token}/`, {
 			agent: new https.Agent({
 				keepAlive: true,
 				keepAliveMsecs: 5000,
@@ -83,7 +89,7 @@ export default class TelegramApi extends Api {
 	protected supportedFeatures: Set<ApiFeature> = new Set();
 
 	getUser(uid: string): MaybePromise<TelegramUser | null> {
-		const userPrefix = `TGU:${this.descriptor}:`;
+		const userPrefix = `TGU:${this.config.descriminator}:`;
 		if (!uid.startsWith(userPrefix)) {
 			return null;
 		}
@@ -106,7 +112,7 @@ export default class TelegramApi extends Api {
 		}
 	}
 	getChat(cid: string): MaybePromise<TelegramChat | null> {
-		const chatPrefix = `TGC:${this.descriptor}:`;
+		const chatPrefix = `TGC:${this.config.descriminator}:`;
 		if (!cid.startsWith(chatPrefix)) {
 			return Promise.resolve(null);
 		}
@@ -164,7 +170,6 @@ export default class TelegramApi extends Api {
 			api: this,
 			user,
 			chat,
-			conversation: chat ?? user,
 			attachments: [],
 			text: message.text ?? message.caption,
 			replyTo: message.reply_to_message ? (await this.parseMessage(message.reply_to_message)) : null,
@@ -182,21 +187,22 @@ export default class TelegramApi extends Api {
 		const chat = this.chats.get(-message.chat.id) ?? null;
 		const isForwarded = !!message.forwarded_from;
 		// TODO: Group multiple forwarded at api level?
-		return new MessageEvent(
-			this,
+		const messageData: IMessage = {
+			api: this,
 			user,
 			chat,
-			chat ?? user,
-			[],
-			isForwarded ? '' : (message.text ?? message.caption),
-			await this.parseForwarded(message),
-			message.message_id,
-			message.reply_to_message ? (await this.parseMessage(message.reply_to_message)) : null,
-		);
+			attachments: [],
+			text: isForwarded ? '' : (message.text ?? message.caption),
+			replyTo: message.reply_to_message ? (await this.parseMessage(message.reply_to_message)) : null,
+			forwarded: await this.parseForwarded(message),
+			messageId: message.message_id,
+		};
+
+		return new PlainMessageEvent(messageData);
 	}
 	async processMessageUpdate(messageUpdate: any) {
 		const message = await this.parseMessage(messageUpdate);
-		this.messageEvent.emit(message);
+		this.bus.emit(new PlainMessageEvent(message));
 	}
 	async processUpdate(update: any) {
 		this.logger.debug(update);
@@ -229,6 +235,8 @@ export default class TelegramApi extends Api {
 			}
 		}
 	}
+	async cancel() { }
+
 	get apiLocalUserArgumentType(): ArgumentType<void, User> {
 		throw new Error('Method not implemented.');
 	}
@@ -306,5 +314,22 @@ export default class TelegramApi extends Api {
 				return this.partToString(part.data);
 		}
 		throw new Error(`Part ${JSON.stringify(part)} not handled`);
+	}
+}
+
+export default class TelegramApiPlugin extends ApiPlugin {
+	constructor() {
+		super(
+			'Telegram',
+			'НекийЛач',
+			'Поддержка Telegram',
+			TelegramApiConfiguration,
+			{
+				descriminator: 'telegramExample',
+				username: 'test',
+				token: 'example-token',
+			},
+			TelegramApi,
+		);
 	}
 }

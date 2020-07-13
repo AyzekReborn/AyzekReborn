@@ -18,6 +18,7 @@ import { lookup as lookupMime } from '@meteor-it/mime';
 import type { MaybePromise } from '@meteor-it/utils';
 import { emit } from '@meteor-it/xrest';
 import * as multipart from '@meteor-it/xrest/multipart';
+import * as t from 'io-ts';
 import { pick } from 'lodash';
 import VKApiProcessor from './apiProcessor';
 import { VKUserArgumentType } from './arguments';
@@ -36,20 +37,24 @@ export type IVKMessageOptions = IMessageOptions & {
 	vkKeyboard?: IVKKeyboard,
 };
 
-export default class VKApi extends Api {
+const VKApiConfiguration = t.interface({
+	descriminator: t.string,
+	groupId: t.number,
+	tokens: t.array(t.string),
+});
+
+export class VKApi extends Api {
 	processor: VKApiProcessor;
 	userMap: VKUserMap;
 	botMap: VKBotMap;
 	chatMap: VKChatMap;
-	tokens: string[];
 	// TODO: Work as user account (illegal :D)
-	constructor(public apiId: string, public groupId: number, tokens: string[]) {
+	constructor(public config: t.TypeOf<typeof VKApiConfiguration>) {
 		super('vk');
-		this.processor = new VKApiProcessor(this.logger, tokens, true);
+		this.processor = new VKApiProcessor(this.logger, config.tokens, true);
 		this.userMap = new VKUserMap(this);
 		this.botMap = new VKBotMap(this);
 		this.chatMap = new VKChatMap(this);
-		this.tokens = tokens;
 	}
 	async init() {
 	}
@@ -64,13 +69,13 @@ export default class VKApi extends Api {
 		return this.chatMap.get(id);
 	}
 	encodeUserUid(id: number): string {
-		return `VKU:${this.apiId}:${id}`;
+		return `VKU:${this.config.descriminator}:${id}`;
 	}
 	encodeChatCid(id: number): string {
-		return `VKC:${this.apiId}:${id}`;
+		return `VKC:${this.config.descriminator}:${id}`;
 	}
 	getUser(uid: string): MaybePromise<VKUser | null> {
-		const userPrefix = `VKU:${this.apiId}:`;
+		const userPrefix = `VKU:${this.config.descriminator}:`;
 		if (!uid.startsWith(userPrefix)) {
 			return null;
 		}
@@ -80,7 +85,7 @@ export default class VKApi extends Api {
 		return this.getApiUser(id);
 	}
 	getChat(cid: string) {
-		const chatPrefix = `VKC:${this.apiId}:`;
+		const chatPrefix = `VKC:${this.config.descriminator}:`;
 		if (!cid.startsWith(chatPrefix)) {
 			return Promise.resolve(null);
 		}
@@ -156,7 +161,6 @@ export default class VKApi extends Api {
 			api: this,
 			user,
 			chat: null,
-			conversation: user,
 			attachments: [
 				...(attachments as Attachment[]),
 				...(extraAttachments as Attachment[]),
@@ -184,7 +188,6 @@ export default class VKApi extends Api {
 			api: this,
 			user: user,
 			chat: chat,
-			conversation: chat ?? user,
 			attachments: [
 				...(attachments as Attachment[]),
 				...(extraAttachments as Attachment[]),
@@ -206,7 +209,7 @@ export default class VKApi extends Api {
 					if (!user) throw new Error(`Bad user: ${update.from_id}`);
 					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
 					const newTitle = update.action.text;
-					this.chatTitleChangeEvent.emit(new ChatTitleChangeEvent(
+					this.bus.emit(new ChatTitleChangeEvent(
 						this,
 						// If old title is in cache
 						chat.title === newTitle ? null : chat.title,
@@ -224,7 +227,7 @@ export default class VKApi extends Api {
 					]);
 					if (!user) throw new Error(`Bad user: ${update.from_id}`);
 					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
-					this.joinChatEvent.emit(new JoinChatEvent(
+					this.bus.emit(new JoinChatEvent(
 						this,
 						user,
 						null,
@@ -244,7 +247,7 @@ export default class VKApi extends Api {
 					if (!user) throw new Error(`Bad user: ${update.action.member_id}`);
 					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
 					if (update.from_id === update.action.member_id) {
-						this.joinChatEvent.emit(new JoinChatEvent(
+						this.bus.emit(new JoinChatEvent(
 							this,
 							user,
 							null,
@@ -253,7 +256,7 @@ export default class VKApi extends Api {
 							chat,
 						));
 					} else {
-						this.joinChatEvent.emit(new JoinChatEvent(
+						this.bus.emit(new JoinChatEvent(
 							this,
 							user,
 							await this.getApiUser(update.from_id),
@@ -274,7 +277,7 @@ export default class VKApi extends Api {
 					if (!user) throw new Error(`Bad user: ${update.action.member_id}`);
 					if (!chat) throw new Error(`Bad chat: ${update.peer_id}`);
 					if (update.from_id === update.action.member_id) {
-						this.leaveChatEvent.emit(new LeaveChatEvent(
+						this.bus.emit(new LeaveChatEvent(
 							this,
 							user,
 							null,
@@ -283,7 +286,7 @@ export default class VKApi extends Api {
 							chat,
 						));
 					} else {
-						this.leaveChatEvent.emit(new LeaveChatEvent(
+						this.bus.emit(new LeaveChatEvent(
 							this,
 							user,
 							await this.getApiUser(update.from_id),
@@ -303,19 +306,17 @@ export default class VKApi extends Api {
 			return;
 		}
 		const parsed = await this.parseMessage(update, true);
-		this.messageEvent.emit(new MessageEvent(
-			this, parsed.user,
-			parsed.chat,
-			parsed.conversation, parsed.attachments, parsed.text, parsed.forwarded, parsed.messageId, parsed.replyTo,
-			update.payload,
-		));
+		if (parsed.text.startsWith('/') && !parsed.text.startsWith('//') && parsed.text.length != 1) {
+			this.bus.emit(new CommandMessageEvent(parsed, parsed.text.slice(1)));
+		}
+		this.bus.emit(new PlainMessageEvent(parsed));
 	}
 	async processMessageTypingStateUpdate(update: any) {
 		// TODO: Distinct event types? (VK always sends "typing")
 		if (update.state !== 'typing') throw new Error(`Unknown typing state: ${update.state}`);
 		const user = await this.getApiUser(update.from_id);
 		if (!user) throw new Error(`Bad user: ${update.from_id}`);
-		this.typingEvent.emit(new TypingEvent(
+		this.bus.emit(new TypingEvent(
 			this,
 			user,
 			null,
@@ -346,7 +347,7 @@ export default class VKApi extends Api {
 		while (true) {
 			try {
 				const data = await this.execute('groups.getLongPollServer', {
-					group_id: this.groupId,
+					group_id: this.config.groupId,
 				});
 				if (!data || !data.server) {
 					this.logger.error('Can\'t get data!');
@@ -554,6 +555,9 @@ export default class VKApi extends Api {
 	async doWork(): Promise<void> {
 		await this.loop();
 	}
+	async cancel() {
+
+	}
 
 	apiLocalUserArgumentType = new VKUserArgumentType(this);
 
@@ -564,4 +568,21 @@ export default class VKApi extends Api {
 		ApiFeature.ChatMemberList,
 		ApiFeature.EditMessage,
 	]);
+}
+
+export default class VKApiPlugin extends ApiPlugin {
+	constructor() {
+		super(
+			'VK',
+			'НекийЛач',
+			'Поддержка VK',
+			VKApiConfiguration,
+			{
+				descriminator: 'telegramExample',
+				username: 'test',
+				token: 'example-token',
+			},
+			VKApi,
+		);
+	}
 }

@@ -1,11 +1,11 @@
-import { Image } from '@ayzek/model/attachment';
-import { Gender } from '@ayzek/model/conversation';
-import type VKApi from '..';
-import VKUser from './user';
+import { Gender } from '@ayzek/core/conversation';
+import { Image } from '@ayzek/core/model/attachment';
 import { validateData } from '@ayzek/core/util/config';
 import { PromiseMap } from '@meteor-it/utils';
 import * as t from 'io-ts';
+import { VKApi } from '..';
 import GroupingVKApiRequester from '../groupingRequester';
+import VKUser from './user';
 
 export class VKRealUser extends VKUser {
 	constructor(api: VKApi, public apiUser: VKApiUserType) {

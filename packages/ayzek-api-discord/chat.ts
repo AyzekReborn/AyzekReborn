@@ -1,6 +1,6 @@
 import { Chat } from '@ayzek/core/conversation';
 import type { TextChannel } from 'discord.js';
-import type DiscordApi from '.';
+import { DiscordApi } from '.';
 import type DiscordGuild from './guild';
 import type DiscordUser from './user';
 

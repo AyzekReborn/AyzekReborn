@@ -3,7 +3,7 @@ import { ExpectedSomethingError } from '@ayzek/command-parser/error';
 import type StringReader from '@ayzek/command-parser/reader';
 import { NoSuchUserError } from '@ayzek/core/argument';
 import type { AyzekParseEntryPoint } from '@ayzek/core/command';
-import type VKApi from '.';
+import { VKApi } from '.';
 import type VKUser from './user/user';
 
 type ParsedVKUser = {

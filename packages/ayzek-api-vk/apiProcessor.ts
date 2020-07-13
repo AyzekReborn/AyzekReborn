@@ -8,7 +8,7 @@ export interface IVKApiRequest {
 	params: any | null,
 }
 
-const VK_API_VERSION = '5.103';
+const VK_API_VERSION = '5.120';
 
 export default class VKApiProcessor extends CollapseQueueProcessor<IVKApiRequest, any>{
 	/**

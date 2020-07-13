@@ -14,6 +14,7 @@ import { Text, TextPart } from '@ayzek/text';
 import { lookupByPath } from '@meteor-it/mime';
 import * as assert from 'assert';
 import { Client, Guild, GuildMember, MessageAttachment, TextChannel, User } from 'discord.js';
+import * as t from 'io-ts';
 import { DSUserArgumentType } from './arguments';
 import DiscordChat from './chat';
 import DiscordGuild from './guild';
@@ -21,21 +22,24 @@ import DiscordUser from './user';
 
 const MAX_MESSAGE_LENGTH = 2000;
 
-export default class DiscordApi extends Api {
+const DiscordApiConfiguration = t.interface({
+	descriminator: t.string,
+	token: t.string,
+});
+
+export class DiscordApi extends Api {
 
 	api: Client;
-	token: string;
 	private userPrefix: string;
 	private chatPrefix: string;
 	private guildPrefix: string;
 
-	constructor(public apiId: string, token: string) {
+	constructor(public config: t.TypeOf<typeof DiscordApiConfiguration>) {
 		super('ds');
 		this.api = new Client();
-		this.token = token;
-		this.userPrefix = `DSU:${apiId}:`;
-		this.chatPrefix = `DSC:${apiId}:`;
-		this.guildPrefix = `DSG:${apiId}:`;
+		this.userPrefix = `DSU:${config.descriminator}:`;
+		this.chatPrefix = `DSC:${config.descriminator}:`;
+		this.guildPrefix = `DSG:${config.descriminator}:`;
 	}
 
 	encodeUserUid(uid: string): string {
@@ -123,9 +127,9 @@ export default class DiscordApi extends Api {
 	}
 
 	async init() {
-		await this.api.login(this.token);
+		await this.api.login(this.config.descriminator);
 		this.api.on('guildMemberAdd', async member => {
-			this.joinGuildEvent.emit(new JoinGuildEvent(
+			this.bus.emit(new JoinGuildEvent(
 				this,
 				this.wrapMember(await member.fetch()),
 				null,
@@ -135,7 +139,7 @@ export default class DiscordApi extends Api {
 			));
 		});
 		this.api.on('guildMemberRemove', async member => {
-			this.leaveGuildEvent.emit(new LeaveGuildEvent(
+			this.bus.emit(new LeaveGuildEvent(
 				this,
 				this.wrapMember(await member.fetch()),
 				null,
@@ -148,22 +152,22 @@ export default class DiscordApi extends Api {
 			if (message.author === this.api.user) return;
 			const chat = message.channel.type === 'dm' ? null : this.wrapChat(message.channel as TextChannel);
 			const user = this.wrapUser(message.author);
-			this.messageEvent.emit(new MessageEvent(
-				this,
+			const messageData: IMessage = {
+				api: this,
 				user,
 				chat,
-				chat || user,
-				this.parseAttachments(message.attachments.array()),
-				message.content,
-				[],
-				message.id,
-				null,
-			));
+				attachments: this.parseAttachments(message.attachments.array()),
+				text: message.content,
+				replyTo: null,
+				forwarded: [],
+				messageId: message.id,
+			};
+			this.bus.emit(new PlainMessageEvent(messageData));
 		});
 		this.api.on('typingStart', async (ch, apiUser) => {
 			const chat = ch.type === 'dm' ? null : this.wrapChat(ch as TextChannel);
 			const user = this.wrapUser(await apiUser.fetch());
-			this.typingEvent.emit(new TypingEvent(
+			this.bus.emit(new TypingEvent(
 				this,
 				user,
 				chat,
@@ -255,6 +259,7 @@ export default class DiscordApi extends Api {
 	async doWork(): Promise<void> {
 		await this.init();
 	}
+	async cancel() { }
 
 	apiLocalUserArgumentType = new DSUserArgumentType(this);
 
@@ -264,4 +269,20 @@ export default class DiscordApi extends Api {
 		ApiFeature.GuildSupport,
 		ApiFeature.MessageReactions,
 	]);
+}
+
+export default class DiscordApiPlugin extends ApiPlugin {
+	constructor() {
+		super(
+			'Discord',
+			'НекийЛач',
+			'Поддержка Discord',
+			DiscordApiConfiguration,
+			{
+				descriminator: 'discordExample',
+				token: 'example-token',
+			},
+			DiscordApi,
+		);
+	}
 }
