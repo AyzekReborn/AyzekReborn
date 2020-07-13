@@ -1,16 +1,15 @@
 import type { ArgumentType } from '@ayzek/command-parser/arguments';
-import type ApiFeature from '@ayzek/model/features';
+import { CustomEventBus } from '@ayzek/core/events/custom';
 import type { Text } from '@ayzek/text';
 import Logger from '@meteor-it/logger';
-import { isPromise, MaybePromise, TypedEvent } from '@meteor-it/utils';
-import type { Attachment } from './attachment';
+import { Disposable, isPromise, MaybePromise } from '@meteor-it/utils';
+import * as t from 'io-ts';
+import { Ayzek } from './ayzek';
 import type { Chat, Conversation, Guild, User } from './conversation';
-import type { JoinChatEvent, JoinGuildEvent } from './events/join';
-import type { LeaveChatEvent, LeaveGuildEvent } from './events/leave';
-import type { MessageEvent } from './events/message';
-import type { ChatTitleChangeEvent, GuildTitleChangeEvent } from './events/titleChange';
-import type { TypingEvent } from './events/typing';
+import ApiFeature from './features';
 import type { IMessageOptions } from './message';
+import { Attachment } from './model/attachment';
+import { PluginCategory, PluginInfo } from './plugin';
 
 /**
  * Error thrown if feature isn't supported by api
@@ -31,17 +30,7 @@ export abstract class Api {
 	 */
 	logger: Logger;
 
-	messageEvent = new TypedEvent<MessageEvent>();
-	typingEvent = new TypedEvent<TypingEvent>();
-
-	joinGuildEvent = new TypedEvent<JoinGuildEvent>();
-	joinChatEvent = new TypedEvent<JoinChatEvent>();
-
-	leaveGuildEvent = new TypedEvent<LeaveGuildEvent>();
-	leaveChatEvent = new TypedEvent<LeaveChatEvent>();
-
-	guildTitleChangeEvent = new TypedEvent<GuildTitleChangeEvent>();
-	chatTitleChangeEvent = new TypedEvent<ChatTitleChangeEvent>();
+	bus = new CustomEventBus();
 
 	constructor(name: string | Logger) {
 		this.logger = Logger.from(name);
@@ -104,10 +93,15 @@ export abstract class Api {
 
 	/**
 	 * Starts event loop/connects to server
-	 *
-	 * TODO: Cancellable
+	 * 
+	 * Should return only after successful cancellation
 	 */
-	public abstract async doWork(): Promise<void>;
+	public abstract doWork(): Promise<void>;
+
+	/**
+	 * Queues API to be cancelled
+	 */
+	public abstract cancel(): void;
 
 	/**
 	 * Since every api have their own mention syntax, this
@@ -115,4 +109,51 @@ export abstract class Api {
 	 * by userArgument
 	 */
 	abstract get apiLocalUserArgumentType(): ArgumentType<any, User>;
+}
+
+export abstract class ApiPlugin<P extends t.TypeC<any> = any> implements PluginInfo {
+	category: PluginCategory = PluginCategory.API;
+	name: string;
+	constructor(
+		name: string,
+		public author: string,
+		public description: string,
+		configType: P, defaultConfig: t.TypeOf<P>, public creator: new (config: t.TypeOf<P>) => Api,
+	) {
+		this.name = `${name}APIPlugin`;
+		this.configType = t.interface({
+			local: t.array(configType),
+		});
+		this.defaultConfig = {
+			local: [defaultConfig],
+		};
+	}
+
+	config!: { local: t.TypeOf<P>[] };
+	ayzek!: Ayzek;
+	configType: any;
+	defaultConfig: any;
+	tasks: [Api, Promise<void>, Disposable][] = [];
+	async init() {
+		for (const config of this.config.local.values()) {
+			try {
+				const api = new this.creator(config as any);
+				const disposePipe = api.bus.pipe(this.ayzek.bus);
+				this.tasks.push([api, api.doWork(), disposePipe]);
+			} catch (e) {
+				console.log('Api initialization error');
+				console.log(e.stack);
+			}
+		}
+	}
+	async deinit() {
+		for (const task of this.tasks) {
+			task[2].dispose();
+			task[0].cancel();
+			await Promise.race([
+				task[0],
+				task[0],
+			]);
+		}
+	}
 }

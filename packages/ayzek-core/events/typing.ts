@@ -1,6 +1,8 @@
 import type StringReader from '@ayzek/command-parser/reader';
 import type { Api } from '../api';
+import { Ayzek } from '../ayzek';
 import type { Chat, Conversation, User } from '../conversation';
+import { EVENT_ID } from './custom';
 
 export enum TypingEventType {
 	/**
@@ -27,6 +29,8 @@ export enum TypingEventType {
  * TODO: RECORDING_VOICE_MESSAGE+SENDING_PHOTO => Uploading attachment, attachmentType field
  */
 export class TypingEvent {
+	ayzek?: Ayzek;
+	static [EVENT_ID] = 'ayzek:typing';
 	constructor(
 		public api: Api,
 		public user: User,

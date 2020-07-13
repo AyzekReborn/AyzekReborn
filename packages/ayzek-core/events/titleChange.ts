@@ -1,7 +1,10 @@
 import type { Api } from '../api';
+import { Ayzek } from '../ayzek';
 import type { Chat, Guild, User } from '../conversation';
+import { EVENT_ID } from './custom';
 
 export abstract class TitleChangeEvent {
+	ayzek?: Ayzek;
 	constructor(
 		public api: Api,
 		/**
@@ -19,6 +22,7 @@ export abstract class TitleChangeEvent {
 	) { }
 }
 export class ChatTitleChangeEvent extends TitleChangeEvent {
+	static [EVENT_ID] = 'ayzek:chatTitleChange';
 	constructor(
 		api: Api,
 		oldTitle: string | null,
@@ -30,6 +34,7 @@ export class ChatTitleChangeEvent extends TitleChangeEvent {
 	}
 }
 export class GuildTitleChangeEvent extends TitleChangeEvent {
+	static [EVENT_ID] = 'ayzek:guildTitleChange';
 	constructor(
 		api: Api,
 		oldTitle: string | null,

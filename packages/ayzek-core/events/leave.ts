@@ -1,51 +1,56 @@
 import type { Api } from '../api';
+import { Ayzek } from '../ayzek';
 import type { Chat, Guild, User } from '../conversation';
+import { EVENT_ID } from './custom';
 
-export enum JoinReason {
+export enum LeaveReason {
 	/**
-	 * By user
+	 * User is kicked, may return back
 	 */
-	INVITED,
+	KICKED,
 	/**
-	 * Itself
+	 * User is banned from chat, can't return himself
 	 */
-	INVITE_LINK,
+	BANNED,
 	/**
-	 * Returned after leave
+	 * User leaved himself, and can return in future
 	 */
-	RETURNED,
+	SELF,
 }
 
-export abstract class JoinEvent {
+export abstract class LeaveEvent {
+	ayzek?: Ayzek;
 	constructor(
 		public api: Api,
 		public user: User,
 		public initiator: User | null,
-		public reason: JoinReason,
+		public reason: LeaveReason,
 		public reasonString: string | null,
 	) { }
 	get isSelf() {
-		return this.reason === JoinReason.INVITE_LINK || this.reason === JoinReason.RETURNED;
+		return this.reason === LeaveReason.SELF;
 	}
 }
-export class JoinChatEvent extends JoinEvent {
+export class LeaveChatEvent extends LeaveEvent {
+	static [EVENT_ID] = 'ayzek:leaveChat';
 	constructor(
 		api: Api,
 		user: User,
 		initiator: User | null,
-		reason: JoinReason,
+		reason: LeaveReason,
 		reasonString: string | null,
 		public chat: Chat,
 	) {
 		super(api, user, initiator, reason, reasonString);
 	}
 }
-export class JoinGuildEvent extends JoinEvent {
+export class LeaveGuildEvent extends LeaveEvent {
+	static [EVENT_ID] = 'ayzek:leaveGuild';
 	constructor(
 		api: Api,
 		user: User,
 		initiator: User | null,
-		reason: JoinReason,
+		reason: LeaveReason,
 		reasonString: string | null,
 		public guild: Guild,
 	) {
