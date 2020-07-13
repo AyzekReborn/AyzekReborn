@@ -14,11 +14,7 @@ import { ChatTitleChangeEvent } from './events/titleChange';
 import { TypingEvent } from './events/typing';
 import ApiFeature from './features';
 import { craftCommandPayload, parsePayload } from './model/payload';
-import type { IMessageListener, PluginInfo } from './plugin';
-import { exclude } from './util/array';
-import { levenshteinDistance } from './util/levenshtein';
-
-const FIX_MAX_DISTANCE = 3;
+import type { PluginInfo } from './plugin';
 
 export class Ayzek extends Api {
 	/**
@@ -37,7 +33,8 @@ export class Ayzek extends Api {
 	}
 
 	commandDispatcher = new CommandDispatcher<AyzekCommandSource, Text>();
-	listeners: IMessageListener[] = [];
+
+	bus = new CustomEventBus();
 
 	async attachToUser(user: User) {
 		user.attributeStorage = await this.userAttributeRepository.getStorageFor(user);
@@ -52,41 +49,57 @@ export class Ayzek extends Api {
 		return craftCommandPayload(command, 'dummy');
 	}
 
-	constructor(logger: string | Logger, commandPrefix: string, logEvents: boolean, public dataDir: string) {
+	constructor(logger: string | Logger, logEvents: boolean, public dataDir: string) {
 		super(logger);
 		if (logEvents) {
-			this.messageEvent.on(e => {
+			this.bus.on(PlainMessageEvent, e => {
 				const chat = e.chat ? ` {yellow}${e.chat.title}{/yellow}` : '';
 				const text = e.text.trim().length > 0 ? ` ${e.text.trim()}` : '';
 				const attachments = e.attachments.length > 0 ? ` {yellow}+${e.attachments.length}A{/yellow}` : '';
 				const forwarded = e.maybeForwarded ? ` {green}+${e.forwarded.length + (e.replyTo ? 1 : 0)}F{/green}` : '';
 				e.api.logger.log(`${e.user.fullName}${chat} {gray}»{/gray}${text}${attachments}${forwarded}`);
 			});
-			this.typingEvent.on(e => {
+			this.bus.on(CommandMessageEvent, e => {
+				const chat = e.chat ? ` {yellow}${e.chat.title}{/yellow}` : '';
+				const text = e.command.trim().length > 0 ? ` ${e.command.trim()}` : '';
+				const attachments = e.attachments.length > 0 ? ` {yellow}+${e.attachments.length}A{/yellow}` : '';
+				const forwarded = e.maybeForwarded ? ` {green}+${e.forwarded.length + (e.replyTo ? 1 : 0)}F{/green}` : '';
+				e.api.logger.log(`${e.user.fullName}${chat} {gray}» ({red}CMD{/red}){/gray}${text}${attachments}${forwarded}`);
+			});
+			this.bus.on(TypingEvent, e => {
 				const chat = e.chat ? `{yellow}${e.chat.title}{/yellow}` : '{green}PM{/green}';
 				e.api.logger.log(`${e.user.fullName} typing in ${chat}`);
 			});
-			this.chatTitleChangeEvent.on(e => {
+			this.bus.on(ChatTitleChangeEvent, e => {
 				e.api.logger.log(`${e.initiator.fullName} renamed {red}${e.oldTitle || '<unknown>'}{/red} -> {green}${e.newTitle}{/green}`);
 			});
-			this.joinChatEvent.on(e => {
+			this.bus.on(JoinChatEvent, e => {
 				if (e.initiator)
 					e.api.logger.log(`${e.initiator.fullName} added ${e.user.fullName} to ${e.chat.title}`);
 				else
 					e.api.logger.log(`${e.user.fullName} joined to ${e.chat.title}`);
 			});
-			this.leaveChatEvent.on(e => {
+			this.bus.on(LeaveChatEvent, e => {
 				if (e.initiator)
 					e.api.logger.log(`${e.initiator.fullName} kicked ${e.user.fullName} from ${e.chat.title}`);
 				else
 					e.api.logger.log(`${e.user.fullName} leaved ${e.chat.title}`);
 			});
 		}
-		this.messageEvent.on(async event => {
+		this.bus.on(CommandMessageEvent, async event => {
 			await Promise.all([
 				this.attachToUser(event.user),
 				event.chat && this.attachToChat(event.chat),
 			]);
+			event.ayzek = this;
+			await this.handleCommand(event);
+		});
+		this.bus.on(PlainMessageEvent, async event => {
+			await Promise.all([
+				this.attachToUser(event.user),
+				event.chat && this.attachToChat(event.chat),
+			]);
+			event.ayzek = this;
 
 			const payload = parsePayload(event.payload);
 
@@ -94,208 +107,36 @@ export class Ayzek extends Api {
 			if (payload) {
 				switch (payload.type) {
 					case 'command':
-						await this.handleCommand(event, payload.data, null);
+						await this.handleCommand(new CommandMessageEvent(event.message, payload.data));
 						break;
 				}
-			} else if (event.text.startsWith(commandPrefix)) {
-				const command = event.text.slice(commandPrefix.length);
-				// Ignores following:
-				// /
-				// //anything
-				// / anything
-				if (command.length === 0 || command.startsWith(commandPrefix) || command.trimLeft() !== command) {
-					await this.handleMessage(event);
-					return;
-				}
-				await this.handleCommand(event, command, commandPrefix);
-			} else {
-				await this.handleMessage(event);
 			}
 		});
 	}
-
-	private async getSuggestionText(entry: AyzekParseEntryPoint, parseResult: AyzekParseResults, source: AyzekCommandSource): Promise<Text> {
-		const suggestionListNextCommand = [];
-		let suggestionList = [];
-		let possibleFixes: string[] = [];
-		const suggestionThisArgument = [];
-		if (parseResult.reader.string.length === parseResult.reader.cursor) {
-			const oldString = parseResult.reader.string;
-			const oldCursor = parseResult.reader.cursor;
-			parseResult.reader.string += ' ';
-			parseResult.reader.cursor++;
-			const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult as any, parseResult.reader.cursor, source as any);
-			for (const suggestion of suggestions.suggestions) {
-				suggestionListNextCommand.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim());
-			}
-			parseResult.reader.string = oldString;
-			parseResult.reader.cursor = oldCursor;
-		}
-		{
-			const parsedSuccessfully = parseResult.exceptions.size === 0;
-			const neededCursor = parsedSuccessfully ? (() => {
-				return parseResult.context.nodes[parseResult.context.nodes.length - 1]?.range.start ?? 0;
-			})() : parseResult.reader.cursor;
-			const currentArgument = parseResult.reader.string.slice(neededCursor);
-			const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, neededCursor, source);
-			const possibleFixesUnsorted: [string, number][] = [];
-			for (const suggestion of suggestions.suggestions) {
-				const text = `${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim();
-				suggestionList.push(text);
-				const distance = levenshteinDistance(suggestion.text, currentArgument, FIX_MAX_DISTANCE);
-				if (distance <= FIX_MAX_DISTANCE) {
-					possibleFixesUnsorted.push([text, distance]);
-				}
-			}
-			possibleFixes = possibleFixesUnsorted.sort((a, b) => a[1] - b[1]).map(f => f[0]);
-		}
-		{
-			const oldCursor = parseResult.reader.cursor;
-			parseResult.reader.cursor = parseResult.reader.string.length;
-			const suggestions = await this.commandDispatcher.getCompletionSuggestions(entry, parseResult, parseResult.reader.cursor, source);
-			for (const suggestion of suggestions.suggestions) {
-				suggestionThisArgument.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim());
-			}
-			parseResult.reader.cursor = oldCursor;
-		}
-
-		possibleFixes = exclude(possibleFixes, suggestionThisArgument);
-		suggestionList = exclude(suggestionList, possibleFixes, suggestionThisArgument);
-
-		const suggestionText = [
-			suggestionListNextCommand.length === 0 ? [] : [
-				'\n\n',
-				'Пример того, что можно поставить следующей командой:\n',
-				suggestionListNextCommand.join(', '),
-			],
-			suggestionThisArgument.length === 0 ? [] : [
-				'\n\n',
-				'Пример того, как можно продолжить текущий аргумент:\n',
-				suggestionThisArgument.join(', '),
-			],
-			possibleFixes.length === 0 ? [] : [
-				'\n\n',
-				'Возможно ты имел в виду:\n',
-				possibleFixes.join(', '),
-			],
-			suggestionList.length === 0 ? [] : [
-				'\n\n',
-				'Пример того, что ещё можно поставить в этом месте:\n',
-				suggestionList.join(', '),
-			],
-		].filter(e => e.length !== 0);
-
-		return suggestionText;
-	}
-
-	sendErrorFeedback(error: Error) {
-		this.logger.error(error.stack);
-	}
-
-	private formatError(error: Error, commandPrefix: string | null): Text {
-		if (error instanceof UserDisplayableError) {
-			return [error.message, (error.reader && commandPrefix !== null) ? [' ', commandPrefix, error.reader.toStringWithCursor('|')] : null];
-		} else {
-			this.sendErrorFeedback(error);
-			return 'Фатальная ошибка, отчёт отправлен разработчику';
-		}
-	}
-
 	/**
 	 * @param event caused message event
 	 * @param command actual command (i.e `help all`)
 	 * @param commandPrefix prefix of command to display in fix messages,
 	 * 	null in case of payload caused commands
 	 */
-	private async handleCommand(event: MessageEvent, command: string, commandPrefix: string | null) {
+	private async handleCommand(event: CommandMessageEvent) {
 		let parseResult: AyzekParseResults | undefined;
-		const source = new CommandEventContext(this, event, command, commandPrefix);
-		const entry = { source };
+		const entry = { source: event };
 		try {
-			parseResult = await this.commandDispatcher.parse(entry, command, source);
+			parseResult = await this.commandDispatcher.parse(entry, event.command, event);
 			const result = (await this.commandDispatcher.executeResults(parseResult))
 				// Filter commands with no response
 				.filter(e => e.result === 'error' || e.value);
-			if (result.length !== 0) {
-				const errored = result
-					.filter(e => e.result === 'error');
-				if (errored.length === result.length) {
-					const suggestionText = (await this.getSuggestionText(entry, parseResult, source));
-					await source.send([
-						'Все вызовы команды провалились:\n',
-						joinText('\n', errored.map(e => (e as { error: Error }).error).map(e => this.formatError(e, commandPrefix))),
-						suggestionText,
-					]);
-				} else {
-					source.send(joinText('\n', result.map(e => {
-						if (e.result === 'error') return this.formatError(e.error, commandPrefix);
-						return e.value;
-					}) as any));
-				}
-			}
+			event.send(joinText('\n', result.filter(e => e.result !== 'error').map(e => {
+				return (e as any).value;
+			}) as any));
 		} catch (err) {
-			const suggestionText = parseResult ? (await this.getSuggestionText(entry, parseResult, source)) : null;
-			if (err instanceof CommandSyntaxError || err instanceof UserDisplayableError) {
-				if (commandPrefix === null) {
-					this.sendErrorFeedback(err);
-					await source.send([
-						err.message,
-						'\nПо видимому, эта ошибка вызвана кривой кнопкой.',
-						'\nВозможно, ты использовал кнопку на сообщении, которое отсылалось слишком давно',
-					]);
-				} else {
-					await source.send([
-						err.message,
-						err.reader ? ['\n', `${commandPrefix}`, err.reader.toString()] : [],
-						suggestionText,
-					]);
-				}
-			} else {
-				this.sendErrorFeedback(err);
-				await source.send([
-					'Произошла ошибка, репорт передан разработчику.\nПока можешь попробовать воспользоваться данными предложениями:',
-					suggestionText,
-				]);
-			}
-		}
-	}
-
-	private async handleMessage(event: MessageEvent) {
-		const source = new MessageEventContext(this, event);
-		for (const listener of this.listeners) {
-			listener.handler(source);
+			this.bus.emit(new CommandErrorEvent(event, err));
+			console.log(err.stack);
 		}
 	}
 
 	public apis: Api[] = [];
-	private apiDisposables: Disposable[][] = []
-
-	public attachApi(api: Api) {
-		const disposables = [
-			api.typingEvent.pipe(this.typingEvent),
-			api.messageEvent.pipe(this.messageEvent),
-
-			api.joinGuildEvent.pipe(this.joinGuildEvent),
-			api.joinChatEvent.pipe(this.joinChatEvent),
-
-			api.leaveGuildEvent.pipe(this.leaveGuildEvent),
-			api.leaveChatEvent.pipe(this.leaveChatEvent),
-
-			api.guildTitleChangeEvent.pipe(this.guildTitleChangeEvent),
-			api.chatTitleChangeEvent.pipe(this.chatTitleChangeEvent),
-		];
-		if (this.apis.push(api) !== this.apiDisposables.push(disposables))
-			throw new Error('Api list broken!');
-	}
-
-	public detachApi(api: Api) {
-		const index = this.apis.indexOf(api);
-		if (index === -1)
-			throw new Error('Api not found on detach');
-		this.apis.splice(index, 1);
-		for (const disposable of this.apiDisposables.splice(index, 1)[0])
-			disposable.dispose();
-	}
 
 	async getUser(uid: string): Promise<User | null> {
 		const user = (await Promise.all(this.apis.map(e => e.getUser(uid)))).filter(e => e !== null)[0] || null;
@@ -318,6 +159,7 @@ export class Ayzek extends Api {
 	}
 
 	async doWork(): Promise<any> { }
+	public cancel() { }
 
 	get supportedFeatures(): Set<ApiFeature> {
 		throw new Error('Not implemented for ayzek');
