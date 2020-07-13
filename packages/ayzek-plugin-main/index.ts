@@ -53,9 +53,9 @@ async function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek, plugin: Pl
 
 const requirementIsDevelopment: AyzekCommandRequirement = () => process.env.NODE_ENV === 'development';
 
-function requireApi<T>(api: new (...args: any[]) => T): Requirement<any> {
+function requireApi<T>(api: new (...args: any[]) => T): AyzekCommandRequirement {
 	return source => {
-		return source.event.api instanceof api;
+		return source.api instanceof api;
 	};
 }
 

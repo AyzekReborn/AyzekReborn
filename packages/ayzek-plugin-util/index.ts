@@ -6,7 +6,7 @@ const EN = '~@#$^&*QWERTYUIOP{}ASDFGHJKL:"|ZXCVBNM<>?`qwertyuiop[]asdfghjkl;\'\\
 
 const commandRfix = command('rfix')
 	.executes(ctx => {
-		const forwarded = ctx.source.event.maybeForwarded;
+		const forwarded = ctx.source.maybeForwarded;
 		if (!forwarded) throw new UserDisplayableError('Ты не переслал текст!');
 		const { text } = forwarded;
 		let from: string;
