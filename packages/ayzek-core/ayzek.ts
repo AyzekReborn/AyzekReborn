@@ -64,7 +64,7 @@ export class Ayzek extends Api {
 				const text = e.command.trim().length > 0 ? ` ${e.command.trim()}` : '';
 				const attachments = e.attachments.length > 0 ? ` {yellow}+${e.attachments.length}A{/yellow}` : '';
 				const forwarded = e.maybeForwarded ? ` {green}+${e.forwarded.length + (e.replyTo ? 1 : 0)}F{/green}` : '';
-				e.api.logger.log(`${e.user.fullName}${chat} {gray}» ({red}CMD{/red}){/gray}${text}${attachments}${forwarded}`);
+				e.api.logger.log(`${e.user.fullName}${chat} {gray}»{/gray} {red}CMD{/red}${text}${attachments}${forwarded}`);
 			});
 			this.bus.on(TypingEvent, e => {
 				const chat = e.chat ? `{yellow}${e.chat.title}{/yellow}` : '{green}PM{/green}';
@@ -127,7 +127,9 @@ export class Ayzek extends Api {
 			const result = (await this.commandDispatcher.executeResults(parseResult))
 				// Filter commands with no response
 				.filter(e => e.result === 'error' || e.value);
-			event.send(joinText('\n', result.filter(e => e.result !== 'error').map(e => {
+			const responses = result.filter(e => e.result !== 'error');
+			if (responses.length === 0) return;
+			event.send(joinText('\n', responses.map(e => {
 				return (e as any).value;
 			}) as any));
 		} catch (err) {
