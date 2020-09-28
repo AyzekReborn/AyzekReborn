@@ -138,15 +138,15 @@ export class Ayzek extends Api {
 		}
 	}
 
-	public apis: Api[] = [];
+	public apis: Set<Api> = new Set();
 
 	async getUser(uid: string): Promise<User | null> {
-		const user = (await Promise.all(this.apis.map(e => e.getUser(uid)))).filter(e => e !== null)[0] || null;
+		const user = (await Promise.all([...this.apis].map(e => e.getUser(uid)))).filter(e => e !== null)[0] || null;
 		if (user) await this.attachToUser(user);
 		return user;
 	}
 	async getChat(cid: string): Promise<Chat | null> {
-		const chat = (await Promise.all(this.apis.map(e => e.getChat(cid)))).filter(e => e !== null)[0] || null;
+		const chat = (await Promise.all([...this.apis].map(e => e.getChat(cid)))).filter(e => e !== null)[0] || null;
 		if (chat) await this.attachToChat(chat);
 		return chat;
 	}
@@ -157,7 +157,7 @@ export class Ayzek extends Api {
 	}
 
 	async getGuild(gid: string): Promise<Guild | null> {
-		return (await Promise.all(this.apis.map(e => e.getGuild(gid)))).filter(e => e !== null)[0] || null;
+		return (await Promise.all([...this.apis].map(e => e.getGuild(gid)))).filter(e => e !== null)[0] || null;
 	}
 
 	async doWork(): Promise<any> { }

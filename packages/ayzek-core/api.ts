@@ -140,6 +140,7 @@ export abstract class ApiPlugin<P extends t.TypeC<any> = any> implements PluginI
 				const api = new this.creator(config as any);
 				const disposePipe = api.bus.pipe(this.ayzek.bus);
 				this.tasks.push([api, api.doWork(), disposePipe]);
+				this.ayzek.apis.add(api);
 			} catch (e) {
 				console.log('Api initialization error');
 				console.log(e.stack);
@@ -148,6 +149,7 @@ export abstract class ApiPlugin<P extends t.TypeC<any> = any> implements PluginI
 	}
 	async deinit() {
 		for (const task of this.tasks) {
+			this.ayzek.apis.delete(task[0]);
 			task[2].dispose();
 			task[0].cancel();
 			await Promise.race([
