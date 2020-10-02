@@ -127,7 +127,7 @@ export class DiscordApi extends Api {
 	}
 
 	async init() {
-		await this.api.login(this.config.descriminator);
+		await this.api.login(this.config.token);
 		this.api.on('guildMemberAdd', async member => {
 			this.bus.emit(new JoinGuildEvent(
 				this,
@@ -162,6 +162,9 @@ export class DiscordApi extends Api {
 				forwarded: [],
 				messageId: message.id,
 			};
+			if (messageData.text.startsWith('/') && !messageData.text.startsWith('//') && messageData.text.length != 1) {
+				this.bus.emit(new CommandMessageEvent(messageData, messageData.text.slice(1)));
+			}
 			this.bus.emit(new PlainMessageEvent(messageData));
 		});
 		this.api.on('typingStart', async (ch, apiUser) => {
