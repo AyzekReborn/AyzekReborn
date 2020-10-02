@@ -2,7 +2,7 @@ import StringReader from '@ayzek/command-parser/reader';
 import { Api, ApiPlugin } from '@ayzek/core/api';
 import { JoinGuildEvent, JoinReason } from '@ayzek/core/events/join';
 import { LeaveGuildEvent, LeaveReason } from '@ayzek/core/events/leave';
-import { PlainMessageEvent } from '@ayzek/core/events/message';
+import { CommandMessageEvent, PlainMessageEvent } from '@ayzek/core/events/message';
 import { TypingEvent, TypingEventType } from '@ayzek/core/events/typing';
 import ApiFeature from '@ayzek/core/features';
 import { IMessage, IMessageOptions } from '@ayzek/core/message';
