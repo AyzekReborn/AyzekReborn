@@ -35,17 +35,28 @@ export class TypedEvent<T> {
 	}
 
 	async emit(event: T) {
-		for (let i = 0; i<this.listeners.length; i++) {
-			await this.listeners[i](event);
-		}
-		if (this.listenersOncer.length > 0) {
-			const toCall = this.listenersOncer;
-			this.listenersOncer = [];
-			for (let i = 0; i<toCall.length; i++) {
-				await toCall[i](event);
+		let exception = undefined;
+		for (let handler of this.listeners) {
+			try {
+				await handler(event);
+			} catch(e) {
+				if (!exception) exception = e;
 			}
 		}
-	}
+        if (this.listenersOncer.length > 0) {
+            const toCall = this.listenersOncer;
+			this.listenersOncer = [];
+			for (let handler of toCall) {
+				try {
+					await handler(event);
+				} catch(e) {
+					if (!exception) exception = e;
+				}
+			}
+		}
+		if (exception) throw exception;
+    }
+	
 	pipe(te: TypedEvent<T>): Disposable {
 		return this.on(async (e) => await te.emit(e));
 	}
