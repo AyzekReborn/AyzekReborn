@@ -2,7 +2,7 @@ import type { ArgumentType } from '@ayzek/command-parser/arguments';
 import StringReader from '@ayzek/command-parser/reader';
 import { Api, ApiPlugin } from '@ayzek/core/api';
 import { Chat, Conversation, Gender, User } from '@ayzek/core/conversation';
-import { MessageEvent, PlainMessageEvent } from '@ayzek/core/events/message';
+import { CommandMessageEvent, MessageEvent, PlainMessageEvent } from '@ayzek/core/events/message';
 import ApiFeature from '@ayzek/core/features';
 import { IMessage, IMessageOptions } from '@ayzek/core/message';
 import { Attachment, Image } from '@ayzek/core/model/attachment';
@@ -20,7 +20,6 @@ const ApiUser = t.interface({
 	id: t.number,
 	username: t.string,
 	first_name: t.union([t.null, t.string]),
-	last_name: t.union([t.null, t.string]),
 	is_bot: t.boolean,
 });
 const ApiChat = t.interface({
@@ -35,7 +34,7 @@ export class TelegramUser extends User {
 			`TGU:${api.config.descriminator}:${apiUser.id.toString()}`,
 			apiUser.username,
 			apiUser.first_name ?? null,
-			apiUser.last_name ?? null,
+			null,
 			apiUser.is_bot ? Gender.BOT : Gender.UNSPECIFIED,
 			`https://t.me/${apiUser.username}`,
 			apiUser.is_bot,
@@ -202,6 +201,9 @@ export class TelegramApi extends Api {
 	}
 	async processMessageUpdate(messageUpdate: any) {
 		const message = await this.parseMessage(messageUpdate);
+		if (message.text.startsWith('/') && !message.text.startsWith('//') && message.text.length != 1) {
+			this.bus.emit(new CommandMessageEvent(message, message.text.slice(1)));
+		}
 		this.bus.emit(new PlainMessageEvent(message));
 	}
 	async processUpdate(update: any) {
