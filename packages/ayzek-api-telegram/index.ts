@@ -19,7 +19,8 @@ import * as t from 'io-ts';
 const ApiUser = t.interface({
 	id: t.number,
 	username: t.string,
-	first_name: t.union([t.null, t.string]),
+	first_name: t.union([t.undefined, t.string]),
+	last_name: t.union([t.undefined, t.string]),
 	is_bot: t.boolean,
 });
 const ApiChat = t.interface({
@@ -34,7 +35,7 @@ export class TelegramUser extends User {
 			`TGU:${api.config.descriminator}:${apiUser.id.toString()}`,
 			apiUser.username,
 			apiUser.first_name ?? null,
-			null,
+			apiUser.last_name ?? null,
 			apiUser.is_bot ? Gender.BOT : Gender.UNSPECIFIED,
 			`https://t.me/${apiUser.username}`,
 			apiUser.is_bot,
