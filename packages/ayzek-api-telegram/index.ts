@@ -203,7 +203,14 @@ export class TelegramApi extends Api {
 	async processMessageUpdate(messageUpdate: any) {
 		const message = await this.parseMessage(messageUpdate);
 		if (message.text.startsWith('/') && !message.text.startsWith('//') && message.text.length != 1) {
-			this.bus.emit(new CommandMessageEvent(message, message.text.slice(1)));
+			let command = message.text.slice(1);
+			const firstArg = command.split(' ', 1)[0];
+			const splitted = firstArg.split('@');
+			if (splitted.length === 1 || splitted[splitted.length - 1] === this.config.username) {
+				if (splitted.length !== 1)
+					command = command.substring(0, command.lastIndexOf('@')) + command.substring(command.lastIndexOf('@') + splitted[splitted.length - 1].length + 1, command.length);
+				this.bus.emit(new CommandMessageEvent(message, command));
+			}
 		}
 		this.bus.emit(new PlainMessageEvent(message));
 	}
