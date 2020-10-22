@@ -18,7 +18,7 @@ import * as t from 'io-ts';
 
 const ApiUser = t.interface({
 	id: t.number,
-	username: t.string,
+	username: t.union([t.undefined, t.string]),
 	first_name: t.union([t.undefined, t.string]),
 	last_name: t.union([t.undefined, t.string]),
 	is_bot: t.boolean,
@@ -33,7 +33,7 @@ export class TelegramUser extends User {
 		super(
 			api,
 			`TGU:${api.config.descriminator}:${apiUser.id.toString()}`,
-			apiUser.username,
+			apiUser.username ?? null,
 			apiUser.first_name ?? null,
 			apiUser.last_name ?? null,
 			apiUser.is_bot ? Gender.BOT : Gender.UNSPECIFIED,
