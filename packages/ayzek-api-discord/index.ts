@@ -2,7 +2,7 @@ import StringReader from '@ayzek/command-parser/reader';
 import { Api, ApiPlugin } from '@ayzek/core/api';
 import { JoinGuildEvent, JoinReason } from '@ayzek/core/events/join';
 import { LeaveGuildEvent, LeaveReason } from '@ayzek/core/events/leave';
-import { PlainMessageEvent } from '@ayzek/core/events/message';
+import { CommandMessageEvent, PlainMessageEvent } from '@ayzek/core/events/message';
 import { TypingEvent, TypingEventType } from '@ayzek/core/events/typing';
 import ApiFeature from '@ayzek/core/features';
 import { IMessage, IMessageOptions } from '@ayzek/core/message';
@@ -127,7 +127,7 @@ export class DiscordApi extends Api {
 	}
 
 	async init() {
-		await this.api.login(this.config.descriminator);
+		await this.api.login(this.config.token);
 		this.api.on('guildMemberAdd', async member => {
 			this.bus.emit(new JoinGuildEvent(
 				this,
@@ -162,6 +162,9 @@ export class DiscordApi extends Api {
 				forwarded: [],
 				messageId: message.id,
 			};
+			if (messageData.text.startsWith('/') && !messageData.text.startsWith('//') && messageData.text.length != 1) {
+				this.bus.emit(new CommandMessageEvent(messageData, messageData.text.slice(1)));
+			}
 			this.bus.emit(new PlainMessageEvent(messageData));
 		});
 		this.api.on('typingStart', async (ch, apiUser) => {
