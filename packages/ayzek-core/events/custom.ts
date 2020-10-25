@@ -1,4 +1,4 @@
-import { Disposable, TypedEvent } from '@meteor-it/utils';
+import { Disposable, Listener } from '@meteor-it/utils';
 import { CommandMessageEvent } from './message';
 
 // Can't use Symbols due to unstable linking
@@ -13,6 +13,55 @@ export type CustomEventConstructor<I> = {
 	[EVENT_ID]: string,
 	new(...t: any[]): I,
 };
+
+export class TypedEvent<T> {
+	private listeners: Listener<T>[] = [];
+	private listenersOncer: Listener<T>[] = [];
+
+	on(listener: Listener<T>): Disposable {
+		this.listeners.push(listener);
+		return {
+			dispose: () => this.off(listener)
+		};
+	}
+
+	once(listener: Listener<T>): void {
+		this.listenersOncer.push(listener);
+	}
+
+	off(listener: Listener<T>) {
+		var callbackIndex = this.listeners.indexOf(listener);
+		if (callbackIndex > -1) this.listeners.splice(callbackIndex, 1);
+	}
+
+	async emit(event: T) {
+		let exception = undefined;
+		for (let handler of this.listeners) {
+			try {
+				await handler(event);
+			} catch(e) {
+				if (!exception) exception = e;
+			}
+		}
+        if (this.listenersOncer.length > 0) {
+            const toCall = this.listenersOncer;
+			this.listenersOncer = [];
+			for (let handler of toCall) {
+				try {
+					await handler(event);
+				} catch(e) {
+					if (!exception) exception = e;
+				}
+			}
+		}
+		if (exception) throw exception;
+    }
+	
+	pipe(te: TypedEvent<T>): Disposable {
+		return this.on(async (e) => await te.emit(e));
+	}
+}
+
 export function isCustomEventConstructor(c: CustomEventConstructor<unknown>): c is CustomEventConstructor<unknown> {
 	return !!c[EVENT_ID];
 }
@@ -52,9 +101,9 @@ export class CustomEventBus {
 	off<S>(t: CustomEventConstructor<S>, handler: (event: S) => void) {
 		this.getHandlers(t).off(handler);
 	}
-	emit<I, E extends CustomEventConstructor<I>>(event: I) {
+	async emit<I, E extends CustomEventConstructor<I>>(event: I) {
 		if (!isCustomEvent(event)) throw new Error('Expected custom event');
-		this.getHandlersById((event as any).constructor[EVENT_ID]).emit(event);
+		await this.getHandlersById((event as any).constructor[EVENT_ID]).emit(event);
 	}
 
 	pipe(bus: CustomEventBus): Disposable {
