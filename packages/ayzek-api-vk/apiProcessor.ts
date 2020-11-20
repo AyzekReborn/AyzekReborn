@@ -16,11 +16,11 @@ export default class VKApiProcessor extends CollapseQueueProcessor<IVKApiRequest
 	 *
 	 * @param logger
 	 * @param tokens User/group tokens, chosen round-robing on request (TODO: Maybe there is no sense in this anymore)
-	 * @param isUserTokens Users have stricter limits
+	 * @param isUserAccount Users have stricter limits
 	 */
-	constructor(public logger: Logger, public tokens: string[], public isUserTokens: boolean) {
+	constructor(public logger: Logger, public tokens: string[], public isUserAccount: boolean) {
 		// Per https://vk.com/dev/api_requests
-		super(Math.ceil(isUserTokens ? (1000 / 3) : (1000 / 20)), 25, 0);
+		super(Math.ceil(isUserAccount ? (1000 / 3) : (1000 / 20)), 25, 0);
 	}
 
 	get token() {

@@ -14,7 +14,7 @@ export const VKApiChat = t.interface({
 	chat_settings: t.interface({
 		title: t.string,
 		owner_id: t.number,
-		admin_ids: t.array(t.number),
+		admin_ids: t.union([t.array(t.number), t.undefined]),
 	}),
 });
 export type VKApiChatType = t.TypeOf<typeof VKApiChat>;
@@ -52,6 +52,7 @@ export class VKChatMap extends PromiseMap<number, VKChat> {
 		let apiChat = null;
 		try {
 			apiChat = await this.processor.runTask(key + 2e9);
+			console.log('Got chat', apiChat);
 		} catch {
 			// We have no access to this chat
 		}
@@ -80,7 +81,7 @@ export class VKChatMap extends PromiseMap<number, VKChat> {
 			members = { items: [] };
 		const [memberUsers, adminUsers] = await Promise.all([
 			Promise.all(members.items.map((e: any) => this.api.getApiUser(e.member_id)) as Promise<VKUser>[]),
-			Promise.all([validatedChat.chat_settings.owner_id, ...validatedChat.chat_settings.admin_ids].map((e: any) => this.api.getApiUser(e))),
+			Promise.all([validatedChat.chat_settings.owner_id, ...(validatedChat.chat_settings.admin_ids ?? [])].map((e: any) => this.api.getApiUser(e))),
 		]);
 		return new VKChat(
 			this.api,
