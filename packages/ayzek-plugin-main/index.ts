@@ -68,12 +68,7 @@ async function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek, plugin: Pl
 				joinText('\n', availableCommands.map(command => {
 					const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal)!;
 					return [
-						`⚡ /${command.literal} `,
-						{
-							type: 'formatting',
-							preserveMultipleSpaces: true,
-							data: joinText('\n', padAllListItemExceptFirst(ayzek.commandDispatcher.getAllUsage(commandNode, ctx.source, true))),
-						} as Text,
+						joinText('\n', addCommandPrefixes(getAllUsage(ayzek.commandDispatcher.root, command.literal, commandNode, ctx.source, true))),
 					];
 				}).map(e => e!) as any),
 			].filter(e => e.length !== 0)),
@@ -204,6 +199,24 @@ const helpCommand = command('help')
 					console.error(e.stack);
 			}
 		}, 'Просмотр информации о всех плагинах'),
+	)
+	.thenLiteral('cmd', b => b
+		.thenArgument('Команда', stringArgument('greedy_phraze'), b => b
+			.executes(async ctx => {
+				const cmd = ctx.getArgument('Команда');
+				const ayzek = ctx.source.ayzek!;
+				const commandDispatcher = ayzek.commandDispatcher;
+				const parsed = await commandDispatcher.parse(ctx, cmd, ctx.source);
+				const node = parsed?.context.nodes[parsed?.context.nodes.length - 1];
+				if (node && parsed?.reader.read) {
+					return [
+						joinText('\n', addCommandPrefixes(getAllUsage(commandDispatcher.root, parsed?.reader.read, node?.node, ctx.source, true))),
+					];
+				} else {
+					return 'Команда не найдена';
+				}
+			}, 'Справка по команде'),
+		),
 	)
 	.executes(async ({ source }) => {
 		source.conversation.send([
