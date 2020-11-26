@@ -192,7 +192,7 @@ export class DiscordApi extends Api {
 		});
 		const partsToSentBeforeAttachments = (textParts.length - (attachments.length === 0 ? 0 : 1));
 		for (let i = 0; i < partsToSentBeforeAttachments; i++) {
-			await chat.send(textParts.shift());
+			await chat.send(textParts.shift()!);
 		}
 		if (attachments.length !== 0) {
 			for (let i = 0; i < uploadPromises.length; i++) {
