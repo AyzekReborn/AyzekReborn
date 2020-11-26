@@ -1,29 +1,30 @@
-#!/usr/bin/env fish
+#!/bin/sh
 
-source (dirname (status --current-filename))/_functions.fish
+scripts=$(dirname "$(readlink -f "$0")")
+source $scripts/_functions.sh
 
-set name $argv[1]
+name=$1
 
 log "Plugin name: $name"
 
 check_plugin_name $name
 
-set install_dir packages/ayzek-private-plugin-$name
+install_dir=packages/ayzek-private-plugin-$name
 
 log "Installed to: $install_dir"
 
-if not test -d $install_dir
+if ! test -d $install_dir; then
     fatal "Plugin directory not found"
-end
+fi
 
-if not test -d $install_dir/.git
+if ! test -d $install_dir/.git; then
     fatal "Plugin directory is not a git repo (Bare repos is not supported)"
-end
+fi
 
 cd $install_dir
-if not git pull
+if ! git pull; then
     fatal "Update failed, status $status"
-end
+fi
 cd ..
 
 sync_dependencies

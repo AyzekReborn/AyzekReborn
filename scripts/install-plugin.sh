@@ -1,26 +1,27 @@
-#!/usr/bin/env fish
+#!/bin/sh
 
-source (dirname (status --current-filename))/_functions.fish
+scripts=$(dirname "$(readlink -f "$0")")
+source $scripts/_functions.sh
 
-set name $argv[1]
-set repo $argv[2]
+name=$1
+repo=$2
 
 log "Plugin dir: $name"
 log "Plugin repo: $repo"
 
 check_plugin_name $name
 
-set install_dir packages/ayzek-private-plugin-$name
+install_dir=packages/ayzek-private-plugin-$name
 
 log "Install to: $install_dir"
 
-if test -d $install_dir
+if test -d $install_dir; then
     fatal "Plugin directory already exists"
-end
+fi
 
-if not git clone $repo $install_dir
+if ! git clone $repo $install_dir; then
     fatal "Failed to get plugin, status $status"
-end
+fi
 
 log "Adding plugin to .gitmodules (To get SCM features in vscode)"
 echo "[submodule \"$name\"]" >>.gitmodules
