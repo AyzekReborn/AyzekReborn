@@ -231,79 +231,30 @@ const helpCommand = command('help')
 	}, 'Показ списка плагинов');
 
 
-const FIX_MAX_DISTANCE = 3;
-async function getSuggestionText(ayzek: Ayzek, entry: AyzekParseEntryPoint, parseResult: AyzekParseResults, source: AyzekCommandSource): Promise<Text> {
-	const suggestionListNextCommand = [];
-	let suggestionList = [];
-	let possibleFixes: string[] = [];
-	const suggestionThisArgument = [];
-	if (parseResult.reader.string.length === parseResult.reader.cursor) {
-		const oldString = parseResult.reader.string;
-		const oldCursor = parseResult.reader.cursor;
-		parseResult.reader.string += ' ';
-		parseResult.reader.cursor++;
-		const suggestions = await ayzek.commandDispatcher.getCompletionSuggestions(entry, parseResult as any, parseResult.reader.cursor, source as any);
-		for (const suggestion of suggestions.suggestions) {
-			suggestionListNextCommand.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim());
-		}
-		parseResult.reader.string = oldString;
-		parseResult.reader.cursor = oldCursor;
+const FIX_MAX_DISTANCE = 4;
+async function getSuggestionText(ayzek: Ayzek, entry: AyzekParseEntryPoint, parsed: AyzekParseResults, source: AyzekCommandSource): Promise<Text> {
+	const commandDispatcher = ayzek.commandDispatcher;
+	const node = parsed.context.nodes[parsed?.context.nodes.length - 1];
+	if (node) {
+		return [
+			'\n\n',
+			joinText('\n', addCommandPrefixes(getAllUsage(commandDispatcher.root, parsed?.reader.read, node?.node, source, true))),
+		];
+	} else {
+		const command = parsed.reader.readString();
+		const literalSet = new Set();
+		let possibleLiterals = [...commandDispatcher.root.literals.values()]
+			.flatMap(l => l.literalNames.map(n => [l.name, n, levenshteinDistance(n, command, FIX_MAX_DISTANCE + 1)] as [string, string, number]))
+			.filter((l) => l[2] <= FIX_MAX_DISTANCE)
+			.sort((a, b) => a[2] - b[2])
+			.filter(l => literalSet.add(l[0]));
+		if (possibleLiterals.length === 0) { return []; }
+		const minDistance = possibleLiterals[0][2];
+		possibleLiterals = possibleLiterals.filter(literal => literal[2] < minDistance + 1.5);
+		return ['\n\n', 'Возможно ты имел в виду:\n', joinText('\n', possibleLiterals.map(literal => {
+			return joinText('\n', addCommandPrefixes(getAllUsage(commandDispatcher.root, literal[1], commandDispatcher.root.literals.get(literal[0])!, source, true)));
+		}))];
 	}
-	{
-		const parsedSuccessfully = parseResult.exceptions.size === 0;
-		const neededCursor = parsedSuccessfully ? (() => {
-			return parseResult.context.nodes[parseResult.context.nodes.length - 1]?.range.start ?? 0;
-		})() : parseResult.reader.cursor;
-		const currentArgument = parseResult.reader.string.slice(neededCursor);
-		const suggestions = await ayzek.commandDispatcher.getCompletionSuggestions(entry, parseResult, neededCursor, source);
-		const possibleFixesUnsorted: [string, number][] = [];
-		for (const suggestion of suggestions.suggestions) {
-			const text = `${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim();
-			suggestionList.push(text);
-			const distance = levenshteinDistance(suggestion.text, currentArgument, FIX_MAX_DISTANCE);
-			if (distance <= FIX_MAX_DISTANCE) {
-				possibleFixesUnsorted.push([text, distance]);
-			}
-		}
-		possibleFixes = possibleFixesUnsorted.sort((a, b) => a[1] - b[1]).map(f => f[0]);
-	}
-	{
-		const oldCursor = parseResult.reader.cursor;
-		parseResult.reader.cursor = parseResult.reader.string.length;
-		const suggestions = await ayzek.commandDispatcher.getCompletionSuggestions(entry, parseResult, parseResult.reader.cursor, source);
-		for (const suggestion of suggestions.suggestions) {
-			suggestionThisArgument.push(`${suggestion.text} ${suggestion.tooltip === null ? '' : `(${suggestion.tooltip})`}`.trim());
-		}
-		parseResult.reader.cursor = oldCursor;
-	}
-
-	possibleFixes = exclude(possibleFixes, suggestionThisArgument);
-	suggestionList = exclude(suggestionList, possibleFixes, suggestionThisArgument);
-
-	const suggestionText = [
-		suggestionListNextCommand.length === 0 ? [] : [
-			'\n\n',
-			'Пример того, что можно поставить следующей командой:\n',
-			suggestionListNextCommand.join(', '),
-		],
-		suggestionThisArgument.length === 0 ? [] : [
-			'\n\n',
-			'Пример того, как можно продолжить текущий аргумент:\n',
-			suggestionThisArgument.join(', '),
-		],
-		possibleFixes.length === 0 ? [] : [
-			'\n\n',
-			'Возможно ты имел в виду:\n',
-			possibleFixes.join(', '),
-		],
-		suggestionList.length === 0 ? [] : [
-			'\n\n',
-			'Пример того, что ещё можно поставить в этом месте:\n',
-			suggestionList.join(', '),
-		],
-	].filter(e => e.length !== 0);
-
-	return suggestionText;
 }
 
 export default class implements PluginInfo {
