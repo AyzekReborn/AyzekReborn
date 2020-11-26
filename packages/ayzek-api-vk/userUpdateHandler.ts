@@ -7,8 +7,8 @@ const PLATFORMS: (string | undefined)[] = [
 	undefined,
 	'mobile',
 	'ipad',
+	undefined,
 	'android',
-	'wphone',
 	'windows',
 	'web',
 ];
