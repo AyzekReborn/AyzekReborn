@@ -1,24 +1,54 @@
 import VKApi, { IVKMessageOptions } from '@ayzek/api-vk';
-import { SimpleArgumentType } from '@ayzek/command-parser/arguments';
+import { SimpleArgumentType, stringArgument } from '@ayzek/command-parser/arguments';
 import { CommandSyntaxError, UnknownSomethingError, UserDisplayableError } from '@ayzek/command-parser/error';
 import type StringReader from '@ayzek/command-parser/reader';
-import type { Requirement } from '@ayzek/command-parser/requirement';
 import type { Suggestions, SuggestionsBuilder } from '@ayzek/command-parser/suggestions';
+import { CommandNode } from '@ayzek/command-parser/tree';
 import type { Ayzek } from '@ayzek/core/ayzek';
 import { AyzekCommandContext, AyzekCommandRequirement, AyzekCommandSource, AyzekParseEntryPoint, AyzekParseResults } from '@ayzek/core/command';
 import { CommandErrorEvent } from '@ayzek/core/events/custom';
 import { command, PluginCategory, PluginInfo } from '@ayzek/core/plugin';
 import { requireHidden } from '@ayzek/core/requirements';
-import { exclude } from '@ayzek/core/util/array';
 import { levenshteinDistance } from '@ayzek/core/util/levenshtein';
-import { padList } from '@ayzek/core/util/pad';
 import { joinText, Text } from '@ayzek/text';
 
-function padAllListItemExceptFirst(list: string[]) {
-	return [
-		list[0],
-		...padList(list.slice(1), '      '),
-	];
+function getAllUsage<S, R>(root: CommandNode<S, any, R>, prefix: string, node: CommandNode<S, any, R>, source: S, restricted: boolean): string[] {
+	const result: Array<string> = [];
+	__getAllUsage(root, node, source, result, prefix, restricted);
+	return result;
+}
+
+function __getAllUsage<S, R>(root: CommandNode<S, any, R>, node: CommandNode<S, any, R>, source: S, result: string[], prefix = '', restricted: boolean) {
+	if (restricted && !node.canUse(source)) {
+		return;
+	}
+
+	if (node.command != null) {
+		if (node.commandDescription) {
+			result.push(`${prefix.trim()} — ${node.commandDescription}`);
+		} else {
+			result.push(prefix);
+		}
+	}
+
+	if (node.redirect != null) {
+		const redirect = node.redirect === root ?
+			('...' + (node.commandDescription ? ` — ${node.commandDescription}` : '')) :
+			'-> ' + node.redirect.usage;
+		result.push(prefix.length === 0 ? ' ' + redirect : prefix + ' ' + redirect);
+	} else if (node.children.length > 0) {
+		for (const child of node.children) {
+			__getAllUsage(root, child, source, result, prefix.length === 0 ? child.usage : prefix + ' ' + child.usage, restricted);
+		}
+	}
+}
+
+function addCommandPrefixes(out: string[]): string[] {
+	out[0] = `⚡ ${out[0]}`;
+	for (let i = 1; i < out.length; i++) {
+		out[i] = `🖱 ${out[i]}`;
+	}
+	return out;
 }
 
 async function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek, plugin: PluginInfo): Promise<Text> {
