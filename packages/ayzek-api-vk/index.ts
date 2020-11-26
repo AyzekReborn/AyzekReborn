@@ -215,7 +215,7 @@ export class VKApi extends Api {
 			throw new Error('Bad receiver');
 		}
 		if (options.forwarded || options.replyTo) throw new Error('Message responses are not supported by vk bots');
-		const texts = splitByMaxPossibleParts(this.partToString(text), MAX_MESSAGE_LENGTH);
+		const texts = splitByMaxPossibleParts(this.partToString(text).replace(/(:?[^a-z]|^)(vto\.pe|olike\.ru|vkrutilka\.ru)(:?[^a-z]|$)/ig, (_, domain) => domain.replace(/[^.]/g, '*')), MAX_MESSAGE_LENGTH);
 		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[];
 		const attachmentUploadPromises = arrayChunks(attachments, MAX_ATTACHMENTS_PER_MESSAGE)
 			.map(chunk => chunk.map(name => this.uploadAttachment(name, peer_id.toString())));
