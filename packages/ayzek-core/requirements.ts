@@ -45,3 +45,10 @@ export function requireAttributeAbsent<P extends Attribute>(constructor: Attribu
 		return !attribute;
 	};
 }
+
+/**
+ * Fails if command is used not in chat
+ */
+export function requireChat(): AyzekCommandRequirement {
+	return ctx => !!ctx.chat;
+}
