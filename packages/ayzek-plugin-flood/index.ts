@@ -2,6 +2,7 @@ import { intArgument } from '@ayzek/command-parser/arguments';
 import { File, Image } from '@ayzek/core/model/attachment';
 import { command, PluginCategory, PluginInfo } from '@ayzek/core/plugin';
 import { emit } from '@meteor-it/xrest';
+import { whoCommand } from './who';
 
 const SHRUG = '¯\\_(ツ)_/¯';
 
@@ -10,7 +11,7 @@ const shrugCommand = command('shrug')
 
 type CatApiResponse = {
 	url: string,
-}[]
+}[];
 
 const catOBotCommand = command('cat-o-bot')
 	.thenArgument('Количество', intArgument(1, 20), b =>
@@ -32,6 +33,6 @@ export default class implements PluginInfo {
 	author = 'НекийЛач';
 	description = 'Плагин для флуда';
 	category = PluginCategory.FUN;
-	commands = [shrugCommand, catOBotCommand];
+	commands = [shrugCommand, whoCommand, catOBotCommand];
 	listeners = [];
 }
