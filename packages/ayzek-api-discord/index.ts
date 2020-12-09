@@ -10,7 +10,7 @@ import { Attachment, BaseFile, File } from '@ayzek/core/model/attachment';
 import { opaqueToAyzek } from '@ayzek/core/text';
 import { replaceBut } from '@ayzek/core/util/escape';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import { Text, TextPart } from '@ayzek/text';
+import { CodeTextPart, FormattingTextPart, HashTagTextPart, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
 import { lookupByPath } from '@meteor-it/mime';
 import * as assert from 'assert';
 import { Client, Guild, GuildMember, MessageAttachment, TextChannel, User } from 'discord.js';
@@ -200,7 +200,7 @@ export class DiscordApi extends Api {
 				await chat.send(i === 0 ? textParts.shift() : undefined, new MessageAttachment(await file[0], file[1]));
 			}
 		}
-		assert.equal(textParts.length, 0, 'Text parts left unsent');
+		assert.strictEqual(textParts.length, 0, 'Text parts left unsent');
 	}
 
 	partToString(part: TextPart): string {
@@ -217,46 +217,44 @@ export class DiscordApi extends Api {
 		} else if (part instanceof Array) {
 			return part.map(l => this.partToString(l)).join('');
 		}
-		switch (part.type) {
-			case 'formatting': {
-				let string = this.partToString(part.data);
-				if (part.preserveMultipleSpaces) {
-					string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
-				}
-				if (part.bold) {
-					string = `**${replaceBut(string, /\*\*/g, /\\\*\*/g, '')}**`;
-				}
-				if (part.underlined) {
-					string = `__${replaceBut(string, /__/g, /\\__/g, '')}__`;
-				}
-				if (part.italic) {
-					string = `*${replaceBut(string, /\*/g, /\\\*/g, '')}*`;
-				}
-				return string;
+		if (part instanceof FormattingTextPart) {
+			let string = this.partToString(part.text);
+			const desc = part.desc;
+			if (desc.preserveMultipleSpaces) {
+				string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
 			}
-			case 'code':
-				return `\`\`\`${part.lang}\n${part.data.replace(/```/g, '\\`\\`\\`')}\`\`\``;
-			case 'opaque': {
-				const ayzekPart = opaqueToAyzek(part);
-				if (!ayzekPart) {
-					if (part.fallback)
-						return this.partToString(part.fallback);
-					return '**IDK**';
-				}
-				switch (ayzekPart.ayzekPart) {
-					case 'user': {
-						return `<@${(ayzekPart.user as DiscordUser).apiUser.id}>`;
-					}
-					case 'chat': {
-						return `<#${(ayzekPart.chat as DiscordChat).apiChat.id}>`;
-					}
-				}
-				throw new Error('Unreachable');
+			if (desc.bold) {
+				string = `**${replaceBut(string, /\*\*/g, /\\\*\*/g, '')}**`;
 			}
-			case 'hashTagPart':
-				if (part.hideOnNoSupport) return '';
-				return this.partToString(part.data);
+			if (desc.underlined) {
+				string = `__${replaceBut(string, /__/g, /\\__/g, '')}__`;
+			}
+			if (desc.italic) {
+				string = `*${replaceBut(string, /\*/g, /\\\*/g, '')}*`;
+			}
+			return string;
+		} else if (part instanceof CodeTextPart) {
+			return `\`\`\`${part.lang}\n${part.data.replace(/```/g, '\\`\\`\\`')}\`\`\``;
+		} else if (part instanceof OpaqueTextPart) {
+			const ayzekPart = opaqueToAyzek(part);
+			if (!ayzekPart) {
+				if (part.fallback)
+					return this.partToString(part.fallback);
+				return '**IDK**';
+			}
+			switch (ayzekPart.ayzekPart) {
+				case 'user': {
+					return `<@${(ayzekPart.user as DiscordUser).apiUser.id}>`;
+				}
+				case 'chat': {
+					return `<#${(ayzekPart.chat as DiscordChat).apiChat.id}>`;
+				}
+			}
+		} else if (part instanceof HashTagTextPart) {
+			if (part.hideOnNoSupport) return '';
+			return this.partToString(part.tags.map(e => `#${e}`));
 		}
+		throw new Error('unreachable');
 	}
 
 	async doWork(): Promise<void> {

@@ -10,7 +10,7 @@ import { opaqueToAyzek } from '@ayzek/core/text';
 import { validateData } from '@ayzek/core/util/config';
 import { replaceBut } from '@ayzek/core/util/escape';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import type { Text, TextPart } from '@ayzek/text';
+import { CodeTextPart, FormattingTextPart, HashTagTextPart, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
 import type { MaybePromise } from '@meteor-it/utils';
 import XRest from '@meteor-it/xrest';
 import * as https from 'https';
@@ -280,50 +280,47 @@ export class TelegramApi extends Api {
 		} else if (part instanceof Array) {
 			return part.map(l => this.partToString(l)).join('');
 		}
-		switch (part.type) {
-			case 'formatting': {
-				let string = this.partToString(part.data);
-				if (part.preserveMultipleSpaces) {
-					string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
-				}
-				if (part.bold) {
-					string = `**${replaceBut(string, /\*\*/g, /\\\*\*/g, '')}**`;
-				}
-				if (part.underlined) {
-					string = `__${replaceBut(string, /__/g, /\\__/g, '')}__`;
-				}
-				if (part.italic) {
-					string = `*${replaceBut(string, /\*/g, /\\\*/g, '')}*`;
-				}
-				return string;
+		if (part instanceof FormattingTextPart) {
+			let string = this.partToString(part.text);
+			const desc = part.desc;
+			if (desc.preserveMultipleSpaces) {
+				string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
 			}
-			case 'code':
-				return `\`\`\`${part.lang}\n${part.data.replace(/```/g, '\\`\\`\\`')}\`\`\``;
-			case 'opaque': {
-				const ayzekPart = opaqueToAyzek(part);
-				if (!ayzekPart) {
-					if (part.fallback)
-						return this.partToString(part.fallback);
-					return '**IDK**';
-				}
-				switch (ayzekPart.ayzekPart) {
-					case 'user': {
-						if (ayzekPart.user instanceof TelegramUser)
-							return `[${ayzekPart.title ?? ayzekPart.user.name}](tg://user?id=${ayzekPart.user.apiUser})`;
-						else
-							return `${ayzekPart.user.name} (${ayzekPart.user.profileUrl})`;
-					}
-					case 'chat': {
-						return `<Чат ${(ayzekPart.chat as TelegramChat).title}>`;
-					}
-				}
-				throw new Error('Unreachable');
+			if (desc.bold) {
+				string = `**${replaceBut(string, /\*\*/g, /\\\*\*/g, '')}**`;
 			}
-			case 'hashTagPart':
-				if (part.hideOnNoSupport) return '';
-				return this.partToString(part.data);
+			if (desc.underlined) {
+				string = `__${replaceBut(string, /__/g, /\\__/g, '')}__`;
+			}
+			if (desc.italic) {
+				string = `*${replaceBut(string, /\*/g, /\\\*/g, '')}*`;
+			}
+			return string;
+		} else if (part instanceof CodeTextPart) {
+			return `\`\`\`${part.lang}\n${part.data.replace(/```/g, '\\`\\`\\`')}\`\`\``;
+		} else if (part instanceof OpaqueTextPart) {
+			const ayzekPart = opaqueToAyzek(part);
+			if (!ayzekPart) {
+				if (part.fallback)
+					return this.partToString(part.fallback);
+				return '**IDK**';
+			}
+			switch (ayzekPart.ayzekPart) {
+				case 'user': {
+					if (ayzekPart.user instanceof TelegramUser)
+						return `[${ayzekPart.title ?? ayzekPart.user.name}](tg://user?id=${ayzekPart.user.apiUser.id})`;
+					else
+						return `${ayzekPart.user.name} (${ayzekPart.user.profileUrl})`;
+				}
+				case 'chat': {
+					return `${(ayzekPart.chat as TelegramChat).title}`;
+				}
+			}
+		} else if (part instanceof HashTagTextPart) {
+			if (part.hideOnNoSupport) return '';
+			return this.partToString(part.tags.map(e => `#${e}`));
 		}
-		throw new Error(`Part ${JSON.stringify(part)} not handled`);
+		throw new Error('unreachable');
 	}
 }
 

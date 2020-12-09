@@ -7,7 +7,7 @@ import { Attachment, File, Image, Location } from '@ayzek/core/model/attachment'
 import { opaqueToAyzek } from '@ayzek/core/text';
 import arrayChunks from '@ayzek/core/util/arrayChunks';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import type { Text, TextPart } from '@ayzek/text';
+import { CodeTextPart, FormattingTextPart, HashTagTextPart, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
 import type { MaybePromise } from '@meteor-it/utils';
 import { emit } from '@meteor-it/xrest';
 import * as multipart from '@meteor-it/xrest/multipart';
@@ -283,35 +283,33 @@ export class VKApi extends Api {
 		} else if (part instanceof Array) {
 			return part.map(l => this.partToString(l)).join('');
 		}
-		switch (part.type) {
-			case 'formatting': {
-				let string = this.partToString(part.data);
-				if (part.preserveMultipleSpaces) {
-					string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
-				}
-				return string;
+		if (part instanceof FormattingTextPart) {
+			let string = this.partToString(part.text);
+			if (part.desc.preserveMultipleSpaces) {
+				string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
 			}
-			case 'code':
-				return part.data.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
-			case 'hashTagPart':
-				return this.partToString(part.data).split(' ').map(e => e.length > 0 ? `#${e}` : e).join(' ');
-			case 'opaque': {
-				const ayzekPart = opaqueToAyzek(part);
-				if (!ayzekPart) {
-					if (part.fallback)
-						return this.partToString(part.fallback);
-					return '**IDK**';
+			return string;
+		} else if (part instanceof CodeTextPart) {
+			return part.data.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
+		} else if (part instanceof HashTagTextPart) {
+			return part.tags.map(tag => `#${tag}`).join(' ');
+		} else if (part instanceof OpaqueTextPart) {
+			const ayzekPart = opaqueToAyzek(part);
+			if (!ayzekPart) {
+				if (part.fallback)
+					return this.partToString(part.fallback);
+				return '**IDK**';
+			}
+			switch (ayzekPart.ayzekPart) {
+				case 'user': {
+					return `[${ayzekPart.user.profileUrl.slice(15)}|${ayzekPart.title || ayzekPart.user.name}]`;
 				}
-				switch (ayzekPart.ayzekPart) {
-					case 'user': {
-						return `[${ayzekPart.user.profileUrl.slice(15)}|${ayzekPart.title || ayzekPart.user.name}]`;
-					}
-					case 'chat': {
-						return `<Чат ${(ayzekPart.chat as VKChat).title}>`;
-					}
+				case 'chat': {
+					return `${(ayzekPart.chat as VKChat).title}`;
 				}
 			}
 		}
+		throw new Error('unreachable');
 	}
 
 	async doWork(): Promise<void> {
