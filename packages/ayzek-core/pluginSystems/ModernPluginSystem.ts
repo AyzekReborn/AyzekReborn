@@ -55,9 +55,24 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 		}
 	}
 
-	async onPostInit(module: PluginInfo & PluginInfoAttribute) {
+		const commands = module.commands?.map(cmd => {
+			if (typeof cmd === 'function') {
+				return cmd(module);
+			} else {
+				return cmd;
+			}
+		});
+		module.resolvedCommands = commands;
+		const listeners = module.listeners?.map(listener => {
+			if (typeof listener === 'function') {
+				return listener(module);
+			} else {
+				return listener;
+			}
+		});
+		module.resolvedListeners = listeners;
 		// TODO: Also perform in-plugin conflict search (currently only cross-plugin check is done)
-		module.registered = module.commands?.filter(command => {
+		module.registered = commands?.filter(command => {
 			// FIXME: O(n*m), somehow add alias map to make it O(1)
 			if ([...this.ayzek.commandDispatcher.root.literals.values()].some(otherCommand => command.literals.some(name => otherCommand.isMe(name)))) {
 				this.logger.warn(`Command ${command.literal} is already registered`);
@@ -85,8 +100,8 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 			if (module.ayzekAttributes.length !== 0)
 				await this.ayzek.onAyzekAttributeRepositoryChange();
 		}
-		if (module.listeners) {
-			for (const listener of module.listeners) {
+		if (listeners) {
+			for (const listener of listeners) {
 				this.ayzek.bus.on(listener.type, listener.handler);
 			}
 		}
@@ -120,8 +135,8 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 			if (module.ayzekAttributes.length !== 0)
 				await this.ayzek.onAyzekAttributeRepositoryChange();
 		}
-		if (module.listeners) {
-			for (const listener of module.listeners) {
+		if (module.resolvedListeners) {
+			for (const listener of module.resolvedListeners) {
 				this.ayzek.bus.off(listener.type, listener.handler);
 			}
 		}

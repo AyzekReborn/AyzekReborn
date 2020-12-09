@@ -22,14 +22,18 @@ export enum PluginCategory {
 	FUN,
 }
 
+type ResolvedCommand = LiteralArgumentBuilder<AyzekCommandSource, any, Text>;
+type Command<P> = ResolvedCommand | ((plug: P) => ResolvedCommand);
+
+type ResolvedListener = IListener<any>;
+type Listener<P> = ResolvedListener | ((plug: P) => ResolvedListener);
+
+
 type PluginInfo = {
 	// Injected by ModernPluginSystem
 	ayzek?: Ayzek,
 
 	category: PluginCategory,
-	commands?: LiteralArgumentBuilder<AyzekCommandSource, any, Text>[],
-
-	listeners?: IListener<any>[],
 
 	userAttributes?: AttributeCreator<User, any>[],
 	chatAttributes?: AttributeCreator<Chat, any>[],
@@ -50,9 +54,12 @@ type PluginInfo = {
 	 */
 	description?: string;
 
-	/**
-	 * Called on init
-	 */
+	commands?: Command<this>[];
+	resolvedCommands?: ResolvedCommand[];
+
+	listeners?: Listener<this>[];
+	resolvedListeners?: ResolvedListener[];
+
 	init?(): Promise<void>;
 	/**
 	 * Called on deinit
