@@ -29,22 +29,15 @@ type ResolvedListener = IListener<any>;
 type Listener<P> = ResolvedListener | ((plug: P) => ResolvedListener);
 
 
-type PluginInfo = {
+export abstract class PluginBase {
 	// Injected by ModernPluginSystem
-	ayzek?: Ayzek,
+	translationStorage!: TranslationStorage;
+	ayzek!: Ayzek;
 
 	category: PluginCategory,
 
-	userAttributes?: AttributeCreator<User, any>[],
-	chatAttributes?: AttributeCreator<Chat, any>[],
-	conversationAttributes?: AttributeCreator<Conversation, any>[],
+	name!: string;
 
-	ayzekAttributes?: AttributeCreator<Ayzek, any>[],
-} & {
-	/**
-	 * Class name by default
-	 */
-	name: string;
 	/**
 	 * Plugin developer, displayed in /help from MainPlugin
 	 */
@@ -60,10 +53,13 @@ type PluginInfo = {
 	listeners?: Listener<this>[];
 	resolvedListeners?: ResolvedListener[];
 
+	userAttributes?: AttributeCreator<User, any>[];
+	chatAttributes?: AttributeCreator<Chat, any>[];
+	conversationAttributes?: AttributeCreator<Conversation, any>[];
+
+	ayzekAttributes?: AttributeCreator<Ayzek, any>[];
+
 	init?(): Promise<void>;
-	/**
-	 * Called on deinit
-	 */
 	deinit?(): Promise<void>;
 	/**
 	 * To display additional info in /help

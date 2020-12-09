@@ -3,8 +3,7 @@ import { readFile, writeFile } from '@meteor-it/fs';
 import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
 import { resolve } from 'path';
 import type { Ayzek } from '../ayzek';
-import { isConfigurable, PluginInfo } from '../plugin';
-import { parseYaml, stringifyYaml } from '../util/config';
+import { isConfigurable, PluginBase } from '../plugin';
 
 export type PluginInfoAttribute = {
 	registered?: CommandNode<any, any, any>[];
@@ -16,12 +15,12 @@ export type ModernPluginContext = {
 	ayzek: Ayzek;
 }
 
-export default class ModernPluginSystem extends WebpackPluginLoader<ModernPluginContext, PluginInfo & PluginInfoAttribute> {
+export default class ModernPluginSystem extends WebpackPluginLoader<ModernPluginContext, PluginBase & PluginInfoAttribute> {
 	constructor(public ayzek: Ayzek, requireContextGetter: () => any, moduleHot: { accept: any }) {
 		super('modern', { ayzek }, requireContextGetter, moduleHot);
 	}
 
-	async onPreInit(module: PluginInfo & PluginInfoAttribute) {
+	async onPreInit(module: PluginBase & PluginInfoAttribute) {
 		if (isConfigurable(module)) {
 			const configEnv = 'CONFIG_' + module.name.replace(/([a-z])([A-Z])/g, (_, a, b) => {
 				return `${a.toUpperCase()}_${b.toUpperCase()}`;
@@ -55,6 +54,7 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 		}
 	}
 
+	async onPostInit(module: PluginBase & PluginInfoAttribute) {
 		const commands = module.commands?.map(cmd => {
 			if (typeof cmd === 'function') {
 				return cmd(module);
@@ -109,10 +109,10 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 		this.ayzek.plugins.push(module);
 	}
 
-	async onPreDeinit(_module: PluginInfo & PluginInfoAttribute) {
+	async onPreDeinit(_module: PluginBase & PluginInfoAttribute) {
 	}
 
-	async onPostDeinit(module: PluginInfo & PluginInfoAttribute) {
+	async onPostDeinit(module: PluginBase & PluginInfoAttribute) {
 		if (module.registered)
 			module.registered?.forEach(c => {
 				this.ayzek.commandDispatcher.unregister(c);
@@ -143,7 +143,7 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 		this.ayzek.plugins.splice(this.ayzek.plugins.indexOf(module), 1);
 	}
 
-	async onUnload(_module: PluginInfo & PluginInfoAttribute) {
+	async onUnload(_module: PluginBase & PluginInfoAttribute) {
 		throw new Error('Method not implemented.');
 	}
 }
