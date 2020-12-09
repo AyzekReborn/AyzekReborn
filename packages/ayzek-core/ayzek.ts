@@ -9,18 +9,19 @@ import { Chat, Conversation, Guild, User } from './conversation';
 import { CommandErrorEvent, CustomEventBus } from './events/custom';
 import { JoinChatEvent } from './events/join';
 import { LeaveChatEvent } from './events/leave';
+import { ApplyChatLocaleEvent, ApplyUserLocaleEvent } from './events/locale';
 import { CommandMessageEvent, PlainMessageEvent } from './events/message';
 import { ChatTitleChangeEvent } from './events/titleChange';
 import { TypingEvent } from './events/typing';
 import ApiFeature from './features';
 import { craftCommandPayload, parsePayload } from './model/payload';
-import type { PluginInfo } from './plugin';
+import { PluginBase } from './plugin';
 
 export class Ayzek extends Api {
 	/**
 	 * Loaded plugins
 	 */
-	plugins: PluginInfo[] = [];
+	plugins: PluginBase[] = [];
 
 	userAttributeRepository: AttributeRepository<User> = new AttributeRepository();
 	chatAttributeRepository: AttributeRepository<Chat> = new AttributeRepository();
@@ -38,11 +39,13 @@ export class Ayzek extends Api {
 
 	async attachToUser(user: User) {
 		user.attributeStorage = await this.userAttributeRepository.getStorageFor(user);
+		this.bus.emit(new ApplyUserLocaleEvent(user));
 	}
 
 	async attachToChat(chat: Chat) {
 		chat.attributeStorage = await this.chatAttributeRepository.getStorageFor(chat);
 		await Promise.all([...chat.users, ...chat.admins].map(user => this.attachToUser(user)));
+		this.bus.emit(new ApplyChatLocaleEvent(chat));
 	}
 
 	craftCommandPayload(command: string): string {
