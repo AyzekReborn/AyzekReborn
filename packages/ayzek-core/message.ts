@@ -1,6 +1,7 @@
+import { Locale } from '@ayzek/text';
 import type { Api } from './api';
-import type { Attachment } from './attachment';
 import type { Chat, User } from './conversation';
+import { Attachment } from './model/attachment';
 
 export type ForwardInfo = {
 	messageId: string,
@@ -21,4 +22,5 @@ export type IMessage = {
 export type IMessageOptions = {
 	replyTo?: ForwardInfo,
 	forwarded?: ForwardInfo[],
+	locale?: Locale,
 }
