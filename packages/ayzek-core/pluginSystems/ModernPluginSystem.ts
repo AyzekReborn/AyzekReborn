@@ -1,4 +1,6 @@
 import type { CommandNode } from '@ayzek/command-parser/tree';
+import { ParsingData } from '@ayzek/text/component';
+import { TranslationStorage } from '@ayzek/text/translation';
 import { readFile, writeFile } from '@meteor-it/fs';
 import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
 import { resolve } from 'path';
@@ -49,6 +51,16 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 				} catch (e) {
 					this.logger.error('Failed to parse config');
 					throw e;
+				}
+			}
+		}
+
+		module.translationStorage = new TranslationStorage(new ParsingData());
+		if (module.translations) {
+			for (const key of module.translations.keys()) {
+				if (key.startsWith('./') && key.endsWith('.json')) {
+					const langName = key.replace(/^\.\//, '').replace(/\.json$/, '');
+					module.translationStorage.define(langName, module.translations(key));
 				}
 			}
 		}
