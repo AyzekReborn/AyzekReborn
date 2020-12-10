@@ -13,8 +13,8 @@ __metadata:
     "@ayzek/core": "workspace:*"
     "@ayzek/text": "workspace:*"
     "@meteor-it/mime": 0.4.23
-    discord.js: 12.4.1
-    fp-ts: ^2.8.6
+    discord.js: 12.5.1
+    fp-ts: ^2.9.0
     io-ts: ^2.2.13
   languageName: unknown
   linkType: soft
@@ -76,9 +76,9 @@ __metadata:
     "@meteor-it/plugin-loader": ^1.7.0
     "@meteor-it/utils": 1.3.33
     "@meteor-it/xrest": ^1.3.58
-    "@types/node": 14.14.9
+    "@types/node": 14.14.10
     "@types/temp": ^0.8.34
-    fp-ts: ^2.8.6
+    fp-ts: ^2.9.0
     io-ts: ^2.2.13
     stream-now: ^1.1.1
     temp: ^0.9.4
@@ -95,6 +95,12 @@ __metadata:
     "@types/temp": 0.8.34
     stream-now: ^1.1.1
     temp: ^0.9.4
+  languageName: unknown
+  linkType: soft
+
+"@ayzek/linguist@workspace:*, @ayzek/linguist@workspace:packages/ayzek-linguist":
+  version: 0.0.0-use.local
+  resolution: "@ayzek/linguist@workspace:packages/ayzek-linguist"
   languageName: unknown
   linkType: soft
 
@@ -150,6 +156,9 @@ __metadata:
 "@ayzek/text@workspace:*, @ayzek/text@workspace:packages/ayzek-text":
   version: 0.0.0-use.local
   resolution: "@ayzek/text@workspace:packages/ayzek-text"
+  dependencies:
+    "@ayzek/linguist": "workspace:*"
+    "@meteor-it/random": ^0.4.34
   languageName: unknown
   linkType: soft
 
@@ -1538,7 +1547,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@meteor-it/random@npm:0.4.34":
+"@meteor-it/random@npm:0.4.34, @meteor-it/random@npm:^0.4.34":
   version: 0.4.34
   resolution: "@meteor-it/random@npm:0.4.34"
   dependencies:
@@ -1642,10 +1651,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:14.14.9":
-  version: 14.14.9
-  resolution: "@types/node@npm:14.14.9"
-  checksum: df0405c708fa94831e7f71ed01cd6f859a38ab0daeae99e01afdd408905479f205556a43bafe5692c82cd126abbdc68baeb99b4b7d653c1480c289080b71622b
+"@types/node@npm:14.14.10":
+  version: 14.14.10
+  resolution: "@types/node@npm:14.14.10"
+  checksum: b793aa15e8c08df50d0f77dc0fe7a93bc2e09bfa5a424841d4dba045d6ae8503b7ffe89b773ffe197c9b637c898bb22e78442e21ff4b33414d35160d9c3f8a9b
   languageName: node
   linkType: hard
 
@@ -3186,9 +3195,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"discord.js@npm:12.4.1":
-  version: 12.4.1
-  resolution: "discord.js@npm:12.4.1"
+"discord.js@npm:12.5.1":
+  version: 12.5.1
+  resolution: "discord.js@npm:12.5.1"
   dependencies:
     "@discordjs/collection": ^0.1.6
     "@discordjs/form-data": ^3.0.1
@@ -3198,7 +3207,7 @@ __metadata:
     setimmediate: ^1.0.5
     tweetnacl: ^1.0.3
     ws: ^7.3.1
-  checksum: bf46264835378c80ae9c83a5c86218a75ad810b8566a5527965edb8dac76861d3a716cf47e1a28609cb8ace4a625072826f598ecd2c471493e758e5e8ac7666f
+  checksum: 18850040f3b945b0d60a89ea38df31d1abcca2879abc171b3a44d0b9ce163e0ad0a0119e0e417630cf56609483af6c4b5235f77cc84ae1bee0a2869aff25fae3
   languageName: node
   linkType: hard
 
@@ -3815,10 +3824,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fp-ts@npm:^2.8.6":
-  version: 2.9.0
-  resolution: "fp-ts@npm:2.9.0"
-  checksum: 7695e32896e5fb9103283c97e755d70982f235faed17f4be0fcb4d95b1d7373a10c081b0cf9895b15fecbeaff50669b8a0a037bdf048ee091e842476be03b7b8
+"fp-ts@npm:^2.9.0":
+  version: 2.9.1
+  resolution: "fp-ts@npm:2.9.1"
+  checksum: 74a71a1780719b638f90b2ca8802649def8367adf6afb01fccd7162601891cf342a29fc4f6452e7c4a934fb3413582de4cad41a42bdf9e23534ffe5799d2384a
   languageName: node
   linkType: hard
 
