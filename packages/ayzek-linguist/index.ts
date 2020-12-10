@@ -211,6 +211,7 @@ function readComponents<L, S, T>(input: string, state: ParsingState, data: Abstr
 			if (input.length === 0 || input[0] !== '}') {
 				throw new Error('component invocation should end with "}"!');
 			}
+			input = input.slice(1);
 			out.push(component);
 		}
 	}
