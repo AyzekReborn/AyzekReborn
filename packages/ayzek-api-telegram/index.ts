@@ -10,7 +10,9 @@ import { opaqueToAyzek } from '@ayzek/core/text';
 import { validateData } from '@ayzek/core/util/config';
 import { replaceBut } from '@ayzek/core/util/escape';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import { CodeTextPart, FormattingTextPart, HashTagTextPart, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
+import { CodeTextPart, FormattingTextPart, HashTagTextPart, Locale, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
+import { Component } from '@ayzek/text/component';
+import { Preformatted } from '@ayzek/text/translation';
 import type { MaybePromise } from '@meteor-it/utils';
 import XRest from '@meteor-it/xrest';
 import * as https from 'https';
@@ -252,7 +254,7 @@ export class TelegramApi extends Api {
 	}
 
 	async send(conv: Conversation, text: Text, _attachments: Attachment[], _options: IMessageOptions): Promise<void> {
-		const parts = splitByMaxPossibleParts(this.partToString(text), 4096);
+		const parts = splitByMaxPossibleParts(this.partToString(text, conv.locale), 4096);
 		if (!(conv instanceof TelegramUser || conv instanceof TelegramChat))
 			throw new Error('Tried to send message to non telegram user');
 		for (const part of parts) {
@@ -266,7 +268,7 @@ export class TelegramApi extends Api {
 		}
 	}
 
-	partToString(part: TextPart): string {
+	partToString(part: TextPart, locale?: Locale): string {
 		if (!part) return part + '';
 		if (typeof part === 'number') {
 			return part + '';
@@ -278,10 +280,10 @@ export class TelegramApi extends Api {
 		if (part instanceof StringReader) {
 			return `${part.toStringWithCursor('|')}`;
 		} else if (part instanceof Array) {
-			return part.map(l => this.partToString(l)).join('');
+			return part.map(l => this.partToString(l, locale)).join('');
 		}
 		if (part instanceof FormattingTextPart) {
-			let string = this.partToString(part.text);
+			let string = this.partToString(part.text, locale);
 			const desc = part.desc;
 			if (desc.preserveMultipleSpaces) {
 				string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
@@ -302,7 +304,7 @@ export class TelegramApi extends Api {
 			const ayzekPart = opaqueToAyzek(part);
 			if (!ayzekPart) {
 				if (part.fallback)
-					return this.partToString(part.fallback);
+					return this.partToString(part.fallback, locale);
 				return '**IDK**';
 			}
 			switch (ayzekPart.ayzekPart) {
@@ -318,7 +320,17 @@ export class TelegramApi extends Api {
 			}
 		} else if (part instanceof HashTagTextPart) {
 			if (part.hideOnNoSupport) return '';
-			return this.partToString(part.tags.map(e => `#${e}`));
+			return this.partToString(part.tags.map(e => `#${e}`), locale);
+		} else if (part instanceof Component) {
+			if (!locale) {
+				throw new Error('locale is not set by anyone');
+			}
+			return this.partToString(part.localize(locale, []), locale);
+		} else if (part instanceof Preformatted) {
+			if (!locale) {
+				throw new Error('locale is not set by anyone');
+			}
+			return this.partToString(part.localize(locale), locale);
 		}
 		throw new Error('unreachable');
 	}
