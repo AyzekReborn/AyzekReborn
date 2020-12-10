@@ -2,5 +2,9 @@
 	"name": "@ayzek/text",
 	"version": "1.0.4",
 	"main": "index.js",
-	"license": "MIT"
+	"license": "MIT",
+	"dependencies": {
+		"@ayzek/linguist": "workspace:*",
+		"@meteor-it/random": "^0.4.34"
+	}
 }

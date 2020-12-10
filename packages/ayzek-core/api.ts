@@ -9,7 +9,7 @@ import type { Chat, Conversation, Guild, User } from './conversation';
 import ApiFeature from './features';
 import type { IMessageOptions } from './message';
 import { Attachment } from './model/attachment';
-import { PluginCategory, PluginInfo } from './plugin';
+import { PluginBase, PluginCategory } from './plugin';
 
 /**
  * Error thrown if feature isn't supported by api
@@ -111,7 +111,7 @@ export abstract class Api {
 	abstract get apiLocalUserArgumentType(): ArgumentType<any, User>;
 }
 
-export abstract class ApiPlugin<P extends t.TypeC<any> = any> implements PluginInfo {
+export abstract class ApiPlugin<P extends t.TypeC<any> = any> extends PluginBase {
 	category: PluginCategory = PluginCategory.API;
 	name: string;
 	constructor(
@@ -120,6 +120,8 @@ export abstract class ApiPlugin<P extends t.TypeC<any> = any> implements PluginI
 		public description: string,
 		configType: P, defaultConfig: t.TypeOf<P>, public creator: new (config: t.TypeOf<P>) => Api,
 	) {
+		super();
+
 		this.name = `${name}APIPlugin`;
 		this.configType = t.interface({
 			local: t.array(configType),

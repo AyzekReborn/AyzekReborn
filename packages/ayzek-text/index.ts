@@ -1,12 +1,18 @@
-export type OpaqueTextPart = {
-	type: 'opaque',
-	opaqueType: symbol,
-	opaque: any,
-	fallback: Text,
-};
+import { Component, Slots } from './component';
+import { LanguageBase } from './language';
+import { LocaleBase } from './locale';
+import { Preformatted } from './translation';
+
+export class OpaqueTextPart {
+	constructor(
+		public opaqueType: symbol,
+		public opaque: any,
+		public fallback: Text,
+	) { }
+}
 
 export function isOpaquePart(t: TextPart): t is OpaqueTextPart {
-	return typeof t === 'object' && !(t instanceof Array) && t?.type === 'opaque';
+	return t instanceof OpaqueTextPart;
 }
 
 export function castOpaquePart(t: OpaqueTextPart, neededOpaqueType: symbol): any | null {
@@ -22,27 +28,21 @@ export type FormattingDesc = {
 	preserveMultipleSpaces?: boolean,
 	italic?: boolean,
 }
-export type FormattingTextPart = {
-	type: 'formatting',
-	data: Text,
-} & FormattingDesc;
-export type CodeTextPart = {
-	type: 'code',
-	lang: string,
-	data: string,
+export class FormattingTextPart {
+	constructor(public text: Text, public desc: FormattingDesc) { }
 }
-export type HashTagTextPart = {
-	type: 'hashTagPart',
-	data: Text,
-	hideOnNoSupport?: boolean
+export class CodeTextPart {
+	constructor(public lang: string, public data: string) { }
+}
+export class HashTagTextPart {
+	constructor(public tags: string[], public hideOnNoSupport = false) { }
 }
 
-type ArrayTextPart = Array<TextPart>
 export type TextPart =
 	undefined | null | string | number
 	| OpaqueTextPart
 	| CodeTextPart | FormattingTextPart
-	| HashTagTextPart | ArrayTextPart;
+	| HashTagTextPart | Array<Text> | Component | Preformatted;
 export type Text = TextPart;
 
 export function joinText(joiner: Text, arr: Text[]): Text[] {
@@ -54,8 +54,19 @@ export function wrappedText(wrapper: (input: Text) => Text): Formatter {
 	return (strings, ...format) => wrapper(strings.flatMap((e, index) => index ? [format[index - 1], e] : [e]));
 }
 export const text = wrappedText(t => t);
-export const formattedText = (f: FormattingDesc) => wrappedText(t => ({
-	type: 'formatting',
-	...f,
-	data: t,
-} as FormattingTextPart));
+export const formattedText = (f: FormattingDesc) => wrappedText(t => new FormattingTextPart(t, f));
+
+export type T = ((input: TemplateStringsArray, ...slots: Slots) => Preformatted);
+export type CT = (context: string) => T;
+
+type UserData = {
+	timeZone?: string;
+};
+
+export class Locale {
+	constructor(public translation: LanguageBase, public locale: LocaleBase, public userData: UserData, public chatData?: UserData) { }
+
+	get name(): string {
+		return `${this.translation.name}_${this.locale.name}`;
+	}
+}

@@ -1,10 +1,11 @@
 import type { CommandNode } from '@ayzek/command-parser/tree';
+import { ParsingData } from '@ayzek/text/component';
+import { TranslationStorage } from '@ayzek/text/translation';
 import { readFile, writeFile } from '@meteor-it/fs';
 import WebpackPluginLoader from '@meteor-it/plugin-loader/WebpackPluginLoader';
 import { resolve } from 'path';
 import type { Ayzek } from '../ayzek';
-import { isConfigurable, PluginInfo } from '../plugin';
-import { parseYaml, stringifyYaml } from '../util/config';
+import { isConfigurable, PluginBase } from '../plugin';
 
 export type PluginInfoAttribute = {
 	registered?: CommandNode<any, any, any>[];
@@ -16,12 +17,12 @@ export type ModernPluginContext = {
 	ayzek: Ayzek;
 }
 
-export default class ModernPluginSystem extends WebpackPluginLoader<ModernPluginContext, PluginInfo & PluginInfoAttribute> {
+export default class ModernPluginSystem extends WebpackPluginLoader<ModernPluginContext, PluginBase & PluginInfoAttribute> {
 	constructor(public ayzek: Ayzek, requireContextGetter: () => any, moduleHot: { accept: any }) {
 		super('modern', { ayzek }, requireContextGetter, moduleHot);
 	}
 
-	async onPreInit(module: PluginInfo & PluginInfoAttribute) {
+	async onPreInit(module: PluginBase & PluginInfoAttribute) {
 		if (isConfigurable(module)) {
 			const configEnv = 'CONFIG_' + module.name.replace(/([a-z])([A-Z])/g, (_, a, b) => {
 				return `${a.toUpperCase()}_${b.toUpperCase()}`;
@@ -53,11 +54,37 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 				}
 			}
 		}
+
+		module.translationStorage = new TranslationStorage(new ParsingData());
+		if (module.translations) {
+			for (const key of module.translations.keys()) {
+				if (key.startsWith('./') && key.endsWith('.json')) {
+					const langName = key.replace(/^\.\//, '').replace(/\.json$/, '');
+					module.translationStorage.define(langName, module.translations(key));
+				}
+			}
+		}
 	}
 
-	async onPostInit(module: PluginInfo & PluginInfoAttribute) {
+	async onPostInit(module: PluginBase & PluginInfoAttribute) {
+		const commands = module.commands?.map(cmd => {
+			if (typeof cmd === 'function') {
+				return cmd(module);
+			} else {
+				return cmd;
+			}
+		});
+		module.resolvedCommands = commands;
+		const listeners = module.listeners?.map(listener => {
+			if (typeof listener === 'function') {
+				return listener(module);
+			} else {
+				return listener;
+			}
+		});
+		module.resolvedListeners = listeners;
 		// TODO: Also perform in-plugin conflict search (currently only cross-plugin check is done)
-		module.registered = module.commands?.filter(command => {
+		module.registered = commands?.filter(command => {
 			// FIXME: O(n*m), somehow add alias map to make it O(1)
 			if ([...this.ayzek.commandDispatcher.root.literals.values()].some(otherCommand => command.literals.some(name => otherCommand.isMe(name)))) {
 				this.logger.warn(`Command ${command.literal} is already registered`);
@@ -85,8 +112,8 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 			if (module.ayzekAttributes.length !== 0)
 				await this.ayzek.onAyzekAttributeRepositoryChange();
 		}
-		if (module.listeners) {
-			for (const listener of module.listeners) {
+		if (listeners) {
+			for (const listener of listeners) {
 				this.ayzek.bus.on(listener.type, listener.handler);
 			}
 		}
@@ -94,10 +121,10 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 		this.ayzek.plugins.push(module);
 	}
 
-	async onPreDeinit(_module: PluginInfo & PluginInfoAttribute) {
+	async onPreDeinit(_module: PluginBase & PluginInfoAttribute) {
 	}
 
-	async onPostDeinit(module: PluginInfo & PluginInfoAttribute) {
+	async onPostDeinit(module: PluginBase & PluginInfoAttribute) {
 		if (module.registered)
 			module.registered?.forEach(c => {
 				this.ayzek.commandDispatcher.unregister(c);
@@ -120,15 +147,15 @@ export default class ModernPluginSystem extends WebpackPluginLoader<ModernPlugin
 			if (module.ayzekAttributes.length !== 0)
 				await this.ayzek.onAyzekAttributeRepositoryChange();
 		}
-		if (module.listeners) {
-			for (const listener of module.listeners) {
+		if (module.resolvedListeners) {
+			for (const listener of module.resolvedListeners) {
 				this.ayzek.bus.off(listener.type, listener.handler);
 			}
 		}
 		this.ayzek.plugins.splice(this.ayzek.plugins.indexOf(module), 1);
 	}
 
-	async onUnload(_module: PluginInfo & PluginInfoAttribute) {
+	async onUnload(_module: PluginBase & PluginInfoAttribute) {
 		throw new Error('Method not implemented.');
 	}
 }

@@ -1,4 +1,5 @@
 import VKApi, { IVKMessageOptions } from '@ayzek/api-vk';
+import { AttributeCreator } from '@ayzek/attribute';
 import { SimpleArgumentType, stringArgument } from '@ayzek/command-parser/arguments';
 import { CommandSyntaxError, UnknownSomethingError, UserDisplayableError } from '@ayzek/command-parser/error';
 import type StringReader from '@ayzek/command-parser/reader';
@@ -6,11 +7,15 @@ import type { Suggestions, SuggestionsBuilder } from '@ayzek/command-parser/sugg
 import { CommandNode } from '@ayzek/command-parser/tree';
 import type { Ayzek } from '@ayzek/core/ayzek';
 import { AyzekCommandContext, AyzekCommandRequirement, AyzekCommandSource, AyzekParseEntryPoint, AyzekParseResults } from '@ayzek/core/command';
+import { Chat, Conversation, User } from '@ayzek/core/conversation';
 import { CommandErrorEvent } from '@ayzek/core/events/custom';
-import { command, PluginCategory, PluginInfo } from '@ayzek/core/plugin';
+import { ApplyChatLocaleEvent, ApplyUserLocaleEvent } from '@ayzek/core/events/locale';
+import { command, PluginBase as PluginBase, PluginCategory } from '@ayzek/core/plugin';
 import { requireHidden } from '@ayzek/core/requirements';
 import { levenshteinDistance } from '@ayzek/core/util/levenshtein';
-import { joinText, Text } from '@ayzek/text';
+import { FormattingTextPart, joinText, Locale, T, Text } from '@ayzek/text';
+import { LANGUAGES } from '@ayzek/text/language';
+import { LOCALES } from '@ayzek/text/locale';
 
 function getAllUsage<S, R>(root: CommandNode<S, any, R>, prefix: string, node: CommandNode<S, any, R>, source: S, restricted: boolean): string[] {
 	const result: Array<string> = [];
@@ -51,19 +56,19 @@ function addCommandPrefixes(out: string[]): string[] {
 	return out;
 }
 
-async function describePlugin(ctx: AyzekCommandContext, ayzek: Ayzek, plugin: PluginInfo): Promise<Text> {
-	const availableCommands = plugin.commands?.filter(command => {
+async function describePlugin(t: T, ctx: AyzekCommandContext, ayzek: Ayzek, plugin: PluginBase): Promise<Text> {
+	const availableCommands = plugin.resolvedCommands?.filter(command => {
 		const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal)!;
 		return commandNode.canUse(ctx.source);
 	});
-	const additionalInfo = plugin.getHelpAdditionalInfo ? ([plugin.getHelpAdditionalInfo(ctx), '\n']) : [];
+	const additionalInfo = plugin.getHelpAdditionalInfo ? ([await plugin.getHelpAdditionalInfo(ctx), '\n']) : [];
 	return [
-		`🔌 ${plugin.name}${plugin.category ? ` в категории ${plugin.category}` : ''}\n`,
-		`🕵‍ Разработчик: ${plugin.author}\n`,
+		`🔌 ${plugin.name}\n`,
+		'🕵‍ ', t`Developer:`, ` ${plugin.author}\n`,
 		`💬 ${plugin.description}\n`,
 		additionalInfo,
 		...((availableCommands && availableCommands.length > 0) ? [
-			'\nСписок фич:\n',
+			'\n', t`Feature list:`, '\n',
 			joinText('\n\n', [
 				joinText('\n', availableCommands.map(command => {
 					const commandNode = ayzek.commandDispatcher.root.literals.get(command.literal)!;
@@ -170,31 +175,31 @@ class PluginNameArgument extends SimpleArgumentType<string>{
 	}
 
 	getExamples(ctx: AyzekParseEntryPoint) {
-		return ctx.source.ayzek!.plugins.map((plugin: PluginInfo) => plugin.name);
+		return ctx.source.ayzek!.plugins.map((plugin: PluginBase) => plugin.name);
 	}
 }
 function pluginNameArgument() {
 	return new PluginNameArgument();
 }
 
-const helpCommand = command('help')
+const helpCommand = ({ t }: Plugin) => command('help')
 	.thenArgument('name', pluginNameArgument(), b => b
 		.executes(async ctx => {
 			const name = ctx.getArgument('name');
 			const found = ctx.source.ayzek!.plugins.find(plugin => plugin.name === name);
 			if (!found) throw new UserDisplayableError(`Неизвестное название плагина: ${name}`);
-			else ctx.source.conversation.send(await describePlugin(ctx, ctx.source.ayzek!, found));
+			else ctx.source.conversation.send(await describePlugin(t, ctx, ctx.source.ayzek!, found));
 		}, 'Просмотр информации о плагине'),
 	)
 	.thenLiteral('all', b => b
 		.executes(async ctx => {
 			try {
-				await ctx.source.user.send(joinText({ type: 'formatting', preserveMultipleSpaces: true, data: '\n \n \n' }, await Promise.all(ctx.source.ayzek!.plugins.map(p => describePlugin(ctx, ctx.source.ayzek!, p)))));
+				await ctx.source.user.send(joinText(new FormattingTextPart('\n\n\n', { preserveMultipleSpaces: true }), await Promise.all(ctx.source.ayzek!.plugins.map(p => describePlugin(t, ctx, ctx.source.ayzek!, p)))));
 				if (ctx.source.conversation.isChat)
-					await ctx.source.conversation.send('Помощь отправлена тебе в ЛС');
+					await ctx.source.conversation.send(t`Output of this command is big, so it being sent to PM`);
 			} catch (e) {
 				if (ctx.source.conversation.isChat)
-					await ctx.source.conversation.send('У тебя закрыты ЛС, \n/help all отсылает ответ только туда, т.к это слишком длинное сообщение');
+					await ctx.source.conversation.send(t`You have closed PMs,\n/help all can't answer in chat because of very big output`);
 				else
 					console.error(e.stack);
 			}
@@ -213,26 +218,27 @@ const helpCommand = command('help')
 						joinText('\n', addCommandPrefixes(getAllUsage(commandDispatcher.root, parsed?.reader.read, node?.node, ctx.source, true))),
 					];
 				} else {
-					return 'Команда не найдена';
+					return t`Command not found`;
 				}
 			}, 'Справка по команде'),
 		),
 	)
 	.executes(async ({ source }) => {
 		source.conversation.send([
-			'Бот OpenSource! Исходники: https://github.com/CertainLach/AyzekReborn\n',
-			'В бота установлены следующие плагины:\n\n',
+			t`This bot source code located at github: https://github.com/CertainLach/AyzekReborn`, '\n',
+			t`Installed plugins:`, '\n\n',
 			joinText('\n\n', source.ayzek!.plugins.map((plugin, i) => joinText('\n', [
-				`${i + 1}. ${plugin.name} от ${plugin.author ?? 'Анонимного разработчика'}`,
-				`💬 ${plugin.description ?? 'Без описания'}`,
+				[`${i + 1}. `, t`${/*plugin name*/plugin.name} by ${/*plugin developer*/plugin.author ?? t/*author name shown by default*/`Anonymous developer`}`],
+				`💬 ${plugin.description ?? t`No description`}`,
 			]))),
-			'\n\nДля просмотра информации о каждом плагине пиши /help <название>, либо /help all для просмотра всех в лс',
+			'\n\n',
+			t`For plugin info see "/help <name>", or "/help all" to see all plugins`,
 		]);
 	}, 'Показ списка плагинов');
 
 
 const FIX_MAX_DISTANCE = 4;
-async function getSuggestionText(ayzek: Ayzek, entry: AyzekParseEntryPoint, parsed: AyzekParseResults, source: AyzekCommandSource): Promise<Text> {
+async function getSuggestionText(t: T, ayzek: Ayzek, _entry: AyzekParseEntryPoint, parsed: AyzekParseResults, source: AyzekCommandSource): Promise<Text> {
 	const commandDispatcher = ayzek.commandDispatcher;
 	const node = parsed.context.nodes[parsed?.context.nodes.length - 1];
 	if (node) {
@@ -251,43 +257,72 @@ async function getSuggestionText(ayzek: Ayzek, entry: AyzekParseEntryPoint, pars
 		if (possibleLiterals.length === 0) { return []; }
 		const minDistance = possibleLiterals[0][2];
 		possibleLiterals = possibleLiterals.filter(literal => literal[2] < minDistance + 1.5);
-		return ['\n\n', 'Возможно ты имел в виду:\n', joinText('\n', possibleLiterals.map(literal => {
+		return ['\n\n', t`Probally you meant:`, '\n', joinText('\n', possibleLiterals.map(literal => {
 			return joinText('\n', addCommandPrefixes(getAllUsage(commandDispatcher.root, literal[1], commandDispatcher.root.literals.get(literal[0])!, source, true)));
 		}))];
 	}
 }
 
-export default class implements PluginInfo {
+const errorFormattingListener = ({ t }: Plugin) => ({
+	name: 'Форматирование ошибок',
+	description: 'Пишет ошибку при исполнении команд',
+	type: CommandErrorEvent,
+	handler: async (e: CommandErrorEvent) => {
+		const parseResult = await e.event.ayzek?.commandDispatcher.parse({
+			source: e.event,
+		}, e.event.command, e.event);
+		const suggestionText = await getSuggestionText(t, e.event.ayzek!, {
+			source: e.event,
+		}, parseResult!, e.event);
+		const err = e.error;
+		if (err instanceof CommandSyntaxError || err instanceof UserDisplayableError || err instanceof UnknownSomethingError) {
+			await e.event.send([
+				err.message,
+				err.reader ? ['\n', '/', err.reader.toString()] : [],
+				suggestionText,
+			]);
+		} else {
+			// this.sendErrorFeedback(err);
+			await e.event.send([
+				[t`Something is broken, this issue was reported to developer.\nYou can use those suggestions in meantime:`],
+				suggestionText,
+			]);
+		}
+	},
+});
+
+const localeSettingListener = ({
+	name: 'Locale setting',
+	description: 'Sets user locale',
+	type: ApplyUserLocaleEvent,
+	handler: async (e: ApplyUserLocaleEvent) => {
+		if (!e.user.locale)
+			e.user.locale = new Locale(LANGUAGES.ru, LOCALES.RU, {});
+	},
+});
+const chatLocaleSettingListener = ({
+	name: 'Locale setting',
+	description: 'Sets chat locale',
+	type: ApplyChatLocaleEvent,
+	handler: async (e: ApplyChatLocaleEvent) => {
+		if (!e.chat.locale)
+			e.chat.locale = new Locale(LANGUAGES.ru, LOCALES.RU, {});
+	},
+});
+
+export default class Plugin extends PluginBase {
+	userAttributes?: AttributeCreator<User<unknown>, any>[] | undefined;
+	chatAttributes?: AttributeCreator<Chat<unknown>, any>[] | undefined;
+	conversationAttributes?: AttributeCreator<Conversation, any>[] | undefined;
+	ayzekAttributes?: AttributeCreator<Ayzek, any>[] | undefined;
 	name = 'MainPlugin';
 	author = 'НекийЛач';
 	description = 'Плагин, содержащий некоторые команды - утилиты для управления другими плагинами';
 	category = PluginCategory.UTILITY;
+
 	commands = [debugCommand, helpCommand];
-	listeners = [{
-		name: 'Форматирование ошибок',
-		description: 'Пишет ошибку при исполнении команд',
-		type: CommandErrorEvent,
-		handler: async (e: CommandErrorEvent) => {
-			const parseResult = await e.event.ayzek?.commandDispatcher.parse({
-				source: e.event,
-			}, e.event.command, e.event);
-			const suggestionText = await getSuggestionText(e.event.ayzek!, {
-				source: e.event,
-			}, parseResult!, e.event);
-			const err = e.error;
-			if (err instanceof CommandSyntaxError || err instanceof UserDisplayableError || err instanceof UnknownSomethingError) {
-				await e.event.send([
-					err.message,
-					err.reader ? ['\n', '/', err.reader.toString()] : [],
-					suggestionText,
-				]);
-			} else {
-				// this.sendErrorFeedback(err);
-				await e.event.send([
-					'Произошла ошибка, репорт передан разработчику.\nПока можешь попробовать воспользоваться данными предложениями:',
-					suggestionText,
-				]);
-			}
-		},
-	}];
+
+	listeners = [errorFormattingListener, localeSettingListener, chatLocaleSettingListener];
+
+	translations = require.context('./translations', false, /\.json$/);
 }

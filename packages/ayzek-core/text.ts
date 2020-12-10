@@ -12,10 +12,5 @@ export function opaqueToAyzek(part: OpaqueTextPart): null | AyzekTextPart {
 	return castOpaquePart(part, OPAQUE_TYPE);
 }
 export function ayzekToOpaque(part: AyzekTextPart): OpaqueTextPart {
-	return {
-		type: 'opaque',
-		opaqueType: OPAQUE_TYPE,
-		opaque: part,
-		fallback: null,
-	};
+	return new OpaqueTextPart(OPAQUE_TYPE, part, null);
 }

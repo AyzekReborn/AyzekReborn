@@ -1,0 +1,17 @@
+{
+    "": {
+        "Developer:": "Разработчик:",
+        "Feature list:": "Список фич:",
+        "Output of this command is big, so it being sent to PM": "Вывод этой команды слишком большой, он будет отправлен в ЛС",
+        "You have closed PMs,\n/help all can't answer in chat because of very big output": "У тебя закрыты ЛС,\n/help all не может отвечать в чате из за слишком большого вывода",
+        "Command not found": "Команда не найдена",
+        "This bot source code located at github: https://github.com/CertainLach/AyzekReborn": "Исходники этого бота находятся на гитхабе: https://github.com/CertainLach/AyzekReborn",
+        "Installed plugins:": "Установленные плагины:",
+        "{1} by {2}": "{1} от {2}",
+        "Anonymous developer": "Анонимного разработчика",
+        "No description": "Нет описания",
+        "For plugin info see \"/help <name>\", or \"/help all\" to see all plugins": "Для информации о плагине смотри /help <название> или /help all для всех плагинов",
+        "Probally you meant:": "Возможно ты имел в виду:",
+        "Something is broken, this issue was reported to developer.\nYou can use those suggestions in meantime:": "Что то сломано, отчёт об ошибке отправлен разработчику.\nА пока можешь воспользоваться следующими предложениями:"
+    }
+}

@@ -1,8 +1,8 @@
 import { AttributeStorage, ownerlessEmptyAttributeStorage } from '@ayzek/attribute';
-import type { Text, TextPart } from '@ayzek/text';
+import type { Locale, Text, TextPart } from '@ayzek/text';
 import type { Api } from './api';
-import type { Attachment, Image } from './attachment';
 import type { IMessage, IMessageOptions } from './message';
+import { Attachment, Image } from './model/attachment';
 import { ayzekToOpaque } from './text';
 
 enum ConversationType {
@@ -26,9 +26,14 @@ export abstract class Conversation implements IConversation {
 		this.api = api;
 	}
 
+	locale?: Locale;
+
 	attributeStorage: AttributeStorage<this> = ownerlessEmptyAttributeStorage;
 
 	async send(text: Text, attachments: Attachment[] = [], options: IMessageOptions = {}) {
+		if (!options.locale) {
+			options.locale = this.locale;
+		}
 		return await this.api.send(this, text, attachments, options);
 	}
 

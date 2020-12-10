@@ -1,6 +1,8 @@
 import type { AttributeCreator } from '@ayzek/attribute';
 import { LiteralArgumentBuilder } from '@ayzek/command-parser/builder';
-import type { Text } from '@ayzek/text';
+import type { T, Text } from '@ayzek/text';
+import { TranslationStorage } from '@ayzek/text/translation';
+import { MaybePromise } from '@meteor-it/utils';
 import * as t from 'io-ts';
 import type { Ayzek } from './ayzek';
 import { AyzekCommandContext, AyzekCommandSource } from './command';
@@ -22,25 +24,24 @@ export enum PluginCategory {
 	FUN,
 }
 
-type PluginInfo = {
+type ResolvedCommand = LiteralArgumentBuilder<AyzekCommandSource, any, Text>;
+type Command<P> = ResolvedCommand | ((plug: P) => ResolvedCommand);
+
+type ResolvedListener = IListener<any>;
+type Listener<P> = ResolvedListener | ((plug: P) => ResolvedListener);
+
+
+export abstract class PluginBase {
 	// Injected by ModernPluginSystem
-	ayzek?: Ayzek,
+	translationStorage!: TranslationStorage;
+	ayzek!: Ayzek;
 
-	category: PluginCategory,
-	commands?: LiteralArgumentBuilder<AyzekCommandSource, any, Text>[],
+	get t(): T {
+		return this.translationStorage.t;
+	}
 
-	listeners?: IListener<any>[],
+	name!: string;
 
-	userAttributes?: AttributeCreator<User, any>[],
-	chatAttributes?: AttributeCreator<Chat, any>[],
-	conversationAttributes?: AttributeCreator<Conversation, any>[],
-
-	ayzekAttributes?: AttributeCreator<Ayzek, any>[],
-} & {
-	/**
-	 * Class name by default
-	 */
-	name: string;
 	/**
 	 * Plugin developer, displayed in /help from MainPlugin
 	 */
@@ -50,19 +51,30 @@ type PluginInfo = {
 	 */
 	description?: string;
 
-	/**
-	 * Called on init
-	 */
+	commands?: Command<this>[];
+	resolvedCommands?: ResolvedCommand[];
+
+	listeners?: Listener<this>[];
+	resolvedListeners?: ResolvedListener[];
+
+	userAttributes?: AttributeCreator<User, any>[];
+	chatAttributes?: AttributeCreator<Chat, any>[];
+	conversationAttributes?: AttributeCreator<Conversation, any>[];
+
+	ayzekAttributes?: AttributeCreator<Ayzek, any>[];
+
 	init?(): Promise<void>;
-	/**
-	 * Called on deinit
-	 */
 	deinit?(): Promise<void>;
-	/**
-	 * To display additional info in /help
-	 */
-	getHelpAdditionalInfo?(ctx: AyzekCommandContext): Text;
-};
+
+	getHelpAdditionalInfo?(ctx: AyzekCommandContext): MaybePromise<Text>;
+	translations?: Translations;
+}
+
+// Corresponds to webpack's require.context return
+interface Translations {
+	keys(): string[];
+	(id: string): any;
+}
 
 type Configurable<P extends t.TypeC<any>> = {
 	config: t.TypeOf<P>;
@@ -74,7 +86,7 @@ function isConfigurable(t: any): t is Configurable<any> {
 	return t.configType !== undefined;
 }
 
-export { PluginInfo, Configurable };
+export { Configurable };
 export { isConfigurable };
 
 /**
