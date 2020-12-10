@@ -10,7 +10,9 @@ import { Attachment, BaseFile, File } from '@ayzek/core/model/attachment';
 import { opaqueToAyzek } from '@ayzek/core/text';
 import { replaceBut } from '@ayzek/core/util/escape';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import { CodeTextPart, FormattingTextPart, HashTagTextPart, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
+import { CodeTextPart, FormattingTextPart, HashTagTextPart, Locale, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
+import { Component } from '@ayzek/text/component';
+import { Preformatted } from '@ayzek/text/translation';
 import { lookupByPath } from '@meteor-it/mime';
 import * as assert from 'assert';
 import { Client, Guild, GuildMember, MessageAttachment, TextChannel, User } from 'discord.js';
@@ -181,7 +183,7 @@ export class DiscordApi extends Api {
 	}
 
 	async send(conv: DiscordChat | DiscordUser, text: Text, attachments: Attachment[] = [], _options: IMessageOptions = {}) {
-		const textParts = splitByMaxPossibleParts(this.partToString(text), MAX_MESSAGE_LENGTH);
+		const textParts = splitByMaxPossibleParts(this.partToString(text, conv.locale), MAX_MESSAGE_LENGTH);
 		const chat = await this.api.channels.fetch(conv.channelId) as TextChannel;
 		if (!chat) throw new Error(`Bad channel: ${conv.channelId}`);
 		const uploadPromises: [Promise<Buffer>, string][] = attachments.map(a => {
@@ -203,7 +205,7 @@ export class DiscordApi extends Api {
 		assert.strictEqual(textParts.length, 0, 'Text parts left unsent');
 	}
 
-	partToString(part: TextPart): string {
+	partToString(part: TextPart, locale?: Locale): string {
 		if (!part) return part + '';
 		if (typeof part === 'number') {
 			return part + '';
@@ -215,10 +217,10 @@ export class DiscordApi extends Api {
 		if (part instanceof StringReader) {
 			return `${part.toStringWithCursor('|')}`;
 		} else if (part instanceof Array) {
-			return part.map(l => this.partToString(l)).join('');
+			return part.map(l => this.partToString(l, locale)).join('');
 		}
 		if (part instanceof FormattingTextPart) {
-			let string = this.partToString(part.text);
+			let string = this.partToString(part.text, locale);
 			const desc = part.desc;
 			if (desc.preserveMultipleSpaces) {
 				string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
@@ -239,7 +241,7 @@ export class DiscordApi extends Api {
 			const ayzekPart = opaqueToAyzek(part);
 			if (!ayzekPart) {
 				if (part.fallback)
-					return this.partToString(part.fallback);
+					return this.partToString(part.fallback, locale);
 				return '**IDK**';
 			}
 			switch (ayzekPart.ayzekPart) {
@@ -252,7 +254,17 @@ export class DiscordApi extends Api {
 			}
 		} else if (part instanceof HashTagTextPart) {
 			if (part.hideOnNoSupport) return '';
-			return this.partToString(part.tags.map(e => `#${e}`));
+			return this.partToString(part.tags.map(e => `#${e}`), locale);
+		} else if (part instanceof Component) {
+			if (!locale) {
+				throw new Error('locale is not set by anyone');
+			}
+			return this.partToString(part.localize(locale, []), locale);
+		} else if (part instanceof Preformatted) {
+			if (!locale) {
+				throw new Error('locale is not set by anyone');
+			}
+			return this.partToString(part.localize(locale), locale);
 		}
 		throw new Error('unreachable');
 	}
