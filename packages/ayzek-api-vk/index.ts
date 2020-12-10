@@ -7,7 +7,9 @@ import { Attachment, File, Image, Location } from '@ayzek/core/model/attachment'
 import { opaqueToAyzek } from '@ayzek/core/text';
 import arrayChunks from '@ayzek/core/util/arrayChunks';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import { CodeTextPart, FormattingTextPart, HashTagTextPart, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
+import { CodeTextPart, FormattingTextPart, HashTagTextPart, Locale, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
+import { Component } from '@ayzek/text/component';
+import { Preformatted } from '@ayzek/text/translation';
 import type { MaybePromise } from '@meteor-it/utils';
 import { emit } from '@meteor-it/xrest';
 import * as multipart from '@meteor-it/xrest/multipart';
@@ -215,7 +217,7 @@ export class VKApi extends Api {
 			throw new Error('Bad receiver');
 		}
 		if (options.forwarded || options.replyTo) throw new Error('Message responses are not supported by vk bots');
-		const texts = splitByMaxPossibleParts(this.partToString(text).replace(/(:?[^a-z]|^)(vto\.pe|olike\.ru|vkrutilka\.ru)(:?[^a-z]|$)/ig, (_, domain) => domain.replace(/[^.]/g, '*')), MAX_MESSAGE_LENGTH);
+		const texts = splitByMaxPossibleParts(this.partToString(text, conv.locale).replace(/(:?[^a-z]|^)(vto\.pe|olike\.ru|vkrutilka\.ru)(:?[^a-z]|$)/ig, (_, domain) => domain.replace(/[^.]/g, '*')), MAX_MESSAGE_LENGTH);
 		const extraAttachments = attachments.filter(EXTRA_ATTACHMENT_PREDICATE) as ExtraAttachment[];
 		const attachmentUploadPromises = arrayChunks(attachments, MAX_ATTACHMENTS_PER_MESSAGE)
 			.map(chunk => chunk.map(name => this.uploadAttachment(name, peer_id.toString())));
@@ -272,7 +274,7 @@ export class VKApi extends Api {
 		}
 	}
 
-	partToString(part: TextPart): string {
+	partToString(part: TextPart, locale?: Locale): string {
 		if (!part) return part + '';
 		if (typeof part === 'number') {
 			return part + '';
@@ -281,10 +283,10 @@ export class VKApi extends Api {
 		if (part instanceof StringReader) {
 			return `${part.toStringWithCursor('|')}`;
 		} else if (part instanceof Array) {
-			return part.map(l => this.partToString(l)).join('');
+			return part.map(l => this.partToString(l, locale)).join('');
 		}
 		if (part instanceof FormattingTextPart) {
-			let string = this.partToString(part.text);
+			let string = this.partToString(part.text, locale);
 			if (part.desc.preserveMultipleSpaces) {
 				string = string.replace(/(:?^ | {2})/g, e => '\u2002'.repeat(e.length));
 			}
@@ -297,7 +299,7 @@ export class VKApi extends Api {
 			const ayzekPart = opaqueToAyzek(part);
 			if (!ayzekPart) {
 				if (part.fallback)
-					return this.partToString(part.fallback);
+					return this.partToString(part.fallback, locale);
 				return '**IDK**';
 			}
 			switch (ayzekPart.ayzekPart) {
@@ -308,6 +310,16 @@ export class VKApi extends Api {
 					return `${(ayzekPart.chat as VKChat).title}`;
 				}
 			}
+		} else if (part instanceof Component) {
+			if (!locale) {
+				throw new Error('locale is not set by anyone');
+			}
+			return this.partToString(part.localize(locale, []), locale);
+		} else if (part instanceof Preformatted) {
+			if (!locale) {
+				throw new Error('locale is not set by anyone');
+			}
+			return '{' + this.partToString(part.localize(locale), locale) + '}';
 		}
 		throw new Error('unreachable');
 	}
