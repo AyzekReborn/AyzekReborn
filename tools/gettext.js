@@ -3,6 +3,7 @@ const { readFile, readdir, mkdir, writeFile } = require('fs/promises');
 const { default: traverse } = require('@babel/traverse');
 const { relative } = require('path');
 const { walkDirArray } = require('@meteor-it/fs');
+const po = require('gettext-parser').po;
 
 async function extractLines(stripPath, file) {
 	const pot = [];
@@ -60,6 +61,19 @@ async function extractLines(stripPath, file) {
 		for (const file of files) {
 			if (file.endsWith('.ts')) {
 				pot.push(...await extractLines(`./packages/${plugin}`, file));
+			} else if (file.endsWith('.po')) {
+				const parsed = po.parse(await readFile(file));
+				const out = {};
+				for (const context of Object.getOwnPropertyNames(parsed.translations)) {
+					out[context] = {};
+					for (const message of Object.getOwnPropertyNames(parsed.translations[context])) {
+						if (message === '') {
+							continue;
+						}
+						out[context][message] = parsed.translations[context][message].msgstr[0];
+					}
+				}
+				await writeFile(file.replace(/\.po$/, '.json'), JSON.stringify(out, null, 4));
 			}
 		}
 		if (pot.length !== 0) {
