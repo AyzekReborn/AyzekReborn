@@ -24,3 +24,8 @@ docker-compose.yml
 
 # Built
 dist
+
+# Translations
+.po
+.pot
+.mo
