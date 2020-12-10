@@ -1,5 +1,5 @@
 import { UserDisplayableError } from '@ayzek/command-parser/error';
-import { command, PluginCategory, PluginInfo } from '@ayzek/core/plugin';
+import { command, PluginBase, PluginCategory } from '@ayzek/core/plugin';
 
 const RU = 'Ё"№;:?*ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭ/ЯЧСМИТЬБЮ,ёйцукенгшщзхъфывапролджэ\\ячсмитьбю.';
 const EN = '~@#$^&*QWERTYUIOP{}ASDFGHJKL:"|ZXCVBNM<>?`qwertyuiop[]asdfghjkl;\'\\zxcvbnm,./';
@@ -26,7 +26,7 @@ const commandRfix = command('rfix')
 		}).join('');
 	}, 'Смена раскладки');
 
-export default class implements PluginInfo {
+export default class extends PluginBase {
 	name = 'UtilPlugin';
 	author = 'НекийЛач';
 	description = 'Разные утилиты';
