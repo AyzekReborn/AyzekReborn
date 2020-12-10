@@ -26,6 +26,6 @@ docker-compose.yml
 dist
 
 # Translations
-.po
-.pot
-.mo
+*.po
+*.pot
+*.mo
