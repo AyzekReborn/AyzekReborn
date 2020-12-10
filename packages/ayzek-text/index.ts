@@ -1,3 +1,7 @@
+import { Component, Slots } from './component';
+import { LanguageBase } from './language';
+import { LocaleBase } from './locale';
+import { Preformatted } from './translation';
 
 export class OpaqueTextPart {
 	constructor(
@@ -52,3 +56,17 @@ export function wrappedText(wrapper: (input: Text) => Text): Formatter {
 export const text = wrappedText(t => t);
 export const formattedText = (f: FormattingDesc) => wrappedText(t => new FormattingTextPart(t, f));
 
+export type T = ((input: TemplateStringsArray, ...slots: Slots) => Preformatted);
+export type CT = (context: string) => T;
+
+type UserData = {
+	timeZone?: string;
+};
+
+export class Locale {
+	constructor(public translation: LanguageBase, public locale: LocaleBase, public userData: UserData, public chatData?: UserData) { }
+
+	get name(): string {
+		return `${this.translation.name}_${this.locale.name}`;
+	}
+}
