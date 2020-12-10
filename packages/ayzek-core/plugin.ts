@@ -1,6 +1,8 @@
 import type { AttributeCreator } from '@ayzek/attribute';
 import { LiteralArgumentBuilder } from '@ayzek/command-parser/builder';
-import type { Text } from '@ayzek/text';
+import type { T, Text } from '@ayzek/text';
+import { TranslationStorage } from '@ayzek/text/translation';
+import { MaybePromise } from '@meteor-it/utils';
 import * as t from 'io-ts';
 import type { Ayzek } from './ayzek';
 import { AyzekCommandContext, AyzekCommandSource } from './command';
@@ -34,7 +36,9 @@ export abstract class PluginBase {
 	translationStorage!: TranslationStorage;
 	ayzek!: Ayzek;
 
-	category: PluginCategory,
+	get t(): T {
+		return this.translationStorage.t;
+	}
 
 	name!: string;
 
@@ -61,11 +65,16 @@ export abstract class PluginBase {
 
 	init?(): Promise<void>;
 	deinit?(): Promise<void>;
-	/**
-	 * To display additional info in /help
-	 */
-	getHelpAdditionalInfo?(ctx: AyzekCommandContext): Text;
-};
+
+	getHelpAdditionalInfo?(ctx: AyzekCommandContext): MaybePromise<Text>;
+	translations?: Translations;
+}
+
+// Corresponds to webpack's require.context return
+interface Translations {
+	keys(): string[];
+	(id: string): any;
+}
 
 type Configurable<P extends t.TypeC<any>> = {
 	config: t.TypeOf<P>;
@@ -77,7 +86,7 @@ function isConfigurable(t: any): t is Configurable<any> {
 	return t.configType !== undefined;
 }
 
-export { PluginInfo, Configurable };
+export { Configurable };
 export { isConfigurable };
 
 /**
