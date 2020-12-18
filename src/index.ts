@@ -8,12 +8,12 @@ Logger.addReceiver(new NodeReceiver());
 const ayzek = new Ayzek('ayzek', true, `${__dirname}/../../config/`);
 
 const apiPluginSystem = new ModernPluginSystem(ayzek,
-	() => (require as any).context('../packages/', true, /ayzek(:?-private)?-api-[a-z\-_0-9]+\/index\.ts$/, 'lazy'),
-	(module as any).hot,
+	() => require.context('../packages/', true, /ayzek(:?-private)?-api-[a-z\-_0-9]+\/index\.ts$/, 'lazy'),
+	module.hot,
 );
 const pluginSystem = new ModernPluginSystem(ayzek,
-	() => (require as any).context('../packages/', true, /ayzek(:?-private)?-plugin-[a-z\-_0-9]+\/index\.ts$/, 'lazy'),
-	(module as any).hot,
+	() => require.context('../packages/', true, /ayzek(:?-private)?-plugin-[a-z\-_0-9]+\/index\.ts$/, 'lazy'),
+	module.hot,
 );
 
 (async () => {

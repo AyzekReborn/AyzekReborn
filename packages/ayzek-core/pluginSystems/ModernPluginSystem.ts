@@ -41,7 +41,7 @@ export default class ModernPluginSystem {
 	logger: Logger;
 	reloadQueue: QueueProcessor<ReloadData, void> = new WebpackPluginLoaderQueueProcessor(this);
 
-	constructor(public ayzek: Ayzek, private requireContextGetter: () => __WebpackModuleApi.RequireContext, private moduleHot: __WebpackModuleApi.Hot) {
+	constructor(public ayzek: Ayzek, private requireContextGetter: () => __WebpackModuleApi.RequireContext, private moduleHot?: __WebpackModuleApi.Hot) {
 		this.logger = new Logger('plugin');
 	}
 
@@ -280,16 +280,16 @@ export default class ModernPluginSystem {
 	async load() {
 		const context = this.requireContextGetter();
 		const modules: { [key: string]: any } = {};
-		context.keys().forEach((key) => {
-			const module = context(key);
+		await Promise.all(context.keys().map(async (key) => {
+			const module = await context(key);
 			modules[key] = module;
 			this.reloadQueue.runTask({ key, module, reloaded: false });
-		});
+		}));
 
 		if (this.moduleHot) {
-			this.moduleHot.accept(this.requireContextGetter().id, () => {
+			this.moduleHot.accept(this.requireContextGetter().id, async () => {
 				const reloadedContext = this.requireContextGetter();
-				reloadedContext.keys().map(key => [key, reloadedContext(key)]).filter(reloadedModule => modules[reloadedModule[0]] !== reloadedModule[1]).forEach((module) => {
+				(await Promise.all(reloadedContext.keys().map(async key => [key, await reloadedContext(key)]))).filter(reloadedModule => modules[reloadedModule[0]] !== reloadedModule[1]).forEach((module) => {
 					modules[module[0]] = module[1];
 					this.reloadQueue.runTask({ key: module[0], module: module[1], reloaded: true });
 				});
