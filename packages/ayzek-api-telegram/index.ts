@@ -22,9 +22,10 @@ import * as t from 'io-ts';
 
 const ApiUser = t.interface({
 	id: t.number,
-	username: t.union([t.undefined, t.string]),
-	first_name: t.union([t.undefined, t.string]),
+	first_name: t.string,
 	last_name: t.union([t.undefined, t.string]),
+	username: t.union([t.undefined, t.string]),
+	language_code: t.union([t.undefined, t.string]),
 	is_bot: t.boolean,
 });
 const ApiChat = t.interface({
@@ -44,6 +45,11 @@ export class TelegramUser extends User {
 			`https://t.me/${apiUser.username}`,
 			apiUser.is_bot,
 		);
+
+		const languageName = apiUser.language_code?.split('-')[0];
+		if (languageName) {
+			this.locale._language = LANGUAGES[languageName];
+		}
 	}
 	get photoImage(): Promise<Image | null> {
 		throw new Error('Method not implemented.');
