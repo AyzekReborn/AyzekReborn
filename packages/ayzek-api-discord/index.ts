@@ -10,8 +10,10 @@ import { Attachment, BaseFile, File } from '@ayzek/core/model/attachment';
 import { opaqueToAyzek } from '@ayzek/core/text';
 import { replaceBut } from '@ayzek/core/util/escape';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import { CodeTextPart, FormattingTextPart, HashTagTextPart, Locale, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
+import { CodeTextPart, FormattingTextPart, HashTagTextPart, Translation, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
 import { Component } from '@ayzek/text/component';
+import { LANGUAGES } from '@ayzek/text/language';
+import { LOCALES } from '@ayzek/text/locale';
 import { Preformatted } from '@ayzek/text/translation';
 import { lookupByPath } from '@meteor-it/mime';
 import * as assert from 'assert';
@@ -282,6 +284,8 @@ export class DiscordApi extends Api {
 		ApiFeature.GuildSupport,
 		ApiFeature.MessageReactions,
 	]);
+
+	defaultTranslation = new Translation(LANGUAGES['en'], LOCALES['US']);
 }
 
 export default class DiscordApiPlugin extends ApiPlugin {

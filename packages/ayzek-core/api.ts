@@ -1,6 +1,6 @@
 import type { ArgumentType } from '@ayzek/command-parser/arguments';
 import { CustomEventBus } from '@ayzek/core/events/custom';
-import type { Text } from '@ayzek/text';
+import type { Translation, Text } from '@ayzek/text';
 import Logger from '@meteor-it/logger';
 import { Disposable, isPromise, MaybePromise } from '@meteor-it/utils';
 import * as t from 'io-ts';
@@ -93,7 +93,7 @@ export abstract class Api {
 
 	/**
 	 * Starts event loop/connects to server
-	 * 
+	 *
 	 * Should return only after successful cancellation
 	 */
 	public abstract doWork(): Promise<void>;
@@ -109,6 +109,11 @@ export abstract class Api {
 	 * by userArgument
 	 */
 	abstract get apiLocalUserArgumentType(): ArgumentType<any, User>;
+
+	/**
+	 * Language, which most of this API users uses
+	 */
+	abstract get defaultTranslation(): Translation;
 }
 
 export abstract class ApiPlugin<P extends t.TypeC<any> = any> extends PluginBase {

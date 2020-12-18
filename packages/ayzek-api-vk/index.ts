@@ -7,8 +7,10 @@ import { Attachment, File, Image, Location } from '@ayzek/core/model/attachment'
 import { opaqueToAyzek } from '@ayzek/core/text';
 import arrayChunks from '@ayzek/core/util/arrayChunks';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import { CodeTextPart, FormattingTextPart, HashTagTextPart, Locale, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
+import { CodeTextPart, FormattingTextPart, HashTagTextPart, OpaqueTextPart, Text, TextPart, Translation } from '@ayzek/text';
 import { Component } from '@ayzek/text/component';
+import { LANGUAGES } from '@ayzek/text/language';
+import { LOCALES } from '@ayzek/text/locale';
 import { Preformatted } from '@ayzek/text/translation';
 import type { MaybePromise } from '@meteor-it/utils';
 import { emit } from '@meteor-it/xrest';
@@ -340,6 +342,8 @@ export class VKApi extends Api {
 		ApiFeature.ChatMemberList,
 		ApiFeature.EditMessage,
 	]);
+
+	defaultTranslation = new Translation(LANGUAGES['en'], LOCALES['US']);
 }
 
 export default class VKApiPlugin extends ApiPlugin {

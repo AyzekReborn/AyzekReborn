@@ -10,8 +10,10 @@ import { opaqueToAyzek } from '@ayzek/core/text';
 import { validateData } from '@ayzek/core/util/config';
 import { replaceBut } from '@ayzek/core/util/escape';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import { CodeTextPart, FormattingTextPart, HashTagTextPart, Locale, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
+import { CodeTextPart, FormattingTextPart, HashTagTextPart, Translation, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
 import { Component } from '@ayzek/text/component';
+import { LANGUAGES } from '@ayzek/text/language';
+import { LOCALES } from '@ayzek/text/locale';
 import { Preformatted } from '@ayzek/text/translation';
 import type { MaybePromise } from '@meteor-it/utils';
 import XRest from '@meteor-it/xrest';
@@ -334,6 +336,8 @@ export class TelegramApi extends Api {
 		}
 		throw new Error('unreachable');
 	}
+
+	defaultTranslation = new Translation(LANGUAGES['en'], LOCALES['US']);
 }
 
 export default class TelegramApiPlugin extends ApiPlugin {
