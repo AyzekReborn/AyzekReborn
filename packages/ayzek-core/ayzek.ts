@@ -1,7 +1,7 @@
 import { AttributeRepository, AttributeStorage, ownerlessEmptyAttributeStorage } from '@ayzek/attribute';
 import type { ArgumentType } from '@ayzek/command-parser/arguments';
 import { CommandDispatcher } from '@ayzek/command-parser/command';
-import { joinText, Text } from '@ayzek/text';
+import { joinText, Translation, Text } from '@ayzek/text';
 import type Logger from '@meteor-it/logger';
 import { Api } from './api';
 import type { AyzekCommandSource, AyzekParseResults } from './command';
@@ -172,5 +172,9 @@ export class Ayzek extends Api {
 
 	get apiLocalUserArgumentType(): ArgumentType<void, User> {
 		throw new Error('Method not implemented.');
+	}
+
+	get defaultTranslation(): Translation {
+		throw new Error('not implemented for ayzek itself');
 	}
 }

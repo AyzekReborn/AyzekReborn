@@ -207,7 +207,7 @@ export class DiscordApi extends Api {
 		assert.strictEqual(textParts.length, 0, 'Text parts left unsent');
 	}
 
-	partToString(part: TextPart, locale?: Locale): string {
+	partToString(part: TextPart, locale?: Translation): string {
 		if (!part) return part + '';
 		if (typeof part === 'number') {
 			return part + '';

@@ -13,9 +13,7 @@ import { ApplyChatLocaleEvent, ApplyUserLocaleEvent } from '@ayzek/core/events/l
 import { command, PluginBase as PluginBase, PluginCategory } from '@ayzek/core/plugin';
 import { requireHidden } from '@ayzek/core/requirements';
 import { levenshteinDistance } from '@ayzek/core/util/levenshtein';
-import { FormattingTextPart, joinText, Locale, T, Text } from '@ayzek/text';
-import { LANGUAGES } from '@ayzek/text/language';
-import { LOCALES } from '@ayzek/text/locale';
+import { FormattingTextPart, joinText, T, Text } from '@ayzek/text';
 
 function getAllUsage<S, R>(root: CommandNode<S, any, R>, prefix: string, node: CommandNode<S, any, R>, source: S, restricted: boolean): string[] {
 	const result: Array<string> = [];
@@ -296,8 +294,12 @@ const localeSettingListener = ({
 	description: 'Sets user locale',
 	type: ApplyUserLocaleEvent,
 	handler: async (e: ApplyUserLocaleEvent) => {
-		if (!e.user.locale)
-			e.user.locale = new Locale(LANGUAGES.ru, LOCALES.RU, {});
+		if (!e.user.locale._language) {
+			e.user.locale._language = e.user.api.defaultTranslation._language;
+		}
+		if (!e.user.locale._locale) {
+			e.user.locale._locale = e.user.locale._language?.defaultLocale;
+		}
 	},
 });
 const chatLocaleSettingListener = ({
@@ -305,8 +307,12 @@ const chatLocaleSettingListener = ({
 	description: 'Sets chat locale',
 	type: ApplyChatLocaleEvent,
 	handler: async (e: ApplyChatLocaleEvent) => {
-		if (!e.chat.locale)
-			e.chat.locale = new Locale(LANGUAGES.ru, LOCALES.RU, {});
+		if (!e.chat.locale._language) {
+			e.chat.locale._language = e.chat.api.defaultTranslation._language;
+		}
+		if (!e.chat.locale._locale) {
+			e.chat.locale._locale = e.chat.locale._language?.defaultLocale;
+		}
 	},
 });
 

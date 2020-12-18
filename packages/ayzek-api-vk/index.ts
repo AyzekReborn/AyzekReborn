@@ -276,7 +276,7 @@ export class VKApi extends Api {
 		}
 	}
 
-	partToString(part: TextPart, locale?: Locale): string {
+	partToString(part: TextPart, locale?: Translation): string {
 		if (!part) return part + '';
 		if (typeof part === 'number') {
 			return part + '';

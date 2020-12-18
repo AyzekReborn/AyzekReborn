@@ -1,5 +1,5 @@
 import { AttributeStorage, ownerlessEmptyAttributeStorage } from '@ayzek/attribute';
-import type { Locale, Text, TextPart } from '@ayzek/text';
+import { Translation, Text, TextPart } from '@ayzek/text';
 import type { Api } from './api';
 import type { IMessage, IMessageOptions } from './message';
 import { Attachment, Image } from './model/attachment';
@@ -26,7 +26,7 @@ export abstract class Conversation implements IConversation {
 		this.api = api;
 	}
 
-	locale?: Locale;
+	readonly locale: Translation = new Translation();
 
 	attributeStorage: AttributeStorage<this> = ownerlessEmptyAttributeStorage;
 
