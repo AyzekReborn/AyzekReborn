@@ -1,5 +1,7 @@
+import { LocaleBase, LOCALES } from './locale';
+
 export abstract class LanguageBase {
-	constructor(public name: string) {
+	constructor(public name: string, public defaultLocale: LocaleBase) {
 		this.name = name.toLowerCase();
 	}
 	abstract get possiblePluralForms(): number[];
@@ -22,7 +24,7 @@ const RUSSIAN_PLURAL_FORM = (n: number) => (n % 10 == 1 && n % 100 != 11 ? 1 : n
 // Belorussian
 defineLanguage(new class extends LanguageBase {
 	constructor() {
-		super('be');
+		super('be', LOCALES['BY']);
 	}
 	possiblePluralForms = RUSSIAN_POSSIBLE_PLURAL_FORMS;
 	pluralForm = RUSSIAN_PLURAL_FORM;
@@ -31,7 +33,7 @@ defineLanguage(new class extends LanguageBase {
 // Chinese
 defineLanguage(new class extends LanguageBase {
 	constructor() {
-		super('ch');
+		super('ch', LOCALES['CN']);
 	}
 	possiblePluralForms = [1, 2];
 	defaultPluralForm = 1;
@@ -43,7 +45,7 @@ defineLanguage(new class extends LanguageBase {
 // English
 defineLanguage(new class extends LanguageBase {
 	constructor() {
-		super('en');
+		super('en', LOCALES['US']);
 	}
 	possiblePluralForms = [1, 2];
 	pluralForm(number: number): 1 | 2 {
@@ -54,7 +56,7 @@ defineLanguage(new class extends LanguageBase {
 // Russian
 defineLanguage(new class extends LanguageBase {
 	constructor() {
-		super('ru');
+		super('ru', LOCALES['RU']);
 	}
 	possiblePluralForms = RUSSIAN_POSSIBLE_PLURAL_FORMS;
 	pluralForm = RUSSIAN_PLURAL_FORM;
@@ -63,7 +65,7 @@ defineLanguage(new class extends LanguageBase {
 // Ukrainian
 defineLanguage(new class extends LanguageBase {
 	constructor() {
-		super('uk');
+		super('uk', LOCALES['UA']);
 	}
 	possiblePluralForms = RUSSIAN_POSSIBLE_PLURAL_FORMS;
 	pluralForm = RUSSIAN_PLURAL_FORM;
