@@ -12,6 +12,7 @@
         "No description": "Нет описания",
         "For plugin info see \"/help <name>\", or \"/help all\" to see all plugins": "Для информации о плагине смотри /help <название> или /help all для всех плагинов",
         "Probally you meant:": "Возможно ты имел в виду:",
-        "Something is broken, this issue was reported to developer.\nYou can use those suggestions in meantime:": "Что то сломано, отчёт об ошибке отправлен разработчику.\nА пока можешь воспользоваться следующими предложениями:"
+        "Something is broken, this issue was reported to developer.\nYou can use those suggestions in meantime:": "Что то сломано, отчёт об ошибке отправлен разработчику.\nА пока можешь воспользоваться следующими предложениями:",
+        "Plugins with utility command, to control other plugins": "Плагин, содержащий команды для управления другими плагинами"
     }
 }

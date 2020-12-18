@@ -63,7 +63,7 @@ async function describePlugin(t: T, ctx: AyzekCommandContext, ayzek: Ayzek, plug
 	return [
 		`🔌 ${plugin.name}\n`,
 		'🕵‍ ', t`Developer:`, ` ${plugin.author}\n`,
-		`💬 ${plugin.description}\n`,
+		'💬 ', plugin.description, '\n',
 		additionalInfo,
 		...((availableCommands && availableCommands.length > 0) ? [
 			'\n', t`Feature list:`, '\n',
@@ -323,7 +323,7 @@ export default class Plugin extends PluginBase {
 	ayzekAttributes?: AttributeCreator<Ayzek, any>[] | undefined;
 	name = 'MainPlugin';
 	author = 'НекийЛач';
-	description = 'Плагин, содержащий некоторые команды - утилиты для управления другими плагинами';
+	description = this.t`Plugins with utility command, to control other plugins`;
 	category = PluginCategory.UTILITY;
 
 	commands = [debugCommand, helpCommand];

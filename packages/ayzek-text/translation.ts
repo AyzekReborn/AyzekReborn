@@ -7,7 +7,16 @@ abstract class Translator {
 }
 
 class DefaultTranslator extends Translator {
-	constructor(public data: ParsingData) {
+	_data?: ParsingData;
+
+	get data(): ParsingData {
+		if (!this._data) {
+			throw new Error('parsing data should be set after load');
+		}
+		return this._data;
+	}
+
+	constructor() {
 		super();
 	}
 
@@ -55,11 +64,12 @@ class OtherTranslator extends Translator {
 
 
 export class TranslatorStorage {
-	default: DefaultTranslator;
+	default: DefaultTranslator = new DefaultTranslator();
 	translations: { [key: string]: OtherTranslator } = {};
-	constructor(parsingData: ParsingData) {
-		this.default = new DefaultTranslator(parsingData);
+	set parsingData(data: ParsingData) {
+		this.default._data = data;
 	}
+
 	define(translation: string, data: { [key: string]: { [key: string]: string } }) {
 		if (this.translations[translation]) {
 			throw new Error(`translation is already defined: ${translation}`);

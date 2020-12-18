@@ -1,7 +1,7 @@
 import type { AttributeCreator } from '@ayzek/attribute';
 import { LiteralArgumentBuilder } from '@ayzek/command-parser/builder';
 import type { T, Text } from '@ayzek/text';
-import { TranslationStorage } from '@ayzek/text/translation';
+import { TranslatorStorage } from '@ayzek/text/translation';
 import { MaybePromise } from '@meteor-it/utils';
 import * as t from 'io-ts';
 import type { Ayzek } from './ayzek';
@@ -33,7 +33,7 @@ type Listener<P> = ResolvedListener | ((plug: P) => ResolvedListener);
 
 export abstract class PluginBase {
 	// Injected by ModernPluginSystem
-	translationStorage!: TranslationStorage;
+	translationStorage: TranslatorStorage = new TranslatorStorage();
 	ayzek!: Ayzek;
 
 	get t(): T {
@@ -49,7 +49,7 @@ export abstract class PluginBase {
 	/**
 	 * Plugin description, displayed in /help
 	 */
-	description?: string;
+	description?: Text;
 
 	commands?: Command<this>[];
 	resolvedCommands?: ResolvedCommand[];

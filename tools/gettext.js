@@ -15,7 +15,7 @@ async function extractLines(stripPath, file) {
 	traverse(program, {
 		enter(path) {
 			if (path.isTaggedTemplateExpression()) {
-				if (path.node.tag?.name === 't') {
+				if (path.node.tag?.name === 't' || path.node.tag?.property?.name === 't') {
 					const quasi = path.node.quasi;
 					const quasis = quasi.quasis;
 					const expressions = quasi.expressions;
