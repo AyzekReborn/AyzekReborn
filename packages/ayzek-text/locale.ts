@@ -13,6 +13,17 @@ function defineLocale(translation: LocaleBase) {
 	LOCALES[translation.name] = translation;
 }
 
+// Belarus
+defineLocale(new class extends LocaleBase {
+	constructor() {
+		super('BY');
+	}
+
+	timeFormat: 24 = 24;
+	timeZone = 'Europe/Minsk';
+});
+
+// China
 defineLocale(new class extends LocaleBase {
 	constructor() {
 		super('CN');
@@ -40,4 +51,14 @@ defineLocale(new class extends LocaleBase {
 
 	timeFormat: 12 = 12;
 	timeZone = 'America/New_York';
+});
+
+// Ukraine
+defineLocale(new class extends LocaleBase {
+	constructor() {
+		super('UA');
+	}
+
+	timeFormat: 24 = 24;
+	timeZone = 'Europe/Kyiv';
 });
