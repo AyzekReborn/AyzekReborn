@@ -63,10 +63,26 @@ type UserData = {
 	timeZone?: string;
 };
 
-export class Locale {
-	constructor(public translation: LanguageBase, public locale: LocaleBase, public userData: UserData, public chatData?: UserData) { }
+export class Translation {
+	constructor(
+		public _language?: LanguageBase,
+		public _locale?: LocaleBase,
+	) { }
+
+	get language(): LanguageBase {
+		if (this._language) {
+			return this._language;
+		}
+		throw new Error('language is not set');
+	}
+	get locale(): LocaleBase {
+		if (this._locale) {
+			return this._locale;
+		}
+		throw new Error('locale is not set');
+	}
 
 	get name(): string {
-		return `${this.translation.name}_${this.locale.name}`;
+		return `${this.language.name}_${this.locale.name}`;
 	}
 }

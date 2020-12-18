@@ -1,6 +1,6 @@
 import type { AbstractSlots } from '@ayzek/linguist';
 import Random from '@meteor-it/random';
-import type { Locale, Text, TextPart } from '.';
+import type { Translation, Text, TextPart } from '.';
 import { Component, ListComponent, Slots, StringComponent } from './component';
 
 export class RandomComponent extends Component {
@@ -25,7 +25,7 @@ export class RandomComponent extends Component {
 		}
 	}
 
-	localize(locale: Locale, slots: Slots): Text {
+	localize(locale: Translation, slots: Slots): Text {
 		const seed = this.seedSlot != undefined && slots[this.seedSlot];
 		if (typeof seed !== 'string') {
 			throw new Error('seed should be string!');
@@ -53,7 +53,7 @@ export class TrimWhitespace extends Component {
 		}
 	}
 
-	localize(locale: Locale, slots: AbstractSlots<TextPart>): TextPart {
+	localize(locale: Translation, slots: AbstractSlots<TextPart>): TextPart {
 		return this.children!.localize(locale, slots);
 	}
 }

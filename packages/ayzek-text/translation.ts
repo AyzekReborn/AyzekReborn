@@ -1,12 +1,12 @@
 import { parseComponent } from '@ayzek/linguist';
-import type { CT, Locale, T, Text } from '.';
+import type { CT, T, Text, Translation } from '.';
 import type { Component, ParsingData, Slots } from './component';
 
-abstract class Translation {
+abstract class Translator {
 	abstract translate(context: string, input: string): Component;
 }
 
-class DefaultTranslation extends Translation {
+class DefaultTranslator extends Translator {
 	constructor(public data: ParsingData) {
 		super();
 	}
@@ -24,9 +24,9 @@ class DefaultTranslation extends Translation {
 	}
 }
 
-class OtherTranslation extends Translation {
+class OtherTranslator extends Translator {
 	translated: Map<string, Map<string, Component>> = new Map();
-	constructor(public defaultTranslation: DefaultTranslation, translation: { [key: string]: { [key: string]: string } }) {
+	constructor(public defaultTranslation: DefaultTranslator, translation: { [key: string]: { [key: string]: string } }) {
 		super();
 		for (const context of Object.getOwnPropertyNames(translation)) {
 			const items = new Map();
@@ -54,19 +54,19 @@ class OtherTranslation extends Translation {
 }
 
 
-export class TranslationStorage {
-	default: DefaultTranslation;
-	translations: { [key: string]: OtherTranslation } = {};
+export class TranslatorStorage {
+	default: DefaultTranslator;
+	translations: { [key: string]: OtherTranslator } = {};
 	constructor(parsingData: ParsingData) {
-		this.default = new DefaultTranslation(parsingData);
+		this.default = new DefaultTranslator(parsingData);
 	}
 	define(translation: string, data: { [key: string]: { [key: string]: string } }) {
 		if (this.translations[translation]) {
 			throw new Error(`translation is already defined: ${translation}`);
 		}
-		this.translations[translation] = new OtherTranslation(this.default, data);
+		this.translations[translation] = new OtherTranslator(this.default, data);
 	}
-	translation(translation: string): Translation {
+	translator(translation: string): Translator {
 		return this.translations[translation] ?? this.default;
 	}
 	ct: CT = context => {
@@ -90,8 +90,12 @@ function joinWithSlotIds(input: TemplateStringsArray): string {
 }
 
 export class Preformatted {
-	constructor(private base: TranslationStorage, private context: string, private input: string, private slots: Slots) { }
-	localize(locale: Locale): Text {
-		return this.base.translation(locale.translation.name).translate(this.context, this.input).localize(locale, this.slots);
+	constructor(private base: TranslatorStorage, private context: string, private input: string, private slots: Slots) { }
+	localize(locale: Translation): Text {
+		return this.base.translator(locale.language.name).translate(this.context, this.input).localize(locale, this.slots);
+	}
+
+	get id(): string {
+		return this.context + '.' + this.input;
 	}
 }
