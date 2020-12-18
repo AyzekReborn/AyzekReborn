@@ -1,4 +1,4 @@
-import { Text } from '@ayzek/text';
+import { Text, Translation } from '@ayzek/text';
 import { Ayzek } from '../ayzek';
 import type { IMessage, IMessageOptions } from '../message';
 import { Attachment } from '../model/attachment';
@@ -33,7 +33,18 @@ export abstract class MessageEvent implements IMessage {
 		return null;
 	}
 
-	send(text: Text, attachments?: Attachment[], options?: IMessageOptions): Promise<void> {
+	send(text: Text, attachments?: Attachment[], options: IMessageOptions = {}): Promise<void> {
+		if (!options.locale) {
+			options.locale = new Translation(
+				this.chat?.locale._language
+				?? this.user.locale._language
+				?? this.api.defaultTranslation.language,
+
+				this.chat?.locale._locale ?? this.chat?.locale._language?.defaultLocale
+				?? this.user.locale._locale ?? this.user.locale._language?.defaultLocale
+				?? this.api.defaultTranslation._locale ?? this.api.defaultTranslation.language.defaultLocale,
+			);
+		}
 		return this.conversation.send(text, attachments, options);
 	}
 	waitForNext(shouldAccept: (message: IMessage) => boolean, timeout: number | null): Promise<IMessage> {
