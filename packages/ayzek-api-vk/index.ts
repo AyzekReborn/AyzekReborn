@@ -343,7 +343,7 @@ export class VKApi extends Api {
 		ApiFeature.EditMessage,
 	]);
 
-	defaultTranslation = new Translation(LANGUAGES['en'], LOCALES['US']);
+	defaultTranslation = new Translation(LANGUAGES['ru'], LOCALES['RU']);
 }
 
 export default class VKApiPlugin extends ApiPlugin {
