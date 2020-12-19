@@ -34,23 +34,38 @@ const ApiChat = t.interface({
 });
 
 export class TelegramUser extends User {
-	constructor(public apiUser: t.TypeOf<typeof ApiUser>, api: TelegramApi) {
+	constructor(public _apiUser: t.TypeOf<typeof ApiUser>, api: TelegramApi) {
 		super(
 			api,
-			`TGU:${api.config.descriminator}:${apiUser.id.toString()}`,
-			apiUser.username ?? null,
-			apiUser.first_name ?? null,
-			apiUser.last_name ?? null,
-			apiUser.is_bot ? Gender.BOT : Gender.UNSPECIFIED,
-			`https://t.me/${apiUser.username}`,
-			apiUser.is_bot,
+			`TGU:${api.config.descriminator}:${_apiUser.id.toString()}`,
+			_apiUser.username ?? null,
+			_apiUser.first_name ?? null,
+			_apiUser.last_name ?? null,
+			_apiUser.is_bot ? Gender.BOT : Gender.UNSPECIFIED,
+			`https://t.me/${_apiUser.username}`,
+			_apiUser.is_bot,
 		);
 
-		const languageName = apiUser.language_code?.split('-')[0];
+		this.apiUser = _apiUser;
+	}
+
+	set apiUser(_apiUser: t.TypeOf<typeof ApiUser>) {
+		this.nickName = _apiUser.username ?? null;
+		this.firstName = _apiUser.first_name ?? null;
+		this.lastName = _apiUser.last_name ?? null;
+		this.profileUrl = `https://t.me/${_apiUser.username}`;
+
+		this._apiUser = _apiUser;
+		const languageName = _apiUser.language_code;
 		if (languageName) {
 			this.locale._language = LANGUAGES[languageName];
 		}
 	}
+
+	get apiUser(): t.TypeOf<typeof ApiUser> {
+		return this._apiUser;
+	}
+
 	get photoImage(): Promise<Image | null> {
 		throw new Error('Method not implemented.');
 	}
@@ -154,7 +169,7 @@ export class TelegramApi extends Api {
 		if (!this.users.get(correctUser.id)) {
 			this.users.set(correctUser.id, new TelegramUser(correctUser, this));
 		} else {
-			// TODO: Update
+			this.users.get(correctUser.id)!.apiUser = correctUser;
 		}
 	}
 
