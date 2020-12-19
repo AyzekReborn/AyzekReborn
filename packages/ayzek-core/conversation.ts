@@ -71,11 +71,11 @@ export abstract class User<I = unknown> extends Conversation {
 	constructor(
 		api: Api,
 		public readonly uid: string,
-		public readonly nickName: string | null,
-		public readonly firstName: string | null,
-		public readonly lastName: string | null,
-		public readonly gender: Gender,
-		public readonly profileUrl: string,
+		public nickName: string | null,
+		public firstName: string | null,
+		public lastName: string | null,
+		public gender: Gender,
+		public profileUrl: string,
 		public readonly isBot: boolean,
 	) {
 		super(api, ConversationType.USER);
