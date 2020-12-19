@@ -227,7 +227,7 @@ const helpCommand = ({ t }: Plugin) => command('help')
 			t`Installed plugins:`, '\n\n',
 			joinText('\n\n', source.ayzek!.plugins.map((plugin, i) => joinText('\n', [
 				[`${i + 1}. `, t`${/*plugin name*/plugin.name} by ${/*plugin developer*/plugin.author ?? t/*author name shown by default*/`Anonymous developer`}`],
-				`💬 ${plugin.description ?? t`No description`}`,
+				['💬 ', plugin.description ?? t`No description`],
 			]))),
 			'\n\n',
 			t`For plugin info see "/help <name>", or "/help all" to see all plugins`,
