@@ -10,7 +10,7 @@ import { opaqueToAyzek } from '@ayzek/core/text';
 import { validateData } from '@ayzek/core/util/config';
 import { replaceBut } from '@ayzek/core/util/escape';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import { CodeTextPart, FormattingTextPart, HashTagTextPart, Translation, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
+import { CodeTextPart, FormattingTextPart, HashTagTextPart, OpaqueTextPart, Text, TextPart, Translation } from '@ayzek/text';
 import { Component } from '@ayzek/text/component';
 import { LANGUAGES } from '@ayzek/text/language';
 import { LOCALES } from '@ayzek/text/locale';
@@ -96,7 +96,6 @@ export class TelegramApi extends Api {
 			}),
 		});
 	}
-	protected supportedFeatures: Set<ApiFeature> = new Set();
 
 	getUser(uid: string): MaybePromise<TelegramUser | null> {
 		const userPrefix = `TGU:${this.config.descriminator}:`;
@@ -257,10 +256,6 @@ export class TelegramApi extends Api {
 	}
 	async cancel() { }
 
-	get apiLocalUserArgumentType(): ArgumentType<void, User> {
-		throw new Error('Method not implemented.');
-	}
-
 	async send(conv: Conversation, text: Text, _attachments: Attachment[], _options: IMessageOptions): Promise<void> {
 		const parts = splitByMaxPossibleParts(this.partToString(text, conv.locale), 4096);
 		if (!(conv instanceof TelegramUser || conv instanceof TelegramChat))
@@ -341,6 +336,14 @@ export class TelegramApi extends Api {
 			return this.partToString(part.localize(locale), locale);
 		}
 		throw new Error('unreachable');
+	}
+
+	supportedFeatures: Set<ApiFeature> = new Set([
+		ApiFeature.ProvidesLanguage,
+	]);
+
+	get apiLocalUserArgumentType(): ArgumentType<void, User> {
+		throw new Error('Method not implemented.');
 	}
 
 	defaultTranslation = new Translation(LANGUAGES['en'], LOCALES['US']);

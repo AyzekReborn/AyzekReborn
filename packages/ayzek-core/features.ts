@@ -28,6 +28,10 @@ enum ApiFeature {
 	MessageForward,
 	// MC
 	TabCompleteEvent,
+	// TG, DS
+	ProvidesLanguage,
+	// DS
+	ProvidesLocale,
 }
 
 export default ApiFeature;

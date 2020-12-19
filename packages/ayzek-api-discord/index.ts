@@ -10,7 +10,7 @@ import { Attachment, BaseFile, File } from '@ayzek/core/model/attachment';
 import { opaqueToAyzek } from '@ayzek/core/text';
 import { replaceBut } from '@ayzek/core/util/escape';
 import { splitByMaxPossibleParts } from '@ayzek/core/util/split';
-import { CodeTextPart, FormattingTextPart, HashTagTextPart, Translation, OpaqueTextPart, Text, TextPart } from '@ayzek/text';
+import { CodeTextPart, FormattingTextPart, HashTagTextPart, OpaqueTextPart, Text, TextPart, Translation } from '@ayzek/text';
 import { Component } from '@ayzek/text/component';
 import { LANGUAGES } from '@ayzek/text/language';
 import { LOCALES } from '@ayzek/text/locale';
@@ -283,6 +283,8 @@ export class DiscordApi extends Api {
 		ApiFeature.OutgoingMessageWithMultipleAttachments,
 		ApiFeature.GuildSupport,
 		ApiFeature.MessageReactions,
+		ApiFeature.ProvidesLanguage,
+		ApiFeature.ProvidesLocale,
 	]);
 
 	defaultTranslation = new Translation(LANGUAGES['en'], LOCALES['US']);
