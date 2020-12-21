@@ -5,7 +5,7 @@
 	"license": "MIT",
 	"dependencies": {
 		"@ayzek/attribute": "workspace:*",
-		"@ayzek/command-parser": "^1.0.2",
+		"@ayzek/command-parser": "^2.0.0",
 		"@ayzek/text": "workspace:*",
 		"@meteor-it/ajson": "^0.4.20",
 		"@meteor-it/logger": "2.3.45",
