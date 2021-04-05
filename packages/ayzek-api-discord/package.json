@@ -8,7 +8,7 @@
     "@ayzek/core": "workspace:*",
     "@ayzek/text": "workspace:*",
     "@meteor-it/mime": "0.4.23",
-    "discord.js": "12.5.1",
+    "discord.js": "12.5.3",
     "fp-ts": "^2.9.0",
     "io-ts": "^2.2.13"
   }
