@@ -19,7 +19,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "14.14.10",
-		"@types/temp": "^0.8.34"
+		"@types/temp": "^0.9.0"
 	},
 	"scripts": {
 		"build": "tsc -b .",
