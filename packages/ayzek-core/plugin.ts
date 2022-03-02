@@ -1,6 +1,7 @@
 import type { AttributeCreator } from '@ayzek/attribute';
 import { LiteralArgumentBuilder } from '@ayzek/command-parser/builder';
 import type { T, Text } from '@ayzek/text';
+import { Component } from '@ayzek/text/component';
 import { TranslatorStorage } from '@ayzek/text/translation';
 import { MaybePromise } from '@meteor-it/utils';
 import * as t from 'io-ts';
@@ -62,6 +63,8 @@ export abstract class PluginBase {
 	conversationAttributes?: AttributeCreator<Conversation, any>[];
 
 	ayzekAttributes?: AttributeCreator<Ayzek, any>[];
+
+	components?: { [key: string]: new () => Component };
 
 	init?(): Promise<void>;
 	deinit?(): Promise<void>;

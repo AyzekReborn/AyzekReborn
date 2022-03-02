@@ -78,7 +78,13 @@ export default class ModernPluginSystem {
 			}
 		}
 
-		module.translationStorage.parsingData = new ParsingData();
+		const parsingData = new ParsingData();
+		if (module.components) {
+			for (const name of Object.keys(module.components)) {
+				parsingData.defineComponent(name, module.components[name]);
+			}
+		}
+		module.translationStorage.parsingData = parsingData;
 		if (module.translations) {
 			for (const key of module.translations.keys()) {
 				if (key.startsWith('./') && key.endsWith('.json')) {

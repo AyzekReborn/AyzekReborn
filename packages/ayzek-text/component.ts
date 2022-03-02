@@ -1,5 +1,5 @@
 import { AbstractComponent, AbstractParsingData, AbstractSlots, FundamentalListComponent, FundamentalSlotComponent, FundamentalStringComponent } from '@ayzek/linguist';
-import type { Translation, Text, TextPart } from '.';
+import { Translation, Text, TextPart, FormattingTextPart } from '.';
 import { Preformatted } from './translation';
 
 type Slot = string | Text;
@@ -43,7 +43,29 @@ class NoopComponent extends AbstractComponent<Translation, Slot, Text> {
 	}
 }
 
+class CodeComponent extends Component {
+	children!: ListComponent;
+	setChildren(children: ListComponent): void {
+		this.children = children;
+	}
+	validate(): void {
+		if (this.children === undefined)
+			throw new Error('children is required in code');
+	}
+	localize(locale: Translation, slots: AbstractSlots<Slot>): TextPart {
+		return new FormattingTextPart(this.children.localize(locale, slots), { preserveMultipleSpaces: true });
+	}
+}
+
 export class ParsingData extends AbstractParsingData<Translation, Slot, Text> {
+	components: { [key: string]: new () => Component } = Object.create(null);
+	defineComponent(name: string, component: new () => Component) {
+		this.components[name] = component;
+	}
+	undefineComponent(name: string) {
+		delete this.components[name];
+	}
+
 	fundamentalString(string: string) {
 		return new StringComponent(string);
 	}
@@ -57,6 +79,11 @@ export class ParsingData extends AbstractParsingData<Translation, Slot, Text> {
 	componentByName(name: string): Component {
 		if (name === 'noop') {
 			return new NoopComponent();
+		} else if (name === 'code') {
+			return new CodeComponent();
+		}
+		if (this.components[name]) {
+			return new this.components[name]();
 		}
 		throw new Error(`component not defined: ${name}`);
 	}

@@ -96,7 +96,7 @@ class ParsingState {
 }
 
 function readName(input: string): [string, string] {
-	return readUntil(input, [' ', '.', '{', '}', ';']);
+	return readUntil(input, [' ', '.', '{', '}', '\'', ';']);
 }
 function isDigit(char: string): boolean {
 	return '0123456789'.includes(char) && char.length === 1;
@@ -184,7 +184,6 @@ function readComponent<L, S, T>(input: string, state: ParsingState, data: Abstra
 				if (input.length === 0 || input[0] !== '}') {
 					throw new Error('children should end with "}"!');
 				}
-				input = input.slice(1);
 				component.setChildren(children);
 				break props;
 			case '}':

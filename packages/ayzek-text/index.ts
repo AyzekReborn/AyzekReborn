@@ -39,7 +39,7 @@ export class HashTagTextPart {
 }
 
 export type TextPart =
-	undefined | null | string | number
+	undefined | null | string | number | bigint
 	| OpaqueTextPart
 	| CodeTextPart | FormattingTextPart
 	| HashTagTextPart | Array<Text> | Component | Preformatted;
